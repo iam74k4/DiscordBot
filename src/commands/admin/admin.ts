@@ -65,6 +65,39 @@ async function handleStats(
 }
 
 /**
+ * Allowed table names for database statistics (whitelist for SQL safety)
+ */
+const ALLOWED_TABLES = new Set([
+  'steam_users',
+  'playtime_history',
+  'notification_settings',
+  'user_notification_prefs',
+  'game_activity_cache',
+  'guild_settings',
+  'audit_logs',
+]);
+
+/**
+ * Safely get row count for a whitelisted table
+ */
+function getTableCount(tableName: string): number | null {
+  // Validate table name against whitelist to prevent SQL injection
+  if (!ALLOWED_TABLES.has(tableName)) {
+    return null;
+  }
+
+  try {
+    // Table name is validated against whitelist, safe to use in query
+    const stmt = database.prepare(`SELECT COUNT(*) as count FROM ${tableName}`);
+    const result = stmt.get() as { count: number } | undefined;
+    return result?.count ?? null;
+  } catch {
+    // Table doesn't exist yet
+    return null;
+  }
+}
+
+/**
  * Handle db subcommand
  */
 async function handleDb(
@@ -72,28 +105,12 @@ async function handleDb(
 ): Promise<void> {
   const registeredUsers = getRegisteredUsersCount();
 
-  // Get table counts
-  const tables = [
-    'steam_users',
-    'playtime_history',
-    'notification_settings',
-    'user_notification_prefs',
-    'game_activity_cache',
-    'guild_settings',
-    'audit_logs',
-  ];
-
   const tableCounts: { name: string; count: number }[] = [];
 
-  for (const table of tables) {
-    try {
-      const stmt = database.prepare(`SELECT COUNT(*) as count FROM ${table}`);
-      const result = stmt.get() as { count: number } | undefined;
-      if (result) {
-        tableCounts.push({ name: table, count: result.count });
-      }
-    } catch {
-      // Table doesn't exist yet
+  for (const table of ALLOWED_TABLES) {
+    const count = getTableCount(table);
+    if (count !== null) {
+      tableCounts.push({ name: table, count });
     }
   }
 
