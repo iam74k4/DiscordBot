@@ -8,6 +8,8 @@ A modular Discord bot built with TypeScript and discord.js v14.
 - Steam integration (profile, playtime, game library, ranking)
 - Game start notifications
 - Playtime history tracking
+- Admin system (bot owner commands, server settings)
+- Audit logging for admin actions
 - Middleware system (permissions, cooldown)
 - SQLite database for user data persistence
 - Modular architecture for easy extension
@@ -37,6 +39,7 @@ Create a `.env` file in the project root:
 DISCORD_TOKEN=your_discord_bot_token
 DISCORD_CLIENT_ID=your_discord_client_id
 DISCORD_GUILD_ID=your_guild_id  # Optional, for development
+BOT_OWNER_IDS=your_discord_user_id  # Comma-separated for multiple owners
 STEAM_API_KEY=your_steam_api_key
 NODE_ENV=development
 ```
@@ -112,6 +115,24 @@ npm start
 | `remove`          | Remove notification settings     |
 | `me [action]`     | Toggle personal notifications    |
 
+### Admin (`/admin`) - Bot Owner Only
+
+| Subcommand            | Description                       |
+| --------------------- | --------------------------------- |
+| `stats`               | View bot statistics               |
+| `db`                  | View database statistics          |
+| `guilds`              | List servers the bot is in        |
+| `broadcast <message>` | Send message to all server owners |
+
+### Settings (`/settings`) - Server Admin
+
+| Subcommand        | Description                 |
+| ----------------- | --------------------------- |
+| `view`            | View current settings       |
+| `language <lang>` | Set server language (ja/en) |
+| `audit [channel]` | Set audit log channel       |
+| `logs`            | View recent audit logs      |
+
 ## Available Scripts
 
 | Script                 | Description                          |
@@ -139,7 +160,10 @@ src/
 │   │   └── ping.ts
 │   ├── steam/
 │   │   ├── steam.ts          # /steam command with subcommands
-│   │   └── notify-unified.ts  # /notify command with subcommands
+│   │   └── notify-unified.ts # /notify command with subcommands
+│   ├── admin/
+│   │   ├── admin.ts          # /admin command (bot owner)
+│   │   └── settings.ts       # /settings command (server admin)
 │   └── index.ts
 ├── events/               # Event handlers
 │   ├── client/
@@ -157,13 +181,16 @@ src/
 ├── services/             # Business logic
 │   ├── database/         # SQLite database operations
 │   │   ├── index.ts
-│   │   └── notifications.ts
+│   │   ├── notifications.ts
+│   │   └── settings.ts   # Guild settings & audit logs
 │   ├── steam/            # Steam API client
 │   │   ├── client.ts
 │   │   ├── types.ts
 │   │   ├── utils.ts
 │   │   └── index.ts
 │   ├── notifications/    # Game start notification system
+│   │   └── index.ts
+│   ├── audit/            # Audit log service
 │   │   └── index.ts
 │   └── scheduler/        # Scheduled tasks (playtime recording)
 │       └── index.ts
@@ -189,6 +216,8 @@ The bot uses SQLite (via `better-sqlite3`) for data persistence. The database fi
 - `notification_settings` - Server notification settings
 - `user_notification_prefs` - User notification preferences
 - `game_activity_cache` - Game activity tracking
+- `guild_settings` - Server settings (language, audit channel)
+- `audit_logs` - Audit log entries
 
 ## Adding New Commands
 
