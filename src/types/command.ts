@@ -1,7 +1,9 @@
 import {
   ChatInputCommandInteraction,
+  AutocompleteInteraction,
   SlashCommandBuilder,
   SlashCommandSubcommandsOnlyBuilder,
+  SlashCommandOptionsOnlyBuilder,
   PermissionResolvable,
 } from 'discord.js';
 import { MiddlewareName } from './middleware.js';
@@ -11,6 +13,13 @@ import { MiddlewareName } from './middleware.js';
  */
 export type CommandExecute = (
   interaction: ChatInputCommandInteraction
+) => Promise<void>;
+
+/**
+ * Autocomplete handler function type
+ */
+export type AutocompleteHandler = (
+  interaction: AutocompleteInteraction
 ) => Promise<void>;
 
 /**
@@ -24,18 +33,26 @@ export interface CommandOptions {
 }
 
 /**
+ * Slash command data type
+ */
+export type SlashCommandData =
+  | SlashCommandBuilder
+  | SlashCommandSubcommandsOnlyBuilder
+  | SlashCommandOptionsOnlyBuilder
+  | Omit<SlashCommandBuilder, 'addSubcommand' | 'addSubcommandGroup'>;
+
+/**
  * Command structure
  */
 export interface Command {
   /** Slash command builder data */
-  data:
-    | SlashCommandBuilder
-    | SlashCommandSubcommandsOnlyBuilder
-    | Omit<SlashCommandBuilder, 'addSubcommand' | 'addSubcommandGroup'>;
+  data: SlashCommandData;
   /** Middleware to run before execution */
   middleware?: MiddlewareName[];
   /** Options for middleware */
   options?: CommandOptions;
   /** Command execution function */
   execute: CommandExecute;
+  /** Autocomplete handler (optional) */
+  autocomplete?: AutocompleteHandler;
 }
