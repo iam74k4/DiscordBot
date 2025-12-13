@@ -1,4 +1,4 @@
-import { Events } from 'discord.js';
+import { Events, MessageFlags } from 'discord.js';
 import { Event } from '../../types/index.js';
 import { getCommand } from '../../handlers/commandHandler.js';
 import { runMiddleware } from '../../middleware/index.js';
@@ -6,12 +6,33 @@ import { logger } from '../../utils/logger.js';
 import { createErrorEmbed } from '../../utils/embed.js';
 
 /**
- * InteractionCreate event - handles slash command interactions
+ * InteractionCreate event - handles slash command and autocomplete interactions
  */
 export const event: Event<typeof Events.InteractionCreate> = {
   name: Events.InteractionCreate,
   once: false,
   async execute(_client, interaction) {
+    // Handle autocomplete interactions
+    if (interaction.isAutocomplete()) {
+      const command = getCommand(interaction.commandName);
+
+      if (!command || !command.autocomplete) {
+        await interaction.respond([]).catch(() => {});
+        return;
+      }
+
+      try {
+        await command.autocomplete(interaction);
+      } catch (error) {
+        logger.error(
+          `Autocomplete error for ${interaction.commandName}:`,
+          error
+        );
+        await interaction.respond([]).catch(() => {});
+      }
+      return;
+    }
+
     // Only handle chat input commands (slash commands)
     if (!interaction.isChatInputCommand()) return;
 
@@ -49,7 +70,7 @@ export const event: Event<typeof Events.InteractionCreate> = {
         await interaction.editReply({ embeds: [errorEmbed] }).catch(() => {});
       } else {
         await interaction
-          .reply({ embeds: [errorEmbed], ephemeral: true })
+          .reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral })
           .catch(() => {});
       }
     }

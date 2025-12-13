@@ -7,7 +7,11 @@ dotenvConfig();
 /**
  * Required environment variables
  */
-const requiredEnvVars = ['DISCORD_TOKEN', 'DISCORD_CLIENT_ID'] as const;
+const requiredEnvVars = [
+  'DISCORD_TOKEN',
+  'DISCORD_CLIENT_ID',
+  'STEAM_API_KEY',
+] as const;
 
 /**
  * Validate required environment variables
@@ -45,6 +49,9 @@ export const env = {
 
   /** Discord guild ID for development (optional) */
   DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID || null,
+
+  /** Steam Web API key */
+  STEAM_API_KEY: process.env.STEAM_API_KEY!,
 
   /** Current environment */
   NODE_ENV: (process.env.NODE_ENV || 'development') as
