@@ -38,6 +38,14 @@ function validateEnv(): void {
 validateEnv();
 
 /**
+ * Parse comma-separated IDs
+ */
+function parseOwnerIds(value: string | undefined): string[] {
+  if (!value) return [];
+  return value.split(',').map((id) => id.trim()).filter(Boolean);
+}
+
+/**
  * Environment configuration
  */
 export const env = {
@@ -53,6 +61,9 @@ export const env = {
   /** Steam Web API key */
   STEAM_API_KEY: process.env.STEAM_API_KEY!,
 
+  /** Bot owner IDs (comma-separated) */
+  BOT_OWNER_IDS: parseOwnerIds(process.env.BOT_OWNER_IDS),
+
   /** Current environment */
   NODE_ENV: (process.env.NODE_ENV || 'development') as
     | 'development'
@@ -64,3 +75,10 @@ export const env = {
   /** Check if in production mode */
   isProduction: process.env.NODE_ENV === 'production',
 } as const;
+
+/**
+ * Check if a user is a bot owner
+ */
+export function isBotOwner(userId: string): boolean {
+  return env.BOT_OWNER_IDS.includes(userId);
+}

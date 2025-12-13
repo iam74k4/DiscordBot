@@ -1,1 +1,1 @@
-export { env } from './env.js';
+export { env, isBotOwner } from './env.js';
