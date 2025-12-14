@@ -185,20 +185,23 @@ export function getSteamUsersByDiscordIds(
 ): SteamUserRecord[] {
   if (discordIds.length === 0) return [];
 
+  // Remove duplicates to prevent duplicate results when chunking
+  const uniqueIds = [...new Set(discordIds)];
+
   // For small lists, use single query
-  if (discordIds.length <= SQLITE_MAX_PARAMS) {
-    const placeholders = discordIds.map(() => '?').join(',');
+  if (uniqueIds.length <= SQLITE_MAX_PARAMS) {
+    const placeholders = uniqueIds.map(() => '?').join(',');
     const stmt = db.prepare(
       `SELECT * FROM steam_users WHERE discord_id IN (${placeholders})`
     );
-    return stmt.all(...discordIds) as SteamUserRecord[];
+    return stmt.all(...uniqueIds) as SteamUserRecord[];
   }
 
   // For large lists, chunk into multiple queries
   const results: SteamUserRecord[] = [];
 
-  for (let i = 0; i < discordIds.length; i += SQLITE_MAX_PARAMS) {
-    const chunk = discordIds.slice(i, i + SQLITE_MAX_PARAMS);
+  for (let i = 0; i < uniqueIds.length; i += SQLITE_MAX_PARAMS) {
+    const chunk = uniqueIds.slice(i, i + SQLITE_MAX_PARAMS);
     const placeholders = chunk.map(() => '?').join(',');
     const stmt = db.prepare(
       `SELECT * FROM steam_users WHERE discord_id IN (${placeholders})`
