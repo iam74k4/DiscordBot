@@ -39,6 +39,13 @@ async function handleStats(
   const bots = guild.members.cache.filter((m) => m.user.bot).size;
   const humans = totalMembers - bots;
 
+  // Member status breakdown
+  const onlineStatuses = ['online', 'idle', 'dnd'];
+  const online = guild.members.cache.filter(
+    (m) => !m.user.bot && onlineStatuses.includes(m.presence?.status ?? 'offline')
+  ).size;
+  const offline = humans - online;
+
   // Steam statistics
   const humanIds = guild.members.cache
     .filter((m) => !m.user.bot)
@@ -69,11 +76,11 @@ async function handleStats(
   // Calculate combined playtime from all successful fetches
   const totalPlaytimeHours = topPlayers.reduce((sum, p) => sum + p.playtime, 0);
 
-  // Create member composition pie chart
+  // Create member status pie chart
   const memberChartBuffer = await createPieChart(
-    ['Humans', 'Bots'],
-    [humans, bots],
-    'Member Composition'
+    ['Online', 'Offline', 'Bots'],
+    [online, offline, bots],
+    'Member Status'
   );
 
   const memberAttachment = new AttachmentBuilder(memberChartBuffer, {
@@ -84,7 +91,8 @@ async function handleStats(
   const description = [
     '**Members**',
     `Total: ${totalMembers.toLocaleString()}`,
-    `Humans: ${humans.toLocaleString()}`,
+    `Online: ${online.toLocaleString()}`,
+    `Offline: ${offline.toLocaleString()}`,
     `Bots: ${bots.toLocaleString()}`,
     '',
     '**Steam Integration**',
