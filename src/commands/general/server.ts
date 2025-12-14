@@ -42,7 +42,8 @@ async function handleStats(
   // Member status breakdown
   const onlineStatuses = ['online', 'idle', 'dnd'];
   const online = guild.members.cache.filter(
-    (m) => !m.user.bot && onlineStatuses.includes(m.presence?.status ?? 'offline')
+    (m) =>
+      !m.user.bot && onlineStatuses.includes(m.presence?.status ?? 'offline')
   ).size;
   const offline = humans - online;
 
@@ -67,8 +68,12 @@ async function handleStats(
   // Extract successful results and sort by playtime
   const topPlayers = playtimeResults
     .filter(
-      (result): result is PromiseFulfilledResult<{ name: string; playtimeMinutes: number }> =>
-        result.status === 'fulfilled'
+      (
+        result
+      ): result is PromiseFulfilledResult<{
+        name: string;
+        playtimeMinutes: number;
+      }> => result.status === 'fulfilled'
     )
     .map((result) => result.value)
     .sort((a, b) => b.playtimeMinutes - a.playtimeMinutes);
@@ -108,7 +113,8 @@ async function handleStats(
     const topList = topPlayers
       .slice(0, 5)
       .map(
-        (p, i) => `${i + 1}. **${p.name}** - ${Math.floor(p.playtimeMinutes / 60).toLocaleString()}h`
+        (p, i) =>
+          `${i + 1}. **${p.name}** - ${Math.floor(p.playtimeMinutes / 60).toLocaleString()}h`
       )
       .join('\n');
 
@@ -161,4 +167,3 @@ export const command: Command = {
 };
 
 export default command;
-
