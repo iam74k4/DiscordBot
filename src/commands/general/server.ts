@@ -39,14 +39,6 @@ async function handleStats(
   const bots = guild.members.cache.filter((m) => m.user.bot).size;
   const humans = totalMembers - bots;
 
-  const online = guild.members.cache.filter(
-    (m) =>
-      !m.user.bot &&
-      m.presence?.status !== undefined &&
-      m.presence.status !== 'offline'
-  ).size;
-  const offline = humans - online;
-
   // Steam statistics
   const humanIds = guild.members.cache
     .filter((m) => !m.user.bot)
@@ -54,31 +46,34 @@ async function handleStats(
   const steamUsers = getSteamUsersByDiscordIds(humanIds);
   const steamRegistered = steamUsers.length;
 
-  // Calculate total playtime for registered users
-  let totalPlaytimeHours = 0;
-  const topPlayers: { name: string; playtime: number }[] = [];
-
-  for (const user of steamUsers.slice(0, 10)) {
-    try {
+  // Fetch playtime for all registered users in parallel
+  const playtimeResults = await Promise.allSettled(
+    steamUsers.map(async (user) => {
       const playtime = await steamClient.getTotalPlaytime(user.steam_id);
-      const hours = Math.floor(playtime / 60);
-      totalPlaytimeHours += hours;
-      topPlayers.push({
+      return {
         name: user.steam_name || 'Unknown',
-        playtime: hours,
-      });
-    } catch {
-      continue;
-    }
-  }
+        playtime: Math.floor(playtime / 60),
+      };
+    })
+  );
 
-  topPlayers.sort((a, b) => b.playtime - a.playtime);
+  // Extract successful results and sort by playtime
+  const topPlayers = playtimeResults
+    .filter(
+      (result): result is PromiseFulfilledResult<{ name: string; playtime: number }> =>
+        result.status === 'fulfilled'
+    )
+    .map((result) => result.value)
+    .sort((a, b) => b.playtime - a.playtime);
 
-  // Create member status pie chart
+  // Calculate combined playtime from all successful fetches
+  const totalPlaytimeHours = topPlayers.reduce((sum, p) => sum + p.playtime, 0);
+
+  // Create member composition pie chart
   const memberChartBuffer = await createPieChart(
-    ['Online', 'Offline', 'Bots'],
-    [online, offline, bots],
-    'Member Status'
+    ['Humans', 'Bots'],
+    [humans, bots],
+    'Member Composition'
   );
 
   const memberAttachment = new AttachmentBuilder(memberChartBuffer, {
@@ -89,7 +84,7 @@ async function handleStats(
   const description = [
     '**Members**',
     `Total: ${totalMembers.toLocaleString()}`,
-    `Humans: ${humans.toLocaleString()} (Online: ${online.toLocaleString()})`,
+    `Humans: ${humans.toLocaleString()}`,
     `Bots: ${bots.toLocaleString()}`,
     '',
     '**Steam Integration**',

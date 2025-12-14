@@ -1108,6 +1108,15 @@ async function handleHistoryGraph(
     return;
   }
 
+  if (!playerInfo.isPublic) {
+    const warningEmbed = createWarningEmbed(
+      TITLES.PRIVATE_PROFILE,
+      `**${playerInfo.name}** has a private profile.`
+    );
+    await interaction.editReply({ embeds: [warningEmbed] });
+    return;
+  }
+
   const periodOption = interaction.options.getString('period') ?? '30d';
   const periodMap: Record<string, number> = {
     '7d': 7 * ONE_DAY,
@@ -1163,7 +1172,7 @@ async function handleHistoryGraph(
 
   const embed = createEmbed({
     title: `${playerInfo.name} - ${TITLES.HISTORY_GRAPH}`,
-    description: `**Period:** ${periodLabels[periodOption]}\n**Playtime Added:** +${playtimeGain.toLocaleString()} hours`,
+    description: `**Period:** ${periodLabels[periodOption] ?? '30 Days'}\n**Playtime Added:** +${playtimeGain.toLocaleString()} hours`,
     color: COLORS.STEAM,
     image: 'attachment://chart.png',
     thumbnail: playerInfo.avatarUrl,
