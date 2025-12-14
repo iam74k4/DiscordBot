@@ -101,4 +101,3 @@ export function smartFilter<T>(
   // Fallback to fuzzy search
   return fuzzyFilter(items, query, getSearchText, 0.4);
 }
-

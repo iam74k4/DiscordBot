@@ -52,7 +52,10 @@ interface GameCacheEntry {
   timestamp: number;
 }
 const gameCache = new Map<string, GameCacheEntry>();
-const userCache: { users: { name: string; steamId: string }[]; timestamp: number } = { users: [], timestamp: 0 };
+const userCache: {
+  users: { name: string; steamId: string }[];
+  timestamp: number;
+} = { users: [], timestamp: 0 };
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
@@ -384,7 +387,11 @@ async function handleGames(
     return;
   }
 
-  const games = await steamClient.getFormattedGames(steamId, 'alphabetical', 100);
+  const games = await steamClient.getFormattedGames(
+    steamId,
+    'alphabetical',
+    100
+  );
 
   if (games.length === 0) {
     const warningEmbed = createWarningEmbed(
@@ -559,7 +566,10 @@ async function handleRanking(
       TITLES.ERROR,
       'This command can only be used in a server.'
     );
-    await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 

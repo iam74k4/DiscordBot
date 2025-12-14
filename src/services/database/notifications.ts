@@ -151,4 +151,3 @@ export function getAllGameActivityCache(): GameActivityCacheRecord[] {
   const stmt = database.prepare('SELECT * FROM game_activity_cache');
   return stmt.all() as GameActivityCacheRecord[];
 }
-

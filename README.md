@@ -268,6 +268,75 @@ export async function myMiddleware(
 2. Register in `src/middleware/index.ts`
 3. Add to `MiddlewareName` type in `src/types/middleware.ts`
 
+## Deployment
+
+### Railway (Recommended)
+
+This bot can be deployed to [Railway](https://railway.app/) with automatic deployments from the `main` branch.
+
+#### 1. Create Railway Project
+
+1. Go to [Railway](https://railway.app/) and sign up/login
+2. Click "New Project" > "Deploy from GitHub repo"
+3. Select this repository
+4. Railway will automatically detect the Node.js project
+
+#### 2. Configure Volume (Required for SQLite)
+
+The bot uses SQLite for data persistence. To prevent data loss on redeployments:
+
+1. In your Railway project, go to the service
+2. Click "Settings" > "Volumes"
+3. Add a new volume:
+   - Mount Path: `/app/data`
+   - Size: 1GB (sufficient for most use cases)
+
+#### 3. Set Environment Variables
+
+In Railway dashboard, add the following variables:
+
+| Variable            | Description                     | Required |
+| ------------------- | ------------------------------- | -------- |
+| `DISCORD_TOKEN`     | Discord bot token               | Yes      |
+| `DISCORD_CLIENT_ID` | Discord application client ID   | Yes      |
+| `STEAM_API_KEY`     | Steam Web API key               | Yes      |
+| `BOT_OWNER_IDS`     | Bot owner Discord IDs (comma-separated) | No |
+| `NODE_ENV`          | Set to `production`             | No       |
+
+#### 4. Deploy
+
+Railway will automatically deploy when you push to the `main` branch.
+
+#### Estimated Cost
+
+| Item           | Monthly Cost |
+| -------------- | ------------ |
+| Hobby Plan     | $5           |
+| Volume (1GB)   | ~$0.25       |
+| **Total**      | **~$5.25**   |
+
+## CI/CD
+
+This project uses GitHub Actions for CI and Railway for deployment.
+
+### Workflows
+
+| Trigger | Actions |
+| ------- | ------- |
+| PR to main/develop | Lint, Type check, Build (GitHub Actions) |
+| Push to main | Auto deploy to Railway |
+
+### Branch Strategy
+
+```
+feature/* ──→ develop ──→ main
+fix/*     ──→ develop ──→ main
+chore/*   ──→ develop ──→ main
+```
+
+- `main`: Production branch (auto-deploys to Railway)
+- `develop`: Development integration branch
+
 ## License
 
 MIT

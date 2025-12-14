@@ -33,7 +33,10 @@ async function handleView(
       'Error',
       'This command can only be used in a server.'
     );
-    await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -48,7 +51,11 @@ async function handleView(
     title: 'Server Settings',
     color: COLORS.INFO,
     fields: [
-      { name: 'Language', value: language === 'ja' ? 'Japanese' : 'English', inline: true },
+      {
+        name: 'Language',
+        value: language === 'ja' ? 'Japanese' : 'English',
+        inline: true,
+      },
       { name: 'Audit Channel', value: auditChannel, inline: true },
     ],
     footer: 'Use /settings to modify',
@@ -69,7 +76,10 @@ async function handleLanguage(
       'Error',
       'This command can only be used in a server.'
     );
-    await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -107,7 +117,10 @@ async function handleAudit(
       'Error',
       'This command can only be used in a server.'
     );
-    await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -159,7 +172,10 @@ async function handleLogs(
       'Error',
       'This command can only be used in a server.'
     );
-    await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -256,4 +272,3 @@ export const command: Command = {
 };
 
 export default command;
-

@@ -68,9 +68,11 @@ export async function logAuditAction(
     const embed = new EmbedBuilder()
       .setTitle(ACTION_NAMES[action])
       .setColor(ACTION_COLORS[action])
-      .addFields(
-        { name: 'User', value: user ? `${user.tag} (<@${userId}>)` : userId, inline: true }
-      )
+      .addFields({
+        name: 'User',
+        value: user ? `${user.tag} (<@${userId}>)` : userId,
+        inline: true,
+      })
       .setTimestamp();
 
     if (targetUser) {
@@ -95,14 +97,38 @@ export async function logAuditAction(
  * Shorthand for common audit actions
  */
 export const audit = {
-  steamRegister: (client: Client, guildId: string, userId: string, steamName: string) =>
-    logAuditAction(client, guildId, userId, 'STEAM_REGISTER', undefined, `Steam: ${steamName}`),
+  steamRegister: (
+    client: Client,
+    guildId: string,
+    userId: string,
+    steamName: string
+  ) =>
+    logAuditAction(
+      client,
+      guildId,
+      userId,
+      'STEAM_REGISTER',
+      undefined,
+      `Steam: ${steamName}`
+    ),
 
   steamUnregister: (client: Client, guildId: string, userId: string) =>
     logAuditAction(client, guildId, userId, 'STEAM_UNREGISTER'),
 
-  notifySetup: (client: Client, guildId: string, userId: string, channelId: string) =>
-    logAuditAction(client, guildId, userId, 'NOTIFY_SETUP', undefined, `Channel: <#${channelId}>`),
+  notifySetup: (
+    client: Client,
+    guildId: string,
+    userId: string,
+    channelId: string
+  ) =>
+    logAuditAction(
+      client,
+      guildId,
+      userId,
+      'NOTIFY_SETUP',
+      undefined,
+      `Channel: <#${channelId}>`
+    ),
 
   notifyEnable: (client: Client, guildId: string, userId: string) =>
     logAuditAction(client, guildId, userId, 'NOTIFY_ENABLE'),
@@ -113,7 +139,18 @@ export const audit = {
   notifyRemove: (client: Client, guildId: string, userId: string) =>
     logAuditAction(client, guildId, userId, 'NOTIFY_REMOVE'),
 
-  settingsChange: (client: Client, guildId: string, userId: string, details: string) =>
-    logAuditAction(client, guildId, userId, 'SETTINGS_CHANGE', undefined, details),
+  settingsChange: (
+    client: Client,
+    guildId: string,
+    userId: string,
+    details: string
+  ) =>
+    logAuditAction(
+      client,
+      guildId,
+      userId,
+      'SETTINGS_CHANGE',
+      undefined,
+      details
+    ),
 };
-

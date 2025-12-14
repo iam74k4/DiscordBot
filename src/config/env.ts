@@ -42,7 +42,10 @@ validateEnv();
  */
 function parseOwnerIds(value: string | undefined): string[] {
   if (!value) return [];
-  return value.split(',').map((id) => id.trim()).filter(Boolean);
+  return value
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
 }
 
 /**
