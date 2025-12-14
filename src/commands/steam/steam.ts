@@ -163,7 +163,10 @@ async function handleProfile(
   const { steamId, error } = await resolveSteamId(interaction);
 
   if (!steamId) {
-    const errorEmbed = createErrorEmbed(TITLES.NOT_FOUND, error!);
+    const errorEmbed = createErrorEmbed(
+      TITLES.NOT_FOUND,
+      error ?? 'Could not resolve Steam ID'
+    );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
   }
@@ -252,7 +255,10 @@ async function handlePlaytime(
   const gameName = interaction.options.getString('game');
 
   if (!steamId) {
-    const errorEmbed = createErrorEmbed(TITLES.NOT_FOUND, error!);
+    const errorEmbed = createErrorEmbed(
+      TITLES.NOT_FOUND,
+      error ?? 'Could not resolve Steam ID'
+    );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
   }
@@ -369,7 +375,10 @@ async function handleGames(
   const { steamId, error } = await resolveSteamId(interaction);
 
   if (!steamId) {
-    const errorEmbed = createErrorEmbed(TITLES.NOT_FOUND, error!);
+    const errorEmbed = createErrorEmbed(
+      TITLES.NOT_FOUND,
+      error ?? 'Could not resolve Steam ID'
+    );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
   }
@@ -497,7 +506,10 @@ async function handleRecent(
   const { steamId, error } = await resolveSteamId(interaction);
 
   if (!steamId) {
-    const errorEmbed = createErrorEmbed(TITLES.NOT_FOUND, error!);
+    const errorEmbed = createErrorEmbed(
+      TITLES.NOT_FOUND,
+      error ?? 'Could not resolve Steam ID'
+    );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
   }
@@ -609,25 +621,43 @@ async function handleRanking(
     totalPlaytime: number;
   }
 
+  // Filter users who are still in the guild
+  const validUsers = registeredUsers.filter((user) =>
+    guild.members.cache.has(user.discord_id)
+  );
+
+  // Process users in parallel batches to avoid rate limiting
+  const BATCH_SIZE = 5;
   const rankedUsers: RankedUser[] = [];
 
-  for (const user of registeredUsers) {
-    try {
-      const member = guild.members.cache.get(user.discord_id);
-      if (!member) continue;
+  for (let i = 0; i < validUsers.length; i += BATCH_SIZE) {
+    const batch = validUsers.slice(i, i + BATCH_SIZE);
 
-      const totalPlaytime = await steamClient.getTotalPlaytime(user.steam_id);
-      const playerInfo = await steamClient.getFormattedPlayerInfo(
-        user.steam_id
-      );
+    const results = await Promise.allSettled(
+      batch.map(async (user) => {
+        const [totalPlaytime, playerInfo] = await Promise.all([
+          steamClient.getTotalPlaytime(user.steam_id),
+          steamClient.getFormattedPlayerInfo(user.steam_id),
+        ]);
 
-      rankedUsers.push({
-        discordId: user.discord_id,
-        steamName: playerInfo?.name || user.steam_name || 'Unknown',
-        totalPlaytime,
-      });
-    } catch {
-      continue;
+        return {
+          discordId: user.discord_id,
+          steamName: playerInfo?.name || user.steam_name || 'Unknown',
+          totalPlaytime,
+        };
+      })
+    );
+
+    // Collect successful results
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        rankedUsers.push(result.value);
+      }
+    }
+
+    // Small delay between batches to avoid rate limiting
+    if (i + BATCH_SIZE < validUsers.length) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
     }
   }
 
@@ -1191,7 +1221,8 @@ async function handleHistoryGraph(
   };
 
   const playtimePrefix = playtimeGain >= 0 ? '+' : '';
-  const playtimeLabel = playtimeGain >= 0 ? 'Playtime Added' : 'Playtime Change';
+  const playtimeLabel =
+    playtimeGain >= 0 ? 'Playtime Added' : 'Playtime Change';
 
   const embed = createEmbed({
     title: `${playerInfo.name} - ${TITLES.HISTORY_GRAPH}`,

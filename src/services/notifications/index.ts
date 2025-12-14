@@ -1,4 +1,4 @@
-import { Client, TextChannel } from 'discord.js';
+import { Client, TextChannel, PermissionFlagsBits } from 'discord.js';
 import { logger } from '../../utils/logger.js';
 import { createEmbed } from '../../utils/embed.js';
 import { COLORS, TITLES } from '../../utils/constants.js';
@@ -16,6 +16,8 @@ const CHECK_INTERVAL = 5 * 60 * 1000;
 
 let notificationClient: Client | null = null;
 let checkInterval: NodeJS.Timeout | null = null;
+// Flag to prevent concurrent notification processing
+let isProcessing = false;
 
 /**
  * Game start event data
@@ -109,7 +111,10 @@ async function sendNotification(
  * Process game activity and send notifications
  */
 async function processNotifications(): Promise<void> {
-  if (!notificationClient) return;
+  // Prevent concurrent processing
+  if (!notificationClient || isProcessing) return;
+
+  isProcessing = true;
 
   try {
     const events = await checkGameActivity();
@@ -133,6 +138,18 @@ async function processNotifications(): Promise<void> {
         ) as TextChannel;
         if (!channel) continue;
 
+        // Check if bot has permission to send messages in the channel
+        const botMember = guild.members.me;
+        if (!botMember) continue;
+
+        const permissions = channel.permissionsFor(botMember);
+        if (!permissions?.has(PermissionFlagsBits.SendMessages)) {
+          logger.warn(
+            `Missing SendMessages permission in channel ${channel.id} (guild: ${guild.id})`
+          );
+          continue;
+        }
+
         // Get guild member IDs
         await guild.members.fetch();
         const memberIds = new Set(guild.members.cache.map((m) => m.id));
@@ -152,6 +169,8 @@ async function processNotifications(): Promise<void> {
     }
   } catch (error) {
     logger.error('Failed to process notifications:', error);
+  } finally {
+    isProcessing = false;
   }
 }
 

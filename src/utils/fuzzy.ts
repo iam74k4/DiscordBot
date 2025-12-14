@@ -7,6 +7,9 @@
  * Uses a combination of includes check and character matching
  */
 export function calculateSimilarity(query: string, target: string): number {
+  // Handle empty strings to prevent NaN
+  if (!query || !target) return 0;
+
   const q = query.toLowerCase();
   const t = target.toLowerCase();
 
