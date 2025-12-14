@@ -15,8 +15,7 @@
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
-    "type-check": "tsc --noEmit",
-    "seed:test": "tsx src/scripts/seed-test-data.ts"
+    "type-check": "tsc --noEmit"
   },
   "keywords": [
     "discord",
