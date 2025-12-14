@@ -47,7 +47,10 @@ export async function runMiddleware(
       if (interaction.deferred || interaction.replied) {
         await interaction.editReply({ embeds: [embed] });
       } else {
-        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+        await interaction.reply({
+          embeds: [embed],
+          flags: MessageFlags.Ephemeral,
+        });
       }
 
       return false;

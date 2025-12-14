@@ -147,4 +147,3 @@ export interface FormattedGameInfo {
   iconUrl: string;
   storeUrl: string;
 }
-

@@ -70,7 +70,9 @@ export function getGuildSettings(guildId: string): GuildSettingsRecord | null {
  */
 export function setGuildSettings(
   guildId: string,
-  settings: Partial<Omit<GuildSettingsRecord, 'guild_id' | 'created_at' | 'updated_at'>>
+  settings: Partial<
+    Omit<GuildSettingsRecord, 'guild_id' | 'created_at' | 'updated_at'>
+  >
 ): void {
   const existing = getGuildSettings(guildId);
   const now = Date.now();
@@ -171,7 +173,14 @@ export function createAuditLog(
     INSERT INTO audit_logs (guild_id, user_id, action, target_id, details, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
   `);
-  stmt.run(guildId, userId, action, targetId ?? null, details ?? null, Date.now());
+  stmt.run(
+    guildId,
+    userId,
+    action,
+    targetId ?? null,
+    details ?? null,
+    Date.now()
+  );
 }
 
 /**
@@ -213,4 +222,3 @@ export function deleteOldAuditLogs(daysOld: number): number {
 
 // Initialize tables on import
 initializeSettingsTables();
-

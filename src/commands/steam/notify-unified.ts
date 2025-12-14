@@ -32,7 +32,10 @@ async function handleSetup(
       TITLES.ERROR,
       'This command can only be used in a server.'
     );
-    await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -64,7 +67,10 @@ async function handleStatus(
       TITLES.ERROR,
       'This command can only be used in a server.'
     );
-    await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -104,7 +110,10 @@ async function handleEnable(
       TITLES.ERROR,
       'This command can only be used in a server.'
     );
-    await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -115,7 +124,10 @@ async function handleEnable(
       TITLES.ERROR,
       'Please run `/notify setup` first.'
     );
-    await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -139,7 +151,10 @@ async function handleDisable(
       TITLES.ERROR,
       'This command can only be used in a server.'
     );
-    await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -150,7 +165,10 @@ async function handleDisable(
       TITLES.ERROR,
       'Please run `/notify setup` first.'
     );
-    await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -174,7 +192,10 @@ async function handleRemove(
       TITLES.ERROR,
       'This command can only be used in a server.'
     );
-    await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -185,7 +206,10 @@ async function handleRemove(
       TITLES.WARNING,
       'There are no notification settings to remove.'
     );
-    await interaction.reply({ embeds: [warningEmbed], flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      embeds: [warningEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -211,7 +235,10 @@ async function handleMe(
       TITLES.NOT_FOUND,
       'You need to link your Steam account first.\n\nUse `/steam register` to get started.'
     );
-    await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -233,7 +260,10 @@ async function handleMe(
         timestamp: true,
       });
 
-      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+      await interaction.reply({
+        embeds: [embed],
+        flags: MessageFlags.Ephemeral,
+      });
       break;
     }
 
@@ -247,7 +277,10 @@ async function handleMe(
         timestamp: true,
       });
 
-      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+      await interaction.reply({
+        embeds: [embed],
+        flags: MessageFlags.Ephemeral,
+      });
       break;
     }
 
@@ -261,7 +294,10 @@ async function handleMe(
         timestamp: true,
       });
 
-      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+      await interaction.reply({
+        embeds: [embed],
+        flags: MessageFlags.Ephemeral,
+      });
       break;
     }
   }
@@ -347,4 +383,3 @@ export const command: Command = {
 };
 
 export default command;
-
