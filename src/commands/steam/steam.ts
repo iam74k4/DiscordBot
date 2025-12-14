@@ -1068,7 +1068,9 @@ async function handleChart(
   const attachment = new AttachmentBuilder(chartBuffer, { name: 'chart.png' });
 
   const totalHours = Math.floor(totalPlaytime / 60);
-  const topGamesHours = data.reduce((sum, h) => sum + h, 0);
+  // Sum raw minutes first, then convert to hours to avoid cumulative rounding loss
+  const topGamesMinutes = games.reduce((sum, g) => sum + g.playtimeForever, 0);
+  const topGamesHours = Math.floor(topGamesMinutes / 60);
 
   const embed = createEmbed({
     title: `${playerInfo.name} - ${TITLES.CHART}`,
