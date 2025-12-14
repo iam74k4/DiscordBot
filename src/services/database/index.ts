@@ -263,6 +263,23 @@ export function getPlaytimeHistory(
 }
 
 /**
+ * Get the closest playtime record at or before the given time
+ * Useful for calculating accurate playtime gains over a period
+ */
+export function getClosestRecordBefore(
+  discordId: string,
+  time: number
+): PlaytimeHistoryRecord | null {
+  const stmt = db.prepare(`
+    SELECT * FROM playtime_history
+    WHERE discord_id = ? AND recorded_at <= ?
+    ORDER BY recorded_at DESC
+    LIMIT 1
+  `);
+  return (stmt.get(discordId, time) as PlaytimeHistoryRecord) ?? null;
+}
+
+/**
  * Get the latest playtime record for a user
  */
 export function getLatestPlaytimeRecord(

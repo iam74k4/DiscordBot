@@ -53,13 +53,13 @@ async function handleStats(
   const steamUsers = getSteamUsersByDiscordIds(humanIds);
   const steamRegistered = steamUsers.length;
 
-  // Fetch playtime for all registered users in parallel
+  // Fetch playtime for all registered users in parallel (in minutes)
   const playtimeResults = await Promise.allSettled(
     steamUsers.map(async (user) => {
       const playtime = await steamClient.getTotalPlaytime(user.steam_id);
       return {
         name: user.steam_name || 'Unknown',
-        playtime: Math.floor(playtime / 60),
+        playtimeMinutes: playtime,
       };
     })
   );
@@ -67,14 +67,16 @@ async function handleStats(
   // Extract successful results and sort by playtime
   const topPlayers = playtimeResults
     .filter(
-      (result): result is PromiseFulfilledResult<{ name: string; playtime: number }> =>
+      (result): result is PromiseFulfilledResult<{ name: string; playtimeMinutes: number }> =>
         result.status === 'fulfilled'
     )
     .map((result) => result.value)
-    .sort((a, b) => b.playtime - a.playtime);
+    .sort((a, b) => b.playtimeMinutes - a.playtimeMinutes);
 
-  // Calculate combined playtime from all successful fetches
-  const totalPlaytimeHours = topPlayers.reduce((sum, p) => sum + p.playtime, 0);
+  // Calculate combined playtime from all successful fetches (sum minutes, then convert to hours)
+  const totalPlaytimeHours = Math.floor(
+    topPlayers.reduce((sum, p) => sum + p.playtimeMinutes, 0) / 60
+  );
 
   // Create member status pie chart
   const memberChartBuffer = await createPieChart(
@@ -106,7 +108,7 @@ async function handleStats(
     const topList = topPlayers
       .slice(0, 5)
       .map(
-        (p, i) => `${i + 1}. **${p.name}** - ${p.playtime.toLocaleString()}h`
+        (p, i) => `${i + 1}. **${p.name}** - ${Math.floor(p.playtimeMinutes / 60).toLocaleString()}h`
       )
       .join('\n');
 

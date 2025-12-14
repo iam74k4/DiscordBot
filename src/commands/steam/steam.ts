@@ -34,6 +34,7 @@ import {
   getSteamUsersByDiscordIds,
   getPlaytimeChange,
   getPlaytimeHistory,
+  getClosestRecordBefore,
   getAllSteamUsers,
 } from '../../services/database/index.js';
 import { smartFilter } from '../../utils/fuzzy.js';
@@ -1132,9 +1133,12 @@ async function handleHistoryGraph(
   const periodDuration = periodMap[periodOption] ?? 30 * ONE_DAY;
   const startTime = Date.now() - periodDuration;
 
+  // Get the baseline record at or before the start time for accurate playtime calculation
+  // This prevents undercounting when the first record after startTime is delayed (e.g., midnight JST recording)
+  const baselineRecord = getClosestRecordBefore(discordId, startTime);
   const history = getPlaytimeHistory(discordId, startTime);
 
-  if (history.length < 2) {
+  if (history.length < 1) {
     // No history data, show current playtime only
     const totalPlaytime = await steamClient.getTotalPlaytime(steamId);
     const totalHours = Math.floor(totalPlaytime / 60);
@@ -1150,11 +1154,14 @@ async function handleHistoryGraph(
   const labels = history.map((h) => {
     const date = new Date(h.recorded_at);
     // Use JST timezone to match the recording time (midnight JST)
-    return date.toLocaleDateString('ja-JP', {
+    // Include year for 1y period to avoid duplicate labels across years
+    const options: Intl.DateTimeFormatOptions = {
       timeZone: 'Asia/Tokyo',
       month: 'numeric',
       day: 'numeric',
-    });
+      ...(periodOption === '1y' && { year: '2-digit' }),
+    };
+    return date.toLocaleDateString('ja-JP', options);
   });
   const data = history.map((h) => Math.floor(h.total_playtime / 60));
 
@@ -1166,7 +1173,9 @@ async function handleHistoryGraph(
 
   const attachment = new AttachmentBuilder(chartBuffer, { name: 'chart.png' });
 
-  const firstRecord = history[0];
+  // Use the baseline record if available for more accurate playtime calculation
+  // Falls back to the first record in the history if no baseline exists
+  const firstRecord = baselineRecord ?? history[0];
   const lastRecord = history[history.length - 1];
   const playtimeGain = Math.floor(
     (lastRecord.total_playtime - firstRecord.total_playtime) / 60
