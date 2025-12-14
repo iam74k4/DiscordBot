@@ -1149,7 +1149,12 @@ async function handleHistoryGraph(
 
   const labels = history.map((h) => {
     const date = new Date(h.recorded_at);
-    return `${date.getMonth() + 1}/${date.getDate()}`;
+    // Use JST timezone to match the recording time (midnight JST)
+    return date.toLocaleDateString('ja-JP', {
+      timeZone: 'Asia/Tokyo',
+      month: 'numeric',
+      day: 'numeric',
+    });
   });
   const data = history.map((h) => Math.floor(h.total_playtime / 60));
 

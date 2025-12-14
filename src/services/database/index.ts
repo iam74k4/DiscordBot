@@ -171,18 +171,43 @@ export function getAllSteamUsers(): SteamUserRecord[] {
 }
 
 /**
+ * SQLite's maximum bound parameters (SQLITE_MAX_VARIABLE_NUMBER)
+ * Default is 999, we use 900 for safety margin
+ */
+const SQLITE_MAX_PARAMS = 900;
+
+/**
  * Get registered Steam users by Discord IDs
+ * Handles large ID lists by chunking to avoid SQLite's parameter limit
  */
 export function getSteamUsersByDiscordIds(
   discordIds: string[]
 ): SteamUserRecord[] {
   if (discordIds.length === 0) return [];
 
-  const placeholders = discordIds.map(() => '?').join(',');
-  const stmt = db.prepare(
-    `SELECT * FROM steam_users WHERE discord_id IN (${placeholders})`
-  );
-  return stmt.all(...discordIds) as SteamUserRecord[];
+  // For small lists, use single query
+  if (discordIds.length <= SQLITE_MAX_PARAMS) {
+    const placeholders = discordIds.map(() => '?').join(',');
+    const stmt = db.prepare(
+      `SELECT * FROM steam_users WHERE discord_id IN (${placeholders})`
+    );
+    return stmt.all(...discordIds) as SteamUserRecord[];
+  }
+
+  // For large lists, chunk into multiple queries
+  const results: SteamUserRecord[] = [];
+
+  for (let i = 0; i < discordIds.length; i += SQLITE_MAX_PARAMS) {
+    const chunk = discordIds.slice(i, i + SQLITE_MAX_PARAMS);
+    const placeholders = chunk.map(() => '?').join(',');
+    const stmt = db.prepare(
+      `SELECT * FROM steam_users WHERE discord_id IN (${placeholders})`
+    );
+    const chunkResults = stmt.all(...chunk) as SteamUserRecord[];
+    results.push(...chunkResults);
+  }
+
+  return results;
 }
 
 /**
