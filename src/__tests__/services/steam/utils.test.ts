@@ -173,9 +173,16 @@ describe('formatTimestamp', () => {
     // 2024-01-15 00:00:00 UTC
     const timestamp = 1705276800;
     const result = formatTimestamp(timestamp);
-    expect(result).toContain('2024');
-    expect(result).toContain('1');
-    expect(result).toContain('15');
+    // `formatTimestamp` uses local timezone via `toLocaleDateString`,
+    // so derive expected parts from the local Date rather than assuming UTC.
+    const date = new Date(timestamp * 1000);
+    const expectedYear = date.getFullYear();
+    const expectedMonth = date.getMonth() + 1; // 1-12
+    const expectedDay = date.getDate(); // local day of month
+
+    expect(result).toContain(`${expectedYear}年`);
+    expect(result).toContain(`${expectedMonth}月`);
+    expect(result).toContain(`${expectedDay}日`);
   });
 });
 
