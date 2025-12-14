@@ -1,5 +1,5 @@
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
-import { ChartConfiguration } from 'chart.js';
+import { ChartConfiguration, Chart, registerables } from 'chart.js';
 import { CHART_COLORS } from './constants.js';
 
 // Chart dimensions
@@ -11,6 +11,11 @@ const chartJSNodeCanvas = new ChartJSNodeCanvas({
   width: CHART_WIDTH,
   height: CHART_HEIGHT,
   backgroundColour: CHART_COLORS.BACKGROUND,
+  chartCallback: (ChartJS: typeof Chart) => {
+    // Register all Chart.js components (controllers, elements, scales, plugins)
+    // Required for Chart.js v4+ to avoid "X is not a registered controller" errors
+    ChartJS.register(...registerables);
+  },
 });
 
 /**

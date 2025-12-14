@@ -1041,7 +1041,10 @@ async function handleChart(
     return;
   }
 
-  const games = await steamClient.getFormattedGames(steamId, 'playtime', 10);
+  const [games, totalPlaytime] = await Promise.all([
+    steamClient.getFormattedGames(steamId, 'playtime', 10),
+    steamClient.getTotalPlaytime(steamId),
+  ]);
 
   if (games.length === 0) {
     const warningEmbed = createWarningEmbed(
@@ -1063,11 +1066,12 @@ async function handleChart(
 
   const attachment = new AttachmentBuilder(chartBuffer, { name: 'chart.png' });
 
-  const totalHours = data.reduce((sum, h) => sum + h, 0);
+  const totalHours = Math.floor(totalPlaytime / 60);
+  const topGamesHours = data.reduce((sum, h) => sum + h, 0);
 
   const embed = createEmbed({
     title: `${playerInfo.name} - ${TITLES.CHART}`,
-    description: `**Top ${games.length} Games**\nTotal: ${totalHours.toLocaleString()} hours`,
+    description: `**Top ${games.length} Games:** ${topGamesHours.toLocaleString()} hours\n**Total Playtime:** ${totalHours.toLocaleString()} hours`,
     color: COLORS.STEAM,
     image: 'attachment://chart.png',
     thumbnail: playerInfo.avatarUrl,
@@ -1170,9 +1174,12 @@ async function handleHistoryGraph(
     '1y': '1 Year',
   };
 
+  const playtimePrefix = playtimeGain >= 0 ? '+' : '';
+  const playtimeLabel = playtimeGain >= 0 ? 'Playtime Added' : 'Playtime Change';
+
   const embed = createEmbed({
     title: `${playerInfo.name} - ${TITLES.HISTORY_GRAPH}`,
-    description: `**Period:** ${periodLabels[periodOption] ?? '30 Days'}\n**Playtime Added:** +${playtimeGain.toLocaleString()} hours`,
+    description: `**Period:** ${periodLabels[periodOption] ?? '30 Days'}\n**${playtimeLabel}:** ${playtimePrefix}${playtimeGain.toLocaleString()} hours`,
     color: COLORS.STEAM,
     image: 'attachment://chart.png',
     thumbnail: playerInfo.avatarUrl,
