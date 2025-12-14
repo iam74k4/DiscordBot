@@ -171,18 +171,46 @@ export function getAllSteamUsers(): SteamUserRecord[] {
 }
 
 /**
+ * SQLite's maximum bound parameters (SQLITE_MAX_VARIABLE_NUMBER)
+ * Default is 999, we use 900 for safety margin
+ */
+const SQLITE_MAX_PARAMS = 900;
+
+/**
  * Get registered Steam users by Discord IDs
+ * Handles large ID lists by chunking to avoid SQLite's parameter limit
  */
 export function getSteamUsersByDiscordIds(
   discordIds: string[]
 ): SteamUserRecord[] {
   if (discordIds.length === 0) return [];
 
-  const placeholders = discordIds.map(() => '?').join(',');
-  const stmt = db.prepare(
-    `SELECT * FROM steam_users WHERE discord_id IN (${placeholders})`
-  );
-  return stmt.all(...discordIds) as SteamUserRecord[];
+  // Remove duplicates to prevent duplicate results when chunking
+  const uniqueIds = [...new Set(discordIds)];
+
+  // For small lists, use single query
+  if (uniqueIds.length <= SQLITE_MAX_PARAMS) {
+    const placeholders = uniqueIds.map(() => '?').join(',');
+    const stmt = db.prepare(
+      `SELECT * FROM steam_users WHERE discord_id IN (${placeholders})`
+    );
+    return stmt.all(...uniqueIds) as SteamUserRecord[];
+  }
+
+  // For large lists, chunk into multiple queries
+  const results: SteamUserRecord[] = [];
+
+  for (let i = 0; i < uniqueIds.length; i += SQLITE_MAX_PARAMS) {
+    const chunk = uniqueIds.slice(i, i + SQLITE_MAX_PARAMS);
+    const placeholders = chunk.map(() => '?').join(',');
+    const stmt = db.prepare(
+      `SELECT * FROM steam_users WHERE discord_id IN (${placeholders})`
+    );
+    const chunkResults = stmt.all(...chunk) as SteamUserRecord[];
+    results.push(...chunkResults);
+  }
+
+  return results;
 }
 
 /**
@@ -235,6 +263,23 @@ export function getPlaytimeHistory(
     ORDER BY recorded_at ASC
   `);
   return stmt.all(discordId, startTime, endTime) as PlaytimeHistoryRecord[];
+}
+
+/**
+ * Get the closest playtime record at or before the given time
+ * Useful for calculating accurate playtime gains over a period
+ */
+export function getClosestRecordBefore(
+  discordId: string,
+  time: number
+): PlaytimeHistoryRecord | null {
+  const stmt = db.prepare(`
+    SELECT * FROM playtime_history
+    WHERE discord_id = ? AND recorded_at <= ?
+    ORDER BY recorded_at DESC
+    LIMIT 1
+  `);
+  return (stmt.get(discordId, time) as PlaytimeHistoryRecord) ?? null;
 }
 
 /**

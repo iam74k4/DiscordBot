@@ -89,6 +89,12 @@ npm start
 | ------- | ----------------- |
 | `/ping` | Check bot latency |
 
+### Server (`/server`)
+
+| Subcommand | Description            |
+| ---------- | ---------------------- |
+| `stats`    | View server statistics |
+
 ### Steam (`/steam`)
 
 | Subcommand           | Description                                  |
@@ -99,6 +105,8 @@ npm start
 | `recent`             | View recently played games (last 2 weeks)    |
 | `ranking`            | Server-wide playtime ranking                 |
 | `history`            | Playtime history over time (1 day to 1 year) |
+| `chart`              | View playtime bar chart                      |
+| `history-graph`      | View playtime history graph                  |
 | `register <steamid>` | Link your Steam account                      |
 | `unregister`         | Unlink your Steam account                    |
 | `whoami`             | Show your linked account                     |

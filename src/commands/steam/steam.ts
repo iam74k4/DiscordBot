@@ -8,6 +8,7 @@ import {
   ComponentType,
   Guild,
   MessageFlags,
+  AttachmentBuilder,
 } from 'discord.js';
 import { Command } from '../../types/index.js';
 import {
@@ -32,9 +33,15 @@ import {
   unregisterSteamUser,
   getSteamUsersByDiscordIds,
   getPlaytimeChange,
+  getPlaytimeHistory,
+  getClosestRecordBefore,
   getAllSteamUsers,
 } from '../../services/database/index.js';
 import { smartFilter } from '../../utils/fuzzy.js';
+import {
+  createHorizontalBarChart,
+  createLineChart,
+} from '../../utils/chart.js';
 
 // Constants
 const GAMES_PER_PAGE = 10;
@@ -996,6 +1003,209 @@ async function handleHelp(
   await interaction.reply({ embeds: [embed] });
 }
 
+async function handleChart(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  await interaction.deferReply();
+
+  const targetUser = interaction.options.getUser('user') ?? interaction.user;
+  const steamId = getSteamId(targetUser.id);
+
+  if (!steamId) {
+    const errorEmbed = createErrorEmbed(
+      TITLES.NOT_FOUND,
+      targetUser.id === interaction.user.id
+        ? "You haven't linked your Steam account yet.\nUse `/steam register` to link your account."
+        : `**${targetUser.displayName}** has not linked their Steam account.`
+    );
+    await interaction.editReply({ embeds: [errorEmbed] });
+    return;
+  }
+
+  const playerInfo = await steamClient.getFormattedPlayerInfo(steamId);
+
+  if (!playerInfo) {
+    const errorEmbed = createErrorEmbed(
+      TITLES.ERROR,
+      'Could not retrieve Steam profile information.'
+    );
+    await interaction.editReply({ embeds: [errorEmbed] });
+    return;
+  }
+
+  if (!playerInfo.isPublic) {
+    const warningEmbed = createWarningEmbed(
+      TITLES.PRIVATE_PROFILE,
+      `**${playerInfo.name}** has a private profile.`
+    );
+    await interaction.editReply({ embeds: [warningEmbed] });
+    return;
+  }
+
+  const [games, totalPlaytime] = await Promise.all([
+    steamClient.getFormattedGames(steamId, 'playtime', 10),
+    steamClient.getTotalPlaytime(steamId),
+  ]);
+
+  if (games.length === 0) {
+    const warningEmbed = createWarningEmbed(
+      TITLES.NOT_FOUND,
+      `**${playerInfo.name}** has no games.`
+    );
+    await interaction.editReply({ embeds: [warningEmbed] });
+    return;
+  }
+
+  const labels = games.map((g) => g.name);
+  const data = games.map((g) => Math.floor(g.playtimeForever / 60));
+
+  const chartBuffer = await createHorizontalBarChart(
+    labels,
+    data,
+    'Playtime (hours)'
+  );
+
+  const attachment = new AttachmentBuilder(chartBuffer, { name: 'chart.png' });
+
+  const totalHours = Math.floor(totalPlaytime / 60);
+  // Sum raw minutes first, then convert to hours to avoid cumulative rounding loss
+  const topGamesMinutes = games.reduce((sum, g) => sum + g.playtimeForever, 0);
+  const topGamesHours = Math.floor(topGamesMinutes / 60);
+
+  const embed = createEmbed({
+    title: `${playerInfo.name} - ${TITLES.CHART}`,
+    description: `**Top ${games.length} Games:** ${topGamesHours.toLocaleString()} hours\n**Total Playtime:** ${totalHours.toLocaleString()} hours`,
+    color: COLORS.STEAM,
+    image: 'attachment://chart.png',
+    thumbnail: playerInfo.avatarUrl,
+    timestamp: true,
+  });
+
+  await interaction.editReply({ embeds: [embed], files: [attachment] });
+}
+
+async function handleHistoryGraph(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  await interaction.deferReply();
+
+  const targetUser = interaction.options.getUser('user') ?? interaction.user;
+  const discordId = targetUser.id;
+  const steamId = getSteamId(discordId);
+
+  if (!steamId) {
+    const errorEmbed = createErrorEmbed(
+      TITLES.NOT_FOUND,
+      targetUser.id === interaction.user.id
+        ? "You haven't linked your Steam account yet.\nUse `/steam register` to link your account."
+        : `**${targetUser.displayName}** has not linked their Steam account.`
+    );
+    await interaction.editReply({ embeds: [errorEmbed] });
+    return;
+  }
+
+  const playerInfo = await steamClient.getFormattedPlayerInfo(steamId);
+
+  if (!playerInfo) {
+    const errorEmbed = createErrorEmbed(
+      TITLES.ERROR,
+      'Could not retrieve Steam profile information.'
+    );
+    await interaction.editReply({ embeds: [errorEmbed] });
+    return;
+  }
+
+  if (!playerInfo.isPublic) {
+    const warningEmbed = createWarningEmbed(
+      TITLES.PRIVATE_PROFILE,
+      `**${playerInfo.name}** has a private profile.`
+    );
+    await interaction.editReply({ embeds: [warningEmbed] });
+    return;
+  }
+
+  const periodOption = interaction.options.getString('period') ?? '30d';
+  const periodMap: Record<string, number> = {
+    '7d': 7 * ONE_DAY,
+    '30d': 30 * ONE_DAY,
+    '90d': 90 * ONE_DAY,
+    '1y': 365 * ONE_DAY,
+  };
+
+  const periodDuration = periodMap[periodOption] ?? 30 * ONE_DAY;
+  const startTime = Date.now() - periodDuration;
+
+  // Get the baseline record at or before the start time for accurate playtime calculation
+  // This prevents undercounting when the first record after startTime is delayed (e.g., midnight JST recording)
+  const baselineRecord = getClosestRecordBefore(discordId, startTime);
+  const history = getPlaytimeHistory(discordId, startTime);
+
+  if (history.length < 1) {
+    // No history data, show current playtime only
+    const totalPlaytime = await steamClient.getTotalPlaytime(steamId);
+    const totalHours = Math.floor(totalPlaytime / 60);
+
+    const warningEmbed = createWarningEmbed(
+      TITLES.WARNING,
+      `Not enough history data available.\n\n**Current Total Playtime:** ${totalHours.toLocaleString()} hours\n\nHistory is recorded daily at midnight (JST).`
+    );
+    await interaction.editReply({ embeds: [warningEmbed] });
+    return;
+  }
+
+  const labels = history.map((h) => {
+    const date = new Date(h.recorded_at);
+    // Use JST timezone to match the recording time (midnight JST)
+    // Include year for 1y period to avoid duplicate labels across years
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: 'Asia/Tokyo',
+      month: 'numeric',
+      day: 'numeric',
+      ...(periodOption === '1y' && { year: '2-digit' }),
+    };
+    return date.toLocaleDateString('ja-JP', options);
+  });
+  const data = history.map((h) => Math.floor(h.total_playtime / 60));
+
+  const chartBuffer = await createLineChart(
+    labels,
+    data,
+    'Total Playtime (hours)'
+  );
+
+  const attachment = new AttachmentBuilder(chartBuffer, { name: 'chart.png' });
+
+  // Use the baseline record if available for more accurate playtime calculation
+  // Falls back to the first record in the history if no baseline exists
+  const firstRecord = baselineRecord ?? history[0];
+  const lastRecord = history[history.length - 1];
+  const playtimeGain = Math.floor(
+    (lastRecord.total_playtime - firstRecord.total_playtime) / 60
+  );
+
+  const periodLabels: Record<string, string> = {
+    '7d': '7 Days',
+    '30d': '30 Days',
+    '90d': '90 Days',
+    '1y': '1 Year',
+  };
+
+  const playtimePrefix = playtimeGain >= 0 ? '+' : '';
+  const playtimeLabel = playtimeGain >= 0 ? 'Playtime Added' : 'Playtime Change';
+
+  const embed = createEmbed({
+    title: `${playerInfo.name} - ${TITLES.HISTORY_GRAPH}`,
+    description: `**Period:** ${periodLabels[periodOption] ?? '30 Days'}\n**${playtimeLabel}:** ${playtimePrefix}${playtimeGain.toLocaleString()} hours`,
+    color: COLORS.STEAM,
+    image: 'attachment://chart.png',
+    thumbnail: playerInfo.avatarUrl,
+    footer: 'History is recorded daily at midnight (JST)',
+    timestamp: true,
+  });
+
+  await interaction.editReply({ embeds: [embed], files: [attachment] });
+}
+
 // ============ Autocomplete Handler ============
 
 async function handleAutocomplete(
@@ -1164,6 +1374,35 @@ export const command: Command = {
           opt.setName('user').setDescription('Discord user')
         )
     )
+    // Chart
+    .addSubcommand((sub) =>
+      sub
+        .setName('chart')
+        .setDescription('View playtime chart')
+        .addUserOption((opt) =>
+          opt.setName('user').setDescription('Discord user')
+        )
+    )
+    // History Graph
+    .addSubcommand((sub) =>
+      sub
+        .setName('history-graph')
+        .setDescription('View playtime history graph')
+        .addUserOption((opt) =>
+          opt.setName('user').setDescription('Discord user')
+        )
+        .addStringOption((opt) =>
+          opt
+            .setName('period')
+            .setDescription('Time period')
+            .addChoices(
+              { name: '7 Days', value: '7d' },
+              { name: '30 Days', value: '30d' },
+              { name: '90 Days', value: '90d' },
+              { name: '1 Year', value: '1y' }
+            )
+        )
+    )
     // Register
     .addSubcommand((sub) =>
       sub
@@ -1216,6 +1455,12 @@ export const command: Command = {
         break;
       case 'history':
         await handleHistory(interaction);
+        break;
+      case 'chart':
+        await handleChart(interaction);
+        break;
+      case 'history-graph':
+        await handleHistoryGraph(interaction);
         break;
       case 'register':
         await handleRegister(interaction);
