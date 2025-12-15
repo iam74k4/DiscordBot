@@ -207,4 +207,3 @@ export async function createPieChart(
 
   return await chartJSNodeCanvas.renderToBuffer(config);
 }
-

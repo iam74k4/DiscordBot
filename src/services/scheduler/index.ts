@@ -26,11 +26,11 @@ async function recordAllUsersPlaytime(): Promise<void> {
     try {
       const totalPlaytime = await steamClient.getTotalPlaytime(user.steam_id);
 
-      // Only record if we got valid data (profile is public)
-      if (totalPlaytime > 0) {
-        recordPlaytime(user.discord_id, user.steam_id, totalPlaytime);
-        successCount++;
-      }
+      // Record playtime including 0 (valid data from public profiles)
+      // Note: getTotalPlaytime returns 0 for both "no games" and "private profile"
+      // We record 0 to track users who haven't played yet
+      recordPlaytime(user.discord_id, user.steam_id, totalPlaytime);
+      successCount++;
     } catch {
       errorCount++;
     }

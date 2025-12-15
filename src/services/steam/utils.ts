@@ -200,7 +200,8 @@ export function createProgressBar(
   max: number,
   length: number = PROGRESS_BAR.LENGTH
 ): string {
-  const percentage = Math.min(current / max, 1);
+  // Prevent division by zero when max is 0
+  const percentage = max > 0 ? Math.min(current / max, 1) : 0;
   const filled = Math.round(percentage * length);
   const empty = length - filled;
 
