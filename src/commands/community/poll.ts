@@ -12,6 +12,7 @@ import { Command } from '../../types/index.js';
 import { createEmbed, createErrorEmbed } from '../../utils/embed.js';
 import { COLORS, PROGRESS_BAR } from '../../utils/constants.js';
 import { logger } from '../../utils/logger.js';
+import { t, Locale, mapDiscordLocale } from '../../locales/index.js';
 
 /**
  * Poll data structure
@@ -35,6 +36,8 @@ interface PollData {
   guildId: string;
   /** Discord client reference for auto-end */
   client?: Client;
+  /** Creator's locale for consistent display */
+  locale: Locale;
 }
 
 /**
@@ -58,6 +61,7 @@ function buildPollResultEmbed(
   poll: PollData,
   ended: boolean = false
 ): ReturnType<typeof createEmbed> {
+  const locale = poll.locale;
   const totalVotes = poll.votes.size;
 
   // Count votes per option
@@ -77,19 +81,23 @@ function buildPollResultEmbed(
 
     return {
       name: `${index + 1}. ${option}`,
-      value: `${bar} ${count} votes (${percentage.toFixed(1)}%)`,
+      value: `${bar} ${t('poll.votes', locale, { count })} (${percentage.toFixed(1)}%)`,
       inline: false,
     };
   });
 
+  const footerParts: string[] = [];
+  if (poll.anonymous) {
+    footerParts.push(t('poll.anonymous', locale));
+  }
+  footerParts.push(t('poll.total', locale, { count: totalVotes }));
+
   return createEmbed({
-    title: ended ? 'Poll Ended' : 'Poll',
+    title: ended ? t('poll.ended', locale) : t('poll.title', locale),
     description: poll.question,
     color: ended ? COLORS.WARNING : COLORS.PRIMARY,
     fields,
-    footer: poll.anonymous
-      ? `Anonymous poll | Total: ${totalVotes} votes`
-      : `Total: ${totalVotes} votes`,
+    footer: footerParts.join(' | '),
     timestamp: true,
   });
 }
@@ -142,6 +150,9 @@ export async function handlePollVote(
     return;
   }
 
+  // Get voter's locale
+  const locale = mapDiscordLocale(interaction.locale);
+
   // Extract option index from customId (poll_vote_0, poll_vote_1, etc.)
   const optionIndex = parseInt(interaction.customId.split('_')[2], 10);
 
@@ -151,7 +162,7 @@ export async function handlePollVote(
     optionIndex >= poll.options.length
   ) {
     await interaction.reply({
-      content: 'Invalid vote option.',
+      content: t('poll.errors.invalidOption', locale),
       flags: MessageFlags.Ephemeral,
     });
     return;
@@ -166,11 +177,18 @@ export async function handlePollVote(
   // Build response message
   let responseMessage: string;
   if (previousVote !== undefined && previousVote !== optionIndex) {
-    responseMessage = `Vote changed from "${poll.options[previousVote]}" to "${poll.options[optionIndex]}"`;
+    responseMessage = t('poll.voteChanged', locale, {
+      from: poll.options[previousVote],
+      to: poll.options[optionIndex],
+    });
   } else if (previousVote === optionIndex) {
-    responseMessage = `You already voted for "${poll.options[optionIndex]}"`;
+    responseMessage = t('poll.alreadyVoted', locale, {
+      option: poll.options[optionIndex],
+    });
   } else {
-    responseMessage = `Voted for "${poll.options[optionIndex]}"`;
+    responseMessage = t('poll.votedFor', locale, {
+      option: poll.options[optionIndex],
+    });
   }
 
   // Acknowledge the vote
@@ -229,14 +247,23 @@ export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('poll')
     .setDescription('Create and manage polls')
+    .setDescriptionLocalizations({
+      ja: '投票の作成と管理',
+    })
     .addSubcommand((subcommand) =>
       subcommand
         .setName('create')
         .setDescription('Create a new poll')
+        .setDescriptionLocalizations({
+          ja: '新しい投票を作成',
+        })
         .addStringOption((option) =>
           option
             .setName('question')
             .setDescription('The poll question')
+            .setDescriptionLocalizations({
+              ja: '投票の質問',
+            })
             .setRequired(true)
             .setMaxLength(256)
         )
@@ -244,6 +271,7 @@ export const command: Command = {
           option
             .setName('option1')
             .setDescription('First option')
+            .setDescriptionLocalizations({ ja: '選択肢1' })
             .setRequired(true)
             .setMaxLength(100)
         )
@@ -251,6 +279,7 @@ export const command: Command = {
           option
             .setName('option2')
             .setDescription('Second option')
+            .setDescriptionLocalizations({ ja: '選択肢2' })
             .setRequired(true)
             .setMaxLength(100)
         )
@@ -258,48 +287,56 @@ export const command: Command = {
           option
             .setName('option3')
             .setDescription('Third option')
+            .setDescriptionLocalizations({ ja: '選択肢3' })
             .setMaxLength(100)
         )
         .addStringOption((option) =>
           option
             .setName('option4')
             .setDescription('Fourth option')
+            .setDescriptionLocalizations({ ja: '選択肢4' })
             .setMaxLength(100)
         )
         .addStringOption((option) =>
           option
             .setName('option5')
             .setDescription('Fifth option')
+            .setDescriptionLocalizations({ ja: '選択肢5' })
             .setMaxLength(100)
         )
         .addStringOption((option) =>
           option
             .setName('option6')
             .setDescription('Sixth option')
+            .setDescriptionLocalizations({ ja: '選択肢6' })
             .setMaxLength(100)
         )
         .addStringOption((option) =>
           option
             .setName('option7')
             .setDescription('Seventh option')
+            .setDescriptionLocalizations({ ja: '選択肢7' })
             .setMaxLength(100)
         )
         .addStringOption((option) =>
           option
             .setName('option8')
             .setDescription('Eighth option')
+            .setDescriptionLocalizations({ ja: '選択肢8' })
             .setMaxLength(100)
         )
         .addStringOption((option) =>
           option
             .setName('option9')
             .setDescription('Ninth option')
+            .setDescriptionLocalizations({ ja: '選択肢9' })
             .setMaxLength(100)
         )
         .addStringOption((option) =>
           option
             .setName('option10')
             .setDescription('Tenth option')
+            .setDescriptionLocalizations({ ja: '選択肢10' })
             .setMaxLength(100)
         )
         .addIntegerOption((option) =>
@@ -308,6 +345,9 @@ export const command: Command = {
             .setDescription(
               'Poll duration in minutes (leave empty for unlimited)'
             )
+            .setDescriptionLocalizations({
+              ja: '投票の期間（分）（空で無制限）',
+            })
             .setMinValue(1)
             .setMaxValue(1440)
         )
@@ -315,10 +355,18 @@ export const command: Command = {
           option
             .setName('anonymous')
             .setDescription('Make the poll anonymous (default: false)')
+            .setDescriptionLocalizations({
+              ja: '匿名投票にする（デフォルト: false）',
+            })
         )
     )
     .addSubcommand((subcommand) =>
-      subcommand.setName('end').setDescription('End your active poll')
+      subcommand
+        .setName('end')
+        .setDescription('End your active poll')
+        .setDescriptionLocalizations({
+          ja: '有効な投票を終了',
+        })
     ),
 
   middleware: ['cooldown'],
@@ -344,6 +392,7 @@ export const command: Command = {
 async function handleCreatePoll(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
   const question = interaction.options.getString('question', true);
   const duration = interaction.options.getInteger('duration');
   const anonymous = interaction.options.getBoolean('anonymous') ?? false;
@@ -359,7 +408,12 @@ async function handleCreatePoll(
 
   if (options.length < 2) {
     await interaction.reply({
-      embeds: [createErrorEmbed('Error', 'At least 2 options are required.')],
+      embeds: [
+        createErrorEmbed(
+          t('common.error', locale),
+          t('poll.errors.notEnoughOptions', locale)
+        ),
+      ],
       flags: MessageFlags.Ephemeral,
     });
     return;
@@ -375,6 +429,7 @@ async function handleCreatePoll(
     channelId: interaction.channelId,
     guildId: interaction.guildId ?? '',
     client: interaction.client,
+    locale,
   };
 
   // Build embed and buttons
@@ -383,9 +438,13 @@ async function handleCreatePoll(
 
   // Add duration info to embed if specified
   if (duration) {
-    embed.setFooter({
-      text: `${anonymous ? 'Anonymous poll | ' : ''}Ends in ${duration} minute${duration > 1 ? 's' : ''} | Total: 0 votes`,
-    });
+    const footerParts: string[] = [];
+    if (anonymous) {
+      footerParts.push(t('poll.anonymous', locale));
+    }
+    footerParts.push(t('poll.endsIn', locale, { duration }));
+    footerParts.push(t('poll.total', locale, { count: 0 }));
+    embed.setFooter({ text: footerParts.join(' | ') });
   }
 
   // Send the poll message
@@ -419,6 +478,8 @@ async function handleCreatePoll(
 async function handleEndPoll(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
   // Find user's active poll in this channel
   let foundMessageId: string | null = null;
 
@@ -436,8 +497,8 @@ async function handleEndPoll(
     await interaction.reply({
       embeds: [
         createErrorEmbed(
-          'No Active Poll',
-          'You do not have an active poll in this channel.'
+          t('poll.noActivePoll', locale),
+          t('poll.noActivePollDesc', locale)
         ),
       ],
       flags: MessageFlags.Ephemeral,
@@ -450,8 +511,8 @@ async function handleEndPoll(
   await interaction.reply({
     embeds: [
       createEmbed({
-        title: 'Poll Ended',
-        description: 'Your poll has been ended and results are now final.',
+        title: t('poll.ended', locale),
+        description: t('poll.endedMessage', locale),
         color: COLORS.SUCCESS,
       }),
     ],

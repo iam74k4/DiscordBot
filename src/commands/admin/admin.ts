@@ -12,6 +12,7 @@ import {
   getRegisteredUsersCount,
   database,
 } from '../../services/database/index.js';
+import { t, mapDiscordLocale } from '../../locales/index.js';
 
 /**
  * Check if user is bot owner
@@ -210,33 +211,59 @@ export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('admin')
     .setDescription('Bot administration commands (owner only)')
+    .setDescriptionLocalizations({
+      ja: 'Bot管理コマンド（オーナー専用）',
+    })
     .addSubcommand((sub) =>
-      sub.setName('stats').setDescription('View bot statistics')
+      sub
+        .setName('stats')
+        .setDescription('View bot statistics')
+        .setDescriptionLocalizations({
+          ja: 'Bot統計を表示',
+        })
     )
     .addSubcommand((sub) =>
-      sub.setName('db').setDescription('View database statistics')
+      sub
+        .setName('db')
+        .setDescription('View database statistics')
+        .setDescriptionLocalizations({
+          ja: 'データベース統計を表示',
+        })
     )
     .addSubcommand((sub) =>
-      sub.setName('guilds').setDescription('List servers the bot is in')
+      sub
+        .setName('guilds')
+        .setDescription('List servers the bot is in')
+        .setDescriptionLocalizations({
+          ja: 'Botが参加しているサーバー一覧',
+        })
     )
     .addSubcommand((sub) =>
       sub
         .setName('broadcast')
         .setDescription('Send a message to all server owners')
+        .setDescriptionLocalizations({
+          ja: '全サーバーオーナーにメッセージを送信',
+        })
         .addStringOption((opt) =>
           opt
             .setName('message')
             .setDescription('Message to broadcast')
+            .setDescriptionLocalizations({
+              ja: '送信するメッセージ',
+            })
             .setRequired(true)
         )
     ),
 
   async execute(interaction) {
+    const locale = mapDiscordLocale(interaction.locale);
+
     // Check if user is bot owner
     if (!checkOwner(interaction)) {
       const errorEmbed = createErrorEmbed(
-        'Access Denied',
-        'This command is only available to bot owners.'
+        t('common.error', locale),
+        t('common.noPermission', locale)
       );
       await interaction.reply({
         embeds: [errorEmbed],

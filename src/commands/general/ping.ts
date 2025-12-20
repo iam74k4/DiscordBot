@@ -2,6 +2,7 @@ import { SlashCommandBuilder } from 'discord.js';
 import { Command } from '../../types/index.js';
 import { createEmbed } from '../../utils/embed.js';
 import { COLORS } from '../../utils/constants.js';
+import { t, mapDiscordLocale } from '../../locales/index.js';
 
 /**
  * Ping command - check bot latency
@@ -9,7 +10,10 @@ import { COLORS } from '../../utils/constants.js';
 export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('ping')
-    .setDescription('Check the bot latency'),
+    .setDescription('Check the bot latency')
+    .setDescriptionLocalizations({
+      ja: 'Botのレイテンシを確認',
+    }),
 
   middleware: ['cooldown'],
 
@@ -18,6 +22,7 @@ export const command: Command = {
   },
 
   async execute(interaction) {
+    const locale = mapDiscordLocale(interaction.locale);
     const sent = await interaction.deferReply({ fetchReply: true });
 
     const roundtripLatency =
@@ -25,16 +30,16 @@ export const command: Command = {
     const wsLatency = interaction.client.ws.ping;
 
     const embed = createEmbed({
-      title: 'Pong!',
+      title: t('ping.title', locale),
       color: COLORS.PRIMARY,
       fields: [
         {
-          name: 'Roundtrip Latency',
+          name: t('ping.latency', locale),
           value: `${roundtripLatency}ms`,
           inline: true,
         },
         {
-          name: 'WebSocket Latency',
+          name: t('ping.apiLatency', locale),
           value: `${wsLatency}ms`,
           inline: true,
         },

@@ -6,10 +6,11 @@ import {
 } from 'discord.js';
 import { Command } from '../../types/index.js';
 import { createEmbed, createErrorEmbed } from '../../utils/embed.js';
-import { COLORS, TITLES } from '../../utils/constants.js';
+import { COLORS } from '../../utils/constants.js';
 import { createPieChart } from '../../utils/chart.js';
 import { getSteamUsersByDiscordIds } from '../../services/database/index.js';
 import { steamClient } from '../../services/steam/index.js';
+import { t, mapDiscordLocale } from '../../locales/index.js';
 
 /**
  * Handle /server stats command
@@ -17,10 +18,12 @@ import { steamClient } from '../../services/steam/index.js';
 async function handleStats(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
   if (!interaction.guild) {
     const errorEmbed = createErrorEmbed(
-      TITLES.ERROR,
-      'This command can only be used in a server.'
+      t('common.error', locale),
+      t('common.guildOnly', locale)
     );
     await interaction.reply({
       embeds: [errorEmbed],
@@ -83,11 +86,15 @@ async function handleStats(
     topPlayers.reduce((sum, p) => sum + p.playtimeMinutes, 0) / 60
   );
 
-  // Create member status pie chart
+  // Create member status pie chart (chart labels stay in English for now)
   const memberChartBuffer = await createPieChart(
-    ['Online', 'Offline', 'Bots'],
+    [
+      t('server.stats.online', locale),
+      t('server.stats.offline', locale),
+      t('server.stats.bots', locale),
+    ],
     [online, offline, bots],
-    'Member Status'
+    t('server.stats.members', locale)
   );
 
   const memberAttachment = new AttachmentBuilder(memberChartBuffer, {
@@ -96,15 +103,15 @@ async function handleStats(
 
   // Create description
   const description = [
-    '**Members**',
-    `Total: ${totalMembers.toLocaleString()}`,
-    `Online: ${online.toLocaleString()}`,
-    `Offline: ${offline.toLocaleString()}`,
-    `Bots: ${bots.toLocaleString()}`,
+    `**${t('server.stats.members', locale)}**`,
+    `${t('server.stats.total', locale)}: ${totalMembers.toLocaleString()}`,
+    `${t('server.stats.online', locale)}: ${online.toLocaleString()}`,
+    `${t('server.stats.offline', locale)}: ${offline.toLocaleString()}`,
+    `${t('server.stats.bots', locale)}: ${bots.toLocaleString()}`,
     '',
-    '**Steam Integration**',
-    `Registered: ${steamRegistered.toLocaleString()} / ${humans.toLocaleString()} users`,
-    `Combined Playtime: ${totalPlaytimeHours.toLocaleString()} hours`,
+    `**${t('server.stats.steam.title', locale)}**`,
+    `${t('server.stats.steam.registered', locale)}: ${steamRegistered.toLocaleString()} / ${humans.toLocaleString()}`,
+    `${t('server.stats.steam.playtime', locale)}: ${totalPlaytimeHours.toLocaleString()}h`,
   ].join('\n');
 
   const fields = [];
@@ -119,14 +126,14 @@ async function handleStats(
       .join('\n');
 
     fields.push({
-      name: 'Top Steam Players',
+      name: t('server.stats.steam.topPlayers', locale),
       value: topList,
       inline: false,
     });
   }
 
   const embed = createEmbed({
-    title: `${guild.name} - ${TITLES.SERVER_STATS}`,
+    title: `${guild.name} - ${t('server.stats.title', locale)}`,
     description,
     color: COLORS.PRIMARY,
     fields,
@@ -145,8 +152,16 @@ export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('server')
     .setDescription('Server information commands')
+    .setDescriptionLocalizations({
+      ja: 'サーバー情報コマンド',
+    })
     .addSubcommand((sub) =>
-      sub.setName('stats').setDescription('View server statistics')
+      sub
+        .setName('stats')
+        .setDescription('View server statistics')
+        .setDescriptionLocalizations({
+          ja: 'サーバー統計を表示',
+        })
     ),
 
   middleware: ['cooldown'],

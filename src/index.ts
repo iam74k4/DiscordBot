@@ -31,6 +31,12 @@ async function main(): Promise<void> {
 
 // Run the bot
 main().catch((error) => {
-  logger.error('Failed to start bot:', error);
+  // Log error with more details (Discord errors don't serialize well)
+  if (error instanceof Error) {
+    logger.error(`Failed to start bot: ${error.message}`);
+    logger.error(`Stack: ${error.stack}`);
+  } else {
+    logger.error('Failed to start bot:', error);
+  }
   process.exit(1);
 });
