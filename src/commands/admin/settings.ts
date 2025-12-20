@@ -2,7 +2,6 @@ import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
   ChannelType,
-  PermissionFlagsBits,
   MessageFlags,
 } from 'discord.js';
 import { Command } from '../../types/index.js';
@@ -14,13 +13,13 @@ import {
 import { COLORS } from '../../utils/constants.js';
 import {
   getGuildSettings,
-  setGuildSettings,
   setAuditChannel,
   getAuditLogs,
   getAuditLogsCount,
   AuditLogRecord,
 } from '../../services/database/settings.js';
 import { logAuditAction } from '../../services/audit/index.js';
+import { t, mapDiscordLocale } from '../../locales/index.js';
 
 /**
  * Handle view subcommand
@@ -28,10 +27,12 @@ import { logAuditAction } from '../../services/audit/index.js';
 async function handleView(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
   if (!interaction.guild) {
     const errorEmbed = createErrorEmbed(
-      'Error',
-      'This command can only be used in a server.'
+      t('common.error', locale),
+      t('common.guildOnly', locale)
     );
     await interaction.reply({
       embeds: [errorEmbed],
@@ -40,66 +41,19 @@ async function handleView(
     return;
   }
 
-  const settings = getGuildSettings(interaction.guild.id);
+  const guildSettings = getGuildSettings(interaction.guild.id);
 
-  const language = settings?.language ?? 'ja';
-  const auditChannel = settings?.audit_channel_id
-    ? `<#${settings.audit_channel_id}>`
-    : 'Not set';
+  const auditChannel = guildSettings?.audit_channel_id
+    ? `<#${guildSettings.audit_channel_id}>`
+    : t('settings.audit.notSet', locale);
 
   const embed = createEmbed({
-    title: 'Server Settings',
+    title: t('settings.title', locale),
     color: COLORS.INFO,
     fields: [
-      {
-        name: 'Language',
-        value: language === 'ja' ? 'Japanese' : 'English',
-        inline: true,
-      },
-      { name: 'Audit Channel', value: auditChannel, inline: true },
+      { name: t('settings.audit.name', locale), value: auditChannel, inline: true },
     ],
-    footer: 'Use /settings to modify',
-    timestamp: true,
-  });
-
-  await interaction.reply({ embeds: [embed] });
-}
-
-/**
- * Handle language subcommand
- */
-async function handleLanguage(
-  interaction: ChatInputCommandInteraction
-): Promise<void> {
-  if (!interaction.guild) {
-    const errorEmbed = createErrorEmbed(
-      'Error',
-      'This command can only be used in a server.'
-    );
-    await interaction.reply({
-      embeds: [errorEmbed],
-      flags: MessageFlags.Ephemeral,
-    });
-    return;
-  }
-
-  const language = interaction.options.getString('language', true);
-
-  setGuildSettings(interaction.guild.id, { language });
-
-  await logAuditAction(
-    interaction.client,
-    interaction.guild.id,
-    interaction.user.id,
-    'SETTINGS_CHANGE',
-    undefined,
-    `Language changed to: ${language}`
-  );
-
-  const embed = createEmbed({
-    title: 'Settings Updated',
-    description: `Language set to: **${language === 'ja' ? 'Japanese' : 'English'}**`,
-    color: COLORS.SUCCESS,
+    footer: t('settings.view.footer', locale),
     timestamp: true,
   });
 
@@ -112,10 +66,12 @@ async function handleLanguage(
 async function handleAudit(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
   if (!interaction.guild) {
     const errorEmbed = createErrorEmbed(
-      'Error',
-      'This command can only be used in a server.'
+      t('common.error', locale),
+      t('common.guildOnly', locale)
     );
     await interaction.reply({
       embeds: [errorEmbed],
@@ -139,8 +95,8 @@ async function handleAudit(
     );
 
     const embed = createEmbed({
-      title: 'Audit Log Configured',
-      description: `Audit logs will be sent to <#${channel.id}>`,
+      title: t('settings.audit.name', locale),
+      description: t('settings.audit.configured', locale, { channel: channel.id }),
       color: COLORS.SUCCESS,
       timestamp: true,
     });
@@ -151,8 +107,8 @@ async function handleAudit(
     setAuditChannel(interaction.guild.id, null);
 
     const embed = createEmbed({
-      title: 'Audit Log Disabled',
-      description: 'Audit log channel has been removed.',
+      title: t('settings.audit.name', locale),
+      description: t('settings.audit.disabled', locale),
       color: COLORS.WARNING,
       timestamp: true,
     });
@@ -167,10 +123,12 @@ async function handleAudit(
 async function handleLogs(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
   if (!interaction.guild) {
     const errorEmbed = createErrorEmbed(
-      'Error',
-      'This command can only be used in a server.'
+      t('common.error', locale),
+      t('common.guildOnly', locale)
     );
     await interaction.reply({
       embeds: [errorEmbed],
@@ -184,8 +142,8 @@ async function handleLogs(
 
   if (logs.length === 0) {
     const warningEmbed = createWarningEmbed(
-      'No Logs',
-      'No audit logs found for this server.'
+      t('common.warning', locale),
+      t('settings.logs.noLogs', locale)
     );
     await interaction.reply({ embeds: [warningEmbed] });
     return;
@@ -201,10 +159,10 @@ async function handleLogs(
   const logList = logs.map(formatLog).join('\n');
 
   const embed = createEmbed({
-    title: 'Audit Logs',
+    title: t('settings.logs.title', locale),
     description: logList,
     color: COLORS.INFO,
-    footer: `Showing ${logs.length} of ${totalCount} logs`,
+    footer: t('settings.logs.showing', locale, { count: logs.length, total: totalCount }),
     timestamp: true,
   });
 
@@ -217,38 +175,41 @@ export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('settings')
     .setDescription('Server settings management')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-    .addSubcommand((sub) =>
-      sub.setName('view').setDescription('View current settings')
-    )
+    .setDescriptionLocalizations({
+      ja: 'サーバー設定の管理',
+    })
     .addSubcommand((sub) =>
       sub
-        .setName('language')
-        .setDescription('Set server language')
-        .addStringOption((opt) =>
-          opt
-            .setName('language')
-            .setDescription('Language to use')
-            .setRequired(true)
-            .addChoices(
-              { name: 'Japanese', value: 'ja' },
-              { name: 'English', value: 'en' }
-            )
-        )
+        .setName('view')
+        .setDescription('View current settings')
+        .setDescriptionLocalizations({
+          ja: '現在の設定を表示',
+        })
     )
     .addSubcommand((sub) =>
       sub
         .setName('audit')
         .setDescription('Set audit log channel')
+        .setDescriptionLocalizations({
+          ja: '監査ログチャンネルを設定',
+        })
         .addChannelOption((opt) =>
           opt
             .setName('channel')
             .setDescription('Channel for audit logs (leave empty to disable)')
+            .setDescriptionLocalizations({
+              ja: '監査ログを送信するチャンネル（空で無効化）',
+            })
             .addChannelTypes(ChannelType.GuildText)
         )
     )
     .addSubcommand((sub) =>
-      sub.setName('logs').setDescription('View recent audit logs')
+      sub
+        .setName('logs')
+        .setDescription('View recent audit logs')
+        .setDescriptionLocalizations({
+          ja: '最近の監査ログを表示',
+        })
     ),
 
   async execute(interaction) {
@@ -257,9 +218,6 @@ export const command: Command = {
     switch (subcommand) {
       case 'view':
         await handleView(interaction);
-        break;
-      case 'language':
-        await handleLanguage(interaction);
         break;
       case 'audit':
         await handleAudit(interaction);

@@ -11,7 +11,7 @@ import {
   createErrorEmbed,
   createWarningEmbed,
 } from '../../utils/embed.js';
-import { COLORS, TITLES } from '../../utils/constants.js';
+import { COLORS } from '../../utils/constants.js';
 import {
   setNotificationChannel,
   getNotificationSettings,
@@ -21,16 +21,19 @@ import {
   getUserNotificationPref,
 } from '../../services/database/notifications.js';
 import { hasSteamRegistered } from '../../services/database/index.js';
+import { t, mapDiscordLocale } from '../../locales/index.js';
 
 // ============ Subcommand Handlers ============
 
 async function handleSetup(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
   if (!interaction.guild) {
     const errorEmbed = createErrorEmbed(
-      TITLES.ERROR,
-      'This command can only be used in a server.'
+      t('common.error', locale),
+      t('common.guildOnly', locale)
     );
     await interaction.reply({
       embeds: [errorEmbed],
@@ -44,15 +47,12 @@ async function handleSetup(
   setNotificationChannel(interaction.guild.id, channel.id);
 
   const embed = createEmbed({
-    title: TITLES.NOTIFY,
+    title: t('steam.notify.title', locale),
     description:
-      `Game start notifications will be sent to <#${channel.id}>.\n\n` +
-      `**How it works:**\n` +
-      `• Registered users will be notified when they start a game\n` +
-      `• Checks run every 5 minutes\n` +
-      `• Users can opt-out with \`/notify me off\``,
+      t('steam.notify.setup', locale, { channel: channel.id }) + '\n\n' +
+      `**${t('steam.notify.howItWorks', locale)}:**\n` +
+      t('steam.notify.howItWorksDesc', locale).split('\n').map(line => `• ${line}`).join('\n'),
     color: COLORS.SUCCESS,
-    footer: 'Use /notify status to check settings',
     timestamp: true,
   });
 
@@ -62,10 +62,12 @@ async function handleSetup(
 async function handleStatus(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
   if (!interaction.guild) {
     const errorEmbed = createErrorEmbed(
-      TITLES.ERROR,
-      'This command can only be used in a server.'
+      t('common.error', locale),
+      t('common.guildOnly', locale)
     );
     await interaction.reply({
       embeds: [errorEmbed],
@@ -78,8 +80,8 @@ async function handleStatus(
 
   if (!settings) {
     const warningEmbed = createWarningEmbed(
-      TITLES.WARNING,
-      'Notifications are not set up for this server.\n\nUse `/notify setup` to configure.'
+      t('common.warning', locale),
+      t('steam.notify.notSetup', locale)
     );
     await interaction.reply({ embeds: [warningEmbed] });
     return;
@@ -89,13 +91,12 @@ async function handleStatus(
   const statusColor = settings.enabled ? COLORS.SUCCESS : COLORS.WARNING;
 
   const embed = createEmbed({
-    title: TITLES.NOTIFY,
+    title: t('steam.notify.title', locale),
     description:
-      `**Status:** ${statusIcon}\n` +
-      `**Channel:** <#${settings.channel_id}>\n` +
-      `**Configured:** <t:${Math.floor(settings.created_at / 1000)}:R>`,
+      `**${t('common.status', locale)}:** ${statusIcon}\n` +
+      `**${t('steam.notify.channel', locale)}:** <#${settings.channel_id}>\n` +
+      `**${t('steam.notify.configured', locale)}:** <t:${Math.floor(settings.created_at / 1000)}:R>`,
     color: statusColor,
-    footer: 'Use /notify enable or /notify disable to toggle',
     timestamp: true,
   });
 
@@ -105,10 +106,12 @@ async function handleStatus(
 async function handleEnable(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
   if (!interaction.guild) {
     const errorEmbed = createErrorEmbed(
-      TITLES.ERROR,
-      'This command can only be used in a server.'
+      t('common.error', locale),
+      t('common.guildOnly', locale)
     );
     await interaction.reply({
       embeds: [errorEmbed],
@@ -121,8 +124,8 @@ async function handleEnable(
 
   if (!settings) {
     const errorEmbed = createErrorEmbed(
-      TITLES.ERROR,
-      'Please run `/notify setup` first.'
+      t('common.error', locale),
+      t('steam.notify.setupFirst', locale)
     );
     await interaction.reply({
       embeds: [errorEmbed],
@@ -134,8 +137,8 @@ async function handleEnable(
   setNotificationEnabled(interaction.guild.id, true);
 
   const embed = createEmbed({
-    title: TITLES.NOTIFY,
-    description: 'Game notifications are now **enabled** for this server.',
+    title: t('steam.notify.title', locale),
+    description: t('steam.notify.nowEnabled', locale),
     color: COLORS.SUCCESS,
     timestamp: true,
   });
@@ -146,10 +149,12 @@ async function handleEnable(
 async function handleDisable(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
   if (!interaction.guild) {
     const errorEmbed = createErrorEmbed(
-      TITLES.ERROR,
-      'This command can only be used in a server.'
+      t('common.error', locale),
+      t('common.guildOnly', locale)
     );
     await interaction.reply({
       embeds: [errorEmbed],
@@ -162,8 +167,8 @@ async function handleDisable(
 
   if (!settings) {
     const errorEmbed = createErrorEmbed(
-      TITLES.ERROR,
-      'Please run `/notify setup` first.'
+      t('common.error', locale),
+      t('steam.notify.setupFirst', locale)
     );
     await interaction.reply({
       embeds: [errorEmbed],
@@ -175,8 +180,8 @@ async function handleDisable(
   setNotificationEnabled(interaction.guild.id, false);
 
   const embed = createEmbed({
-    title: TITLES.NOTIFY,
-    description: 'Game notifications are now **disabled** for this server.',
+    title: t('steam.notify.title', locale),
+    description: t('steam.notify.nowDisabled', locale),
     color: COLORS.WARNING,
     timestamp: true,
   });
@@ -187,10 +192,12 @@ async function handleDisable(
 async function handleRemove(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
   if (!interaction.guild) {
     const errorEmbed = createErrorEmbed(
-      TITLES.ERROR,
-      'This command can only be used in a server.'
+      t('common.error', locale),
+      t('common.guildOnly', locale)
     );
     await interaction.reply({
       embeds: [errorEmbed],
@@ -203,8 +210,8 @@ async function handleRemove(
 
   if (!removed) {
     const warningEmbed = createWarningEmbed(
-      TITLES.WARNING,
-      'There are no notification settings to remove.'
+      t('common.warning', locale),
+      t('steam.notify.noSettings', locale)
     );
     await interaction.reply({
       embeds: [warningEmbed],
@@ -214,8 +221,8 @@ async function handleRemove(
   }
 
   const embed = createEmbed({
-    title: TITLES.NOTIFY,
-    description: 'Notification settings have been removed for this server.',
+    title: t('steam.notify.title', locale),
+    description: t('steam.notify.removed', locale),
     color: COLORS.INFO,
     timestamp: true,
   });
@@ -226,14 +233,15 @@ async function handleRemove(
 async function handleMe(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
   const discordId = interaction.user.id;
   const action = interaction.options.getString('action') ?? 'status';
 
   // Check if user has registered Steam
   if (!hasSteamRegistered(discordId)) {
     const errorEmbed = createErrorEmbed(
-      TITLES.NOT_FOUND,
-      'You need to link your Steam account first.\n\nUse `/steam register` to get started.'
+      t('common.notFound', locale),
+      t('steam.errors.notRegistered', locale)
     );
     await interaction.reply({
       embeds: [errorEmbed],
@@ -249,14 +257,13 @@ async function handleMe(
       const statusColor = enabled ? COLORS.SUCCESS : COLORS.WARNING;
 
       const embed = createEmbed({
-        title: TITLES.NOTIFY_ME,
+        title: t('steam.notify.meStatus', locale),
         description:
-          `**Status:** ${statusIcon}\n\n` +
+          `**${t('common.status', locale)}:** ${statusIcon}\n\n` +
           (enabled
-            ? 'You will be mentioned when you start playing a game.'
-            : 'You have opted out of game notifications.'),
+            ? t('steam.notify.meEnabled', locale)
+            : t('steam.notify.meDisabled', locale)),
         color: statusColor,
-        footer: 'Use /notify me on or /notify me off to change',
         timestamp: true,
       });
 
@@ -271,8 +278,8 @@ async function handleMe(
       setUserNotificationPref(discordId, true);
 
       const embed = createEmbed({
-        title: TITLES.NOTIFY_ME,
-        description: 'You will now receive game start notifications.',
+        title: t('steam.notify.meStatus', locale),
+        description: t('steam.notify.meNowEnabled', locale),
         color: COLORS.SUCCESS,
         timestamp: true,
       });
@@ -288,8 +295,8 @@ async function handleMe(
       setUserNotificationPref(discordId, false);
 
       const embed = createEmbed({
-        title: TITLES.NOTIFY_ME,
-        description: 'You will no longer receive game start notifications.',
+        title: t('steam.notify.meStatus', locale),
+        description: t('steam.notify.meNowDisabled', locale),
         color: COLORS.WARNING,
         timestamp: true,
       });
@@ -309,45 +316,80 @@ export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('notify')
     .setDescription('Game notification settings')
+    .setDescriptionLocalizations({
+      ja: 'ゲーム通知設定',
+    })
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     // Setup
     .addSubcommand((sub) =>
       sub
         .setName('setup')
         .setDescription('Set the notification channel')
+        .setDescriptionLocalizations({
+          ja: '通知チャンネルを設定',
+        })
         .addChannelOption((opt) =>
           opt
             .setName('channel')
             .setDescription('Channel to send notifications to')
+            .setDescriptionLocalizations({
+              ja: '通知を送信するチャンネル',
+            })
             .addChannelTypes(ChannelType.GuildText)
             .setRequired(true)
         )
     )
     // Status
     .addSubcommand((sub) =>
-      sub.setName('status').setDescription('Check notification settings')
+      sub
+        .setName('status')
+        .setDescription('Check notification settings')
+        .setDescriptionLocalizations({
+          ja: '通知設定を確認',
+        })
     )
     // Enable
     .addSubcommand((sub) =>
-      sub.setName('enable').setDescription('Enable notifications')
+      sub
+        .setName('enable')
+        .setDescription('Enable notifications')
+        .setDescriptionLocalizations({
+          ja: '通知を有効化',
+        })
     )
     // Disable
     .addSubcommand((sub) =>
-      sub.setName('disable').setDescription('Disable notifications')
+      sub
+        .setName('disable')
+        .setDescription('Disable notifications')
+        .setDescriptionLocalizations({
+          ja: '通知を無効化',
+        })
     )
     // Remove
     .addSubcommand((sub) =>
-      sub.setName('remove').setDescription('Remove notification settings')
+      sub
+        .setName('remove')
+        .setDescription('Remove notification settings')
+        .setDescriptionLocalizations({
+          ja: '通知設定を削除',
+        })
     )
     // Me (personal settings)
     .addSubcommand((sub) =>
       sub
         .setName('me')
         .setDescription('Toggle your personal notification settings')
+        .setDescriptionLocalizations({
+          ja: '個人の通知設定を切り替え',
+        })
         .addStringOption((opt) =>
           opt
             .setName('action')
             .setDescription('Action to perform')
+            .setDescriptionLocalizations({
+              ja: '実行するアクション',
+            })
             .addChoices(
               { name: 'Status - Check your settings', value: 'status' },
               { name: 'On - Enable notifications', value: 'on' },

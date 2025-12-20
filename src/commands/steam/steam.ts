@@ -16,7 +16,7 @@ import {
   createErrorEmbed,
   createWarningEmbed,
 } from '../../utils/embed.js';
-import { COLORS, TITLES } from '../../utils/constants.js';
+import { COLORS } from '../../utils/constants.js';
 import {
   steamClient,
   formatPlaytime,
@@ -42,6 +42,7 @@ import {
   createHorizontalBarChart,
   createLineChart,
 } from '../../utils/chart.js';
+import { t, Locale, mapDiscordLocale } from '../../locales/index.js';
 
 // Constants
 const GAMES_PER_PAGE = 10;
@@ -81,6 +82,7 @@ function formatHoursShort(minutes: number): string {
  */
 async function resolveSteamId(
   interaction: ChatInputCommandInteraction,
+  locale: Locale,
   requireRegistration: boolean = false
 ): Promise<{ steamId: string | null; error?: string }> {
   const inputSteamId = interaction.options.getString('steamid');
@@ -89,7 +91,7 @@ async function resolveSteamId(
   if (inputSteamId) {
     const steamId = await steamClient.getSteamId64(inputSteamId);
     if (!steamId) {
-      return { steamId: null, error: 'Invalid Steam ID format' };
+      return { steamId: null, error: t('steam.errors.invalidSteamId', locale) };
     }
     return { steamId };
   }
@@ -99,7 +101,7 @@ async function resolveSteamId(
     if (!steamId) {
       return {
         steamId: null,
-        error: `**${targetUser.displayName}** has not linked their Steam account.`,
+        error: t('steam.errors.userNotLinked', locale, { name: targetUser.displayName }),
       };
     }
     return { steamId };
@@ -109,7 +111,7 @@ async function resolveSteamId(
   if (!steamId && requireRegistration) {
     return {
       steamId: null,
-      error: `You haven't linked your Steam account yet.\nUse \`/steam register\` to link your account.`,
+      error: t('steam.errors.notLinked', locale),
     };
   }
 
@@ -158,14 +160,15 @@ function buildButtons(
 async function handleProfile(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
   await interaction.deferReply();
 
-  const { steamId, error } = await resolveSteamId(interaction);
+  const { steamId, error } = await resolveSteamId(interaction, locale);
 
   if (!steamId) {
     const errorEmbed = createErrorEmbed(
-      TITLES.NOT_FOUND,
-      error ?? 'Could not resolve Steam ID'
+      t('common.notFound', locale),
+      error ?? t('steam.errors.couldNotResolve', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -175,8 +178,8 @@ async function handleProfile(
 
   if (!playerInfo) {
     const errorEmbed = createErrorEmbed(
-      TITLES.NOT_FOUND,
-      'Could not retrieve Steam profile information.'
+      t('common.notFound', locale),
+      t('steam.errors.couldNotRetrieve', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -188,49 +191,52 @@ async function handleProfile(
   );
 
   const statusDisplay = playerInfo.currentGame
-    ? `**Playing:** ${playerInfo.currentGame}`
+    ? `**${t('steam.profile.playing', locale)}:** ${playerInfo.currentGame}`
     : playerInfo.status;
 
-  const visibilityInfo = `${getVisibilityIcon(playerInfo.isPublic)} ${playerInfo.isPublic ? 'Public Profile' : 'Private Profile'}`;
+  const visibilityText = playerInfo.isPublic
+    ? t('steam.profile.publicProfile', locale)
+    : t('steam.profile.privateProfile', locale);
+  const visibilityInfo = `${getVisibilityIcon(playerInfo.isPublic)} ${visibilityText}`;
 
   let description = `${visibilityInfo}\n\n${statusDisplay}`;
   if (!playerInfo.isPublic) {
-    description +=
-      '\n\n*Some information may be hidden due to privacy settings.*';
+    description += `\n\n*${t('steam.profile.privacyNote', locale)}*`;
   }
 
   const fields = [];
   const profileInfo = [];
 
   if (playerInfo.realName)
-    profileInfo.push(`**Real Name:** ${playerInfo.realName}`);
+    profileInfo.push(`**${t('steam.profile.realName', locale)}:** ${playerInfo.realName}`);
   if (playerInfo.country)
-    profileInfo.push(`**Country:** ${playerInfo.country}`);
+    profileInfo.push(`**${t('steam.profile.country', locale)}:** ${playerInfo.country}`);
   if (playerInfo.createdAt) {
-    const memberSince = playerInfo.createdAt.toLocaleDateString('ja-JP', {
+    const dateLocale = locale === 'ja' ? 'ja-JP' : 'en-US';
+    const memberSince = playerInfo.createdAt.toLocaleDateString(dateLocale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
-    profileInfo.push(`**Member Since:** ${memberSince}`);
+    profileInfo.push(`**${t('steam.profile.memberSince', locale)}:** ${memberSince}`);
   }
 
   if (profileInfo.length > 0) {
     fields.push({
-      name: 'Profile Info',
+      name: t('steam.profile.profileInfo', locale),
       value: profileInfo.join('\n'),
       inline: false,
     });
   }
 
   fields.push({
-    name: 'Steam ID',
+    name: t('steam.profile.steamId', locale),
     value: `\`${playerInfo.steamId}\``,
     inline: true,
   });
   fields.push({
-    name: 'Profile Link',
-    value: `[View on Steam](${playerInfo.profileUrl})`,
+    name: t('steam.profile.profileLink', locale),
+    value: `[${t('steam.profile.viewOnSteam', locale)}](${playerInfo.profileUrl})`,
     inline: true,
   });
 
@@ -249,15 +255,16 @@ async function handleProfile(
 async function handlePlaytime(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
   await interaction.deferReply();
 
-  const { steamId, error } = await resolveSteamId(interaction);
+  const { steamId, error } = await resolveSteamId(interaction, locale);
   const gameName = interaction.options.getString('game');
 
   if (!steamId) {
     const errorEmbed = createErrorEmbed(
-      TITLES.NOT_FOUND,
-      error ?? 'Could not resolve Steam ID'
+      t('common.notFound', locale),
+      error ?? t('steam.errors.couldNotResolve', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -267,8 +274,8 @@ async function handlePlaytime(
 
   if (!playerInfo) {
     const errorEmbed = createErrorEmbed(
-      TITLES.NOT_FOUND,
-      'Could not retrieve player information.'
+      t('common.notFound', locale),
+      t('steam.errors.couldNotRetrieve', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -276,8 +283,8 @@ async function handlePlaytime(
 
   if (!playerInfo.isPublic) {
     const warningEmbed = createWarningEmbed(
-      TITLES.PRIVATE_PROFILE,
-      `**${playerInfo.name}** has a private profile.`
+      t('steam.profile.privateProfile', locale),
+      t('steam.errors.privateProfile', locale, { name: playerInfo.name })
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
@@ -288,8 +295,8 @@ async function handlePlaytime(
 
     if (!game) {
       const errorEmbed = createErrorEmbed(
-        TITLES.NOT_FOUND,
-        `Could not find a game matching **"${gameName}"**.`
+        t('common.notFound', locale),
+        t('steam.errors.gameNotFound', locale, { game: gameName })
       );
       await interaction.editReply({ embeds: [errorEmbed] });
       return;
@@ -297,7 +304,7 @@ async function handlePlaytime(
 
     const fields = [
       {
-        name: 'Total Playtime',
+        name: t('steam.playtime.total', locale),
         value: `**${game.playtimeForeverFormatted}**`,
         inline: true,
       },
@@ -305,7 +312,7 @@ async function handlePlaytime(
 
     if (game.playtime2WeeksFormatted) {
       fields.push({
-        name: 'Last 2 Weeks',
+        name: t('steam.playtime.last2Weeks', locale),
         value: `**${game.playtime2WeeksFormatted}**`,
         inline: true,
       });
@@ -313,7 +320,7 @@ async function handlePlaytime(
 
     const embed = createEmbed({
       title: game.name,
-      description: `Playtime for **${playerInfo.name}**\n\n[View on Steam Store](${game.storeUrl})`,
+      description: `**${playerInfo.name}**\n\n[${t('steam.profile.viewOnSteam', locale)}](${game.storeUrl})`,
       color: COLORS.STEAM,
       fields,
       thumbnail: game.iconUrl || undefined,
@@ -329,8 +336,8 @@ async function handlePlaytime(
 
   if (games.length === 0) {
     const warningEmbed = createWarningEmbed(
-      TITLES.NOT_FOUND,
-      `**${playerInfo.name}** has no games.`
+      t('common.notFound', locale),
+      t('steam.games.noGames', locale, { name: playerInfo.name })
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
@@ -355,12 +362,12 @@ async function handlePlaytime(
   const totalHours = Math.floor(totalMinutes / 60);
 
   const embed = createEmbed({
-    title: `${playerInfo.name} - ${TITLES.PLAYTIME}`,
-    description: `**Total Playtime:** ${formatPlaytime(totalMinutes)}\n**Total Games:** ${games.length}+`,
+    title: `${playerInfo.name} - ${t('steam.playtime.title', locale)}`,
+    description: `**${t('steam.playtime.total', locale)}:** ${formatPlaytime(totalMinutes)}\n**${t('steam.games.totalGames', locale)}:** ${games.length}+`,
     color: COLORS.STEAM,
-    fields: [{ name: 'Top 5 Games', value: topGamesList, inline: false }],
+    fields: [{ name: t('steam.games.top5', locale), value: topGamesList, inline: false }],
     thumbnail: playerInfo.avatarUrl,
-    footer: `${totalHours.toLocaleString()} hours total`,
+    footer: `${totalHours.toLocaleString()}h`,
     timestamp: true,
   });
 
@@ -370,14 +377,15 @@ async function handlePlaytime(
 async function handleGames(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
   await interaction.deferReply();
 
-  const { steamId, error } = await resolveSteamId(interaction);
+  const { steamId, error } = await resolveSteamId(interaction, locale);
 
   if (!steamId) {
     const errorEmbed = createErrorEmbed(
-      TITLES.NOT_FOUND,
-      error ?? 'Could not resolve Steam ID'
+      t('common.notFound', locale),
+      error ?? t('steam.errors.couldNotResolve', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -387,8 +395,8 @@ async function handleGames(
 
   if (!playerInfo) {
     const errorEmbed = createErrorEmbed(
-      TITLES.NOT_FOUND,
-      'Could not retrieve player information.'
+      t('common.notFound', locale),
+      t('steam.errors.couldNotRetrieve', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -396,8 +404,8 @@ async function handleGames(
 
   if (!playerInfo.isPublic) {
     const warningEmbed = createWarningEmbed(
-      TITLES.PRIVATE_PROFILE,
-      `**${playerInfo.name}** has a private profile.`
+      t('steam.profile.privateProfile', locale),
+      t('steam.errors.privateProfile', locale, { name: playerInfo.name })
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
@@ -411,8 +419,8 @@ async function handleGames(
 
   if (games.length === 0) {
     const warningEmbed = createWarningEmbed(
-      TITLES.NOT_FOUND,
-      `**${playerInfo.name}** has no games.`
+      t('common.notFound', locale),
+      t('steam.games.noGames', locale, { name: playerInfo.name })
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
@@ -437,11 +445,11 @@ async function handleGames(
       .join('\n\n');
 
     return createEmbed({
-      title: `${playerInfo.name} - ${TITLES.GAMES}`,
-      description: `**Total Games:** ${games.length}\n\n${gamesList}`,
+      title: `${playerInfo.name} - ${t('steam.games.title', locale)}`,
+      description: `**${t('steam.games.totalGames', locale)}:** ${games.length}\n\n${gamesList}`,
       color: COLORS.STEAM,
       thumbnail: playerInfo.avatarUrl,
-      footer: `Page ${page + 1} / ${totalPages}`,
+      footer: `${page + 1} / ${totalPages}`,
       timestamp: true,
     });
   };
@@ -464,7 +472,7 @@ async function handleGames(
   collector.on('collect', async (buttonInteraction) => {
     if (buttonInteraction.user.id !== interaction.user.id) {
       await buttonInteraction.reply({
-        content: 'Only the command user can navigate.',
+        content: t('steam.errors.onlyCommandUser', locale),
         flags: MessageFlags.Ephemeral,
       });
       return;
@@ -501,14 +509,15 @@ async function handleGames(
 async function handleRecent(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
   await interaction.deferReply();
 
-  const { steamId, error } = await resolveSteamId(interaction);
+  const { steamId, error } = await resolveSteamId(interaction, locale);
 
   if (!steamId) {
     const errorEmbed = createErrorEmbed(
-      TITLES.NOT_FOUND,
-      error ?? 'Could not resolve Steam ID'
+      t('common.notFound', locale),
+      error ?? t('steam.errors.couldNotResolve', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -518,8 +527,8 @@ async function handleRecent(
 
   if (!playerInfo) {
     const errorEmbed = createErrorEmbed(
-      TITLES.NOT_FOUND,
-      'Could not retrieve player information.'
+      t('common.notFound', locale),
+      t('steam.errors.couldNotRetrieve', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -527,8 +536,8 @@ async function handleRecent(
 
   if (!playerInfo.isPublic) {
     const warningEmbed = createWarningEmbed(
-      TITLES.PRIVATE_PROFILE,
-      `**${playerInfo.name}** has a private profile.`
+      t('steam.profile.privateProfile', locale),
+      t('steam.errors.privateProfile', locale, { name: playerInfo.name })
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
@@ -538,8 +547,8 @@ async function handleRecent(
 
   if (recentGames.length === 0) {
     const embed = createEmbed({
-      title: `${playerInfo.name} - ${TITLES.RECENT}`,
-      description: '**No games played in the last 2 weeks.**',
+      title: `${playerInfo.name} - ${t('steam.recent.title', locale)}`,
+      description: `**${t('steam.recent.noRecent', locale)}**`,
       color: COLORS.STEAM_OFFLINE,
       thumbnail: playerInfo.avatarUrl,
       timestamp: true,
@@ -559,18 +568,17 @@ async function handleRecent(
       const medal = index < 3 ? `${index + 1}.` : `${index + 1}.`;
       const bar = formatPlaytimeWithBar(game.playtime_2weeks, maxRecent);
       const totalTime = formatPlaytime(game.playtime_forever);
-      return `${medal} **[${game.name}](${getStoreUrl(game.appid)})**\n    ${bar}\n    Total: ${totalTime}`;
+      return `${medal} **[${game.name}](${getStoreUrl(game.appid)})**\n    ${bar}\n    ${t('steam.playtime.total', locale)}: ${totalTime}`;
     })
     .join('\n\n');
 
   const dailyAverage = Math.round(totalRecentMinutes / 14);
 
   const embed = createEmbed({
-    title: `${playerInfo.name} - ${TITLES.RECENT}`,
-    description: `**Last 2 Weeks:** ${formatPlaytime(totalRecentMinutes)}\n**Daily Average:** ~${formatPlaytime(dailyAverage)}\n\n${gamesList}`,
+    title: `${playerInfo.name} - ${t('steam.recent.title', locale)}`,
+    description: `**${t('steam.playtime.last2Weeks', locale)}:** ${formatPlaytime(totalRecentMinutes)}\n**${t('steam.recent.dailyAverage', locale)}:** ~${formatPlaytime(dailyAverage)}\n\n${gamesList}`,
     color: COLORS.STEAM,
     thumbnail: playerInfo.avatarUrl,
-    footer: 'Activity from the last 14 days',
     timestamp: true,
   });
 
@@ -580,10 +588,12 @@ async function handleRecent(
 async function handleRanking(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
   if (!interaction.guild) {
     const errorEmbed = createErrorEmbed(
-      TITLES.ERROR,
-      'This command can only be used in a server.'
+      t('common.error', locale),
+      t('common.guildOnly', locale)
     );
     await interaction.reply({
       embeds: [errorEmbed],
@@ -601,16 +611,16 @@ async function handleRanking(
 
   if (registeredUsers.length === 0) {
     const warningEmbed = createWarningEmbed(
-      TITLES.WARNING,
-      'No one in this server has linked their Steam account.'
+      t('common.warning', locale),
+      t('steam.ranking.noRegistered', locale)
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
   }
 
   const loadingEmbed = createEmbed({
-    title: TITLES.LOADING,
-    description: `Fetching playtime data for ${registeredUsers.length} users...`,
+    title: t('common.loading', locale),
+    description: t('steam.ranking.loading', locale, { count: registeredUsers.length }),
     color: COLORS.STEAM,
   });
   await interaction.editReply({ embeds: [loadingEmbed] });
@@ -663,8 +673,8 @@ async function handleRanking(
 
   if (rankedUsers.length === 0) {
     const warningEmbed = createWarningEmbed(
-      TITLES.WARNING,
-      'Could not retrieve playtime data.'
+      t('common.warning', locale),
+      t('steam.ranking.couldNotRetrieve', locale)
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
@@ -700,10 +710,10 @@ async function handleRanking(
       .join('\n\n');
 
     return createEmbed({
-      title: `${guild.name} - ${TITLES.RANKING}`,
-      description: `**Total Players:** ${rankedUsers.length}\n**Combined:** ${totalHours.toLocaleString()} hours\n**Average:** ${avgHours.toLocaleString()} hours/player\n\n${rankingList}`,
+      title: `${guild.name} - ${t('steam.ranking.title', locale)}`,
+      description: `**${t('steam.ranking.totalPlayers', locale)}:** ${rankedUsers.length}\n**${t('steam.ranking.combined', locale)}:** ${totalHours.toLocaleString()} ${t('units.hours', locale)}\n**${t('steam.ranking.average', locale)}:** ${avgHours.toLocaleString()} ${t('units.hoursPerPlayer', locale)}\n\n${rankingList}`,
       color: COLORS.STEAM,
-      footer: `Page ${page + 1} / ${totalPages}`,
+      footer: t('steam.ranking.page', locale, { current: page + 1, total: totalPages }),
       timestamp: true,
     });
   };
@@ -726,7 +736,7 @@ async function handleRanking(
   collector.on('collect', async (buttonInteraction) => {
     if (buttonInteraction.user.id !== interaction.user.id) {
       await buttonInteraction.reply({
-        content: 'Only the command user can navigate.',
+        content: t('steam.errors.onlyCommandUser', locale),
         flags: MessageFlags.Ephemeral,
       });
       return;
@@ -763,6 +773,7 @@ async function handleRanking(
 async function handleHistory(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
   await interaction.deferReply();
 
   const targetUser = interaction.options.getUser('user') ?? interaction.user;
@@ -771,10 +782,10 @@ async function handleHistory(
 
   if (!steamId) {
     const errorEmbed = createErrorEmbed(
-      TITLES.NOT_FOUND,
+      t('common.notFound', locale),
       targetUser.id === interaction.user.id
-        ? "You haven't linked your Steam account yet."
-        : `**${targetUser.displayName}** has not linked their Steam account.`
+        ? t('steam.errors.notLinked', locale)
+        : t('steam.errors.userNotLinked', locale, { name: targetUser.displayName })
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -784,30 +795,39 @@ async function handleHistory(
 
   if (!playerInfo) {
     const errorEmbed = createErrorEmbed(
-      TITLES.ERROR,
-      'Could not retrieve Steam profile information.'
+      t('common.error', locale),
+      t('steam.errors.couldNotRetrieve', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
   }
 
   const now = Date.now();
-  const periods = [
-    { name: '24 Hours', duration: ONE_DAY },
-    { name: '7 Days', duration: ONE_WEEK },
-    { name: '30 Days', duration: ONE_MONTH },
-    { name: '3 Months', duration: THREE_MONTHS },
-    { name: '6 Months', duration: SIX_MONTHS },
-    { name: '1 Year', duration: ONE_YEAR },
-  ];
+  const periods = locale === 'ja'
+    ? [
+        { name: '24時間', duration: ONE_DAY },
+        { name: '7日間', duration: ONE_WEEK },
+        { name: '30日間', duration: ONE_MONTH },
+        { name: '3ヶ月', duration: THREE_MONTHS },
+        { name: '6ヶ月', duration: SIX_MONTHS },
+        { name: '1年', duration: ONE_YEAR },
+      ]
+    : [
+        { name: '24 Hours', duration: ONE_DAY },
+        { name: '7 Days', duration: ONE_WEEK },
+        { name: '30 Days', duration: ONE_MONTH },
+        { name: '3 Months', duration: THREE_MONTHS },
+        { name: '6 Months', duration: SIX_MONTHS },
+        { name: '1 Year', duration: ONE_YEAR },
+      ];
 
   const periodDisplay = periods
     .map((period) => {
       const change = getPlaytimeChange(discordId, now - period.duration, now);
-      if (change === 0) return `**${period.name}:** No data`;
+      if (change === 0) return `**${period.name}:** ${t('common.noData', locale)}`;
       const formatted = formatPlaytime(change);
       const dailyAvg = Math.round(change / (period.duration / ONE_DAY));
-      return `**${period.name}:** +${formatted} (~${formatPlaytime(dailyAvg)}/day)`;
+      return `**${period.name}:** +${formatted} (~${formatPlaytime(dailyAvg)}/${t('units.perDay', locale)})`;
     })
     .join('\n');
 
@@ -817,8 +837,8 @@ async function handleHistory(
 
   if (!hasHistory) {
     const warningEmbed = createWarningEmbed(
-      TITLES.WARNING,
-      `No playtime history available.\nHistory is recorded daily at midnight.`
+      t('common.warning', locale),
+      t('steam.history.notEnoughData', locale) + '\n' + t('steam.history.recordedDaily', locale)
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
@@ -827,18 +847,18 @@ async function handleHistory(
   const totalPlaytime = await steamClient.getTotalPlaytime(steamId);
 
   const embed = createEmbed({
-    title: `${playerInfo.name} - ${TITLES.HISTORY}`,
-    description: `**Current Total:** ${formatPlaytime(totalPlaytime)}\n\n**Playtime Added:**\n${periodDisplay}`,
+    title: `${playerInfo.name} - ${t('steam.history.title', locale)}`,
+    description: `**${t('steam.history.currentTotal', locale)}:** ${formatPlaytime(totalPlaytime)}\n\n**${t('steam.history.playtimeAdded', locale)}:**\n${periodDisplay}`,
     color: COLORS.STEAM,
     fields: [
       {
-        name: 'How This Works',
-        value: 'Playtime is recorded daily at midnight (JST).',
+        name: t('steam.history.howItWorks', locale),
+        value: t('steam.history.recordedDaily', locale),
         inline: false,
       },
     ],
     thumbnail: playerInfo.avatarUrl,
-    footer: 'History is tracked from registration date',
+    footer: t('steam.history.trackedFrom', locale),
     timestamp: true,
   });
 
@@ -848,6 +868,7 @@ async function handleHistory(
 async function handleRegister(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const input = interaction.options.getString('steamid', true);
@@ -858,8 +879,8 @@ async function handleRegister(
 
   if (!steamId) {
     const errorEmbed = createErrorEmbed(
-      TITLES.NOT_FOUND,
-      'Could not find a Steam account with that ID.\n\n**Valid formats:**\n• Steam ID: `76561198xxxxxxxxx`\n• Custom URL: `customname`\n• Profile URL: `https://steamcommunity.com/id/customname`'
+      t('common.notFound', locale),
+      t('steam.errors.invalidSteamId', locale) + '\n\n' + t('steam.register.validFormats', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -869,8 +890,8 @@ async function handleRegister(
 
   if (!playerInfo) {
     const errorEmbed = createErrorEmbed(
-      TITLES.ERROR,
-      'Could not retrieve Steam profile information.'
+      t('common.error', locale),
+      t('steam.errors.couldNotRetrieve', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -879,18 +900,18 @@ async function handleRegister(
   registerSteamUser(discordId, steamId, playerInfo.name);
 
   const embed = createEmbed({
-    title: TITLES.REGISTER,
+    title: t('steam.register.title', locale),
     description: existing
-      ? 'Your linked Steam account has been updated.'
-      : 'Your Discord account is now linked to Steam!',
+      ? t('steam.register.updated', locale)
+      : t('steam.register.linked', locale),
     color: COLORS.SUCCESS,
     fields: [
       {
-        name: 'Steam Profile',
-        value: `**${playerInfo.name}**\n[View Profile](${playerInfo.profileUrl})`,
+        name: t('steam.profile.title', locale),
+        value: `**${playerInfo.name}**\n[${t('steam.register.viewProfile', locale)}](${playerInfo.profileUrl})`,
         inline: true,
       },
-      { name: 'Steam ID', value: `\`${steamId}\``, inline: true },
+      { name: t('steam.profile.steamId', locale), value: `\`${steamId}\``, inline: true },
     ],
     thumbnail: playerInfo.avatarUrl,
     timestamp: true,
@@ -902,6 +923,7 @@ async function handleRegister(
 async function handleUnregister(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const discordId = interaction.user.id;
@@ -909,8 +931,8 @@ async function handleUnregister(
 
   if (!existing) {
     const warningEmbed = createWarningEmbed(
-      TITLES.NOT_FOUND,
-      'Your Discord account is not linked to any Steam account.'
+      t('common.notFound', locale),
+      t('steam.unregister.notRegistered', locale)
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
@@ -919,12 +941,12 @@ async function handleUnregister(
   unregisterSteamUser(discordId);
 
   const embed = createEmbed({
-    title: TITLES.UNREGISTER,
-    description: 'Your Discord account has been unlinked from Steam.',
+    title: t('steam.unregister.title', locale),
+    description: t('steam.unregister.unlinked', locale),
     color: COLORS.SUCCESS,
     fields: [
       {
-        name: 'Removed Account',
+        name: t('steam.unregister.removedAccount', locale),
         value: `**${existing.steam_name || 'Unknown'}**\n\`${existing.steam_id}\``,
         inline: false,
       },
@@ -938,6 +960,7 @@ async function handleUnregister(
 async function handleWhoami(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
   await interaction.deferReply();
 
   const discordId = interaction.user.id;
@@ -945,8 +968,8 @@ async function handleWhoami(
 
   if (!steamUser) {
     const warningEmbed = createWarningEmbed(
-      TITLES.NOT_FOUND,
-      'Your Discord account is not linked to any Steam account.\n\nUse `/steam register` to link your account.'
+      t('common.notFound', locale),
+      t('steam.whoami.notRegistered', locale)
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
@@ -958,15 +981,16 @@ async function handleWhoami(
 
   if (!playerInfo) {
     const errorEmbed = createErrorEmbed(
-      TITLES.ERROR,
-      'Could not retrieve Steam profile information.'
+      t('common.error', locale),
+      t('steam.errors.couldNotRetrieve', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
   }
 
+  const dateLocale = locale === 'ja' ? 'ja-JP' : 'en-US';
   const registeredAt = new Date(steamUser.registered_at).toLocaleDateString(
-    'ja-JP',
+    dateLocale,
     {
       year: 'numeric',
       month: 'long',
@@ -975,7 +999,7 @@ async function handleWhoami(
   );
 
   const statusDisplay = playerInfo.currentGame
-    ? `**Playing:** ${playerInfo.currentGame}`
+    ? `**${t('steam.profile.playing', locale)}:** ${playerInfo.currentGame}`
     : playerInfo.status;
 
   const embedColor = getStatusColor(
@@ -984,12 +1008,12 @@ async function handleWhoami(
   );
 
   const embed = createEmbed({
-    title: TITLES.WHOAMI,
-    description: `**${playerInfo.name}**\n\n${statusDisplay}\n\n[View Profile](${playerInfo.profileUrl})`,
+    title: t('steam.whoami.title', locale),
+    description: `**${playerInfo.name}**\n\n${statusDisplay}\n\n[${t('steam.whoami.viewProfile', locale)}](${playerInfo.profileUrl})`,
     color: embedColor,
     fields: [
-      { name: 'Steam ID', value: `\`${steamUser.steam_id}\``, inline: true },
-      { name: 'Linked Since', value: registeredAt, inline: true },
+      { name: t('steam.profile.steamId', locale), value: `\`${steamUser.steam_id}\``, inline: true },
+      { name: t('steam.whoami.linkedSince', locale), value: registeredAt, inline: true },
     ],
     thumbnail: playerInfo.avatarUrl,
     timestamp: true,
@@ -1001,32 +1025,30 @@ async function handleWhoami(
 async function handleHelp(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
   const embed = createEmbed({
-    title: TITLES.HELP,
-    description:
-      'Link your Discord account to Steam for easy access to your stats!',
+    title: t('steam.help.title', locale),
+    description: t('steam.help.description', locale),
     color: COLORS.STEAM,
     fields: [
       {
-        name: 'Account',
-        value:
-          '`/steam register <steamid>` - Link account\n`/steam unregister` - Unlink account\n`/steam whoami` - Show linked account',
+        name: t('steam.help.accountSection', locale),
+        value: t('steam.help.accountCommands', locale),
         inline: false,
       },
       {
-        name: 'Stats',
-        value:
-          '`/steam profile` - View profile\n`/steam playtime [game]` - View playtime\n`/steam games` - Browse library\n`/steam recent` - Recent activity\n`/steam ranking` - Server leaderboard\n`/steam history` - Playtime over time',
+        name: t('steam.help.statsSection', locale),
+        value: t('steam.help.statsCommands', locale),
         inline: false,
       },
       {
-        name: 'Options',
-        value:
-          '• `steamid` - Look up any Steam user\n• `user` - Look up a Discord user\n• `game` - Search for a specific game',
+        name: t('steam.help.optionsSection', locale),
+        value: t('steam.help.optionsDesc', locale),
         inline: false,
       },
     ],
-    footer: 'Use Tab to autocomplete game names!',
+    footer: t('steam.help.autocompleteHint', locale),
     timestamp: true,
   });
 
@@ -1036,6 +1058,7 @@ async function handleHelp(
 async function handleChart(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
   await interaction.deferReply();
 
   const targetUser = interaction.options.getUser('user') ?? interaction.user;
@@ -1043,10 +1066,10 @@ async function handleChart(
 
   if (!steamId) {
     const errorEmbed = createErrorEmbed(
-      TITLES.NOT_FOUND,
+      t('common.notFound', locale),
       targetUser.id === interaction.user.id
-        ? "You haven't linked your Steam account yet.\nUse `/steam register` to link your account."
-        : `**${targetUser.displayName}** has not linked their Steam account.`
+        ? t('steam.errors.notLinked', locale)
+        : t('steam.errors.userNotLinked', locale, { name: targetUser.displayName })
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -1056,8 +1079,8 @@ async function handleChart(
 
   if (!playerInfo) {
     const errorEmbed = createErrorEmbed(
-      TITLES.ERROR,
-      'Could not retrieve Steam profile information.'
+      t('common.error', locale),
+      t('steam.errors.couldNotRetrieve', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -1065,8 +1088,8 @@ async function handleChart(
 
   if (!playerInfo.isPublic) {
     const warningEmbed = createWarningEmbed(
-      TITLES.PRIVATE_PROFILE,
-      `**${playerInfo.name}** has a private profile.`
+      t('steam.profile.privateProfile', locale),
+      t('steam.errors.privateProfile', locale, { name: playerInfo.name })
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
@@ -1079,8 +1102,8 @@ async function handleChart(
 
   if (games.length === 0) {
     const warningEmbed = createWarningEmbed(
-      TITLES.NOT_FOUND,
-      `**${playerInfo.name}** has no games.`
+      t('common.notFound', locale),
+      t('steam.games.noGames', locale, { name: playerInfo.name })
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
@@ -1092,7 +1115,7 @@ async function handleChart(
   const chartBuffer = await createHorizontalBarChart(
     labels,
     data,
-    'Playtime (hours)'
+    t('steam.chart.playtimeAxis', locale)
   );
 
   const attachment = new AttachmentBuilder(chartBuffer, { name: 'chart.png' });
@@ -1103,8 +1126,8 @@ async function handleChart(
   const topGamesHours = Math.floor(topGamesMinutes / 60);
 
   const embed = createEmbed({
-    title: `${playerInfo.name} - ${TITLES.CHART}`,
-    description: `**Top ${games.length} Games:** ${topGamesHours.toLocaleString()} hours\n**Total Playtime:** ${totalHours.toLocaleString()} hours`,
+    title: `${playerInfo.name} - ${t('steam.chart.title', locale)}`,
+    description: `**${t('steam.chart.topNGames', locale, { count: games.length })}:** ${topGamesHours.toLocaleString()} ${t('units.hours', locale)}\n**${t('steam.chart.totalPlaytime', locale)}:** ${totalHours.toLocaleString()} ${t('units.hours', locale)}`,
     color: COLORS.STEAM,
     image: 'attachment://chart.png',
     thumbnail: playerInfo.avatarUrl,
@@ -1117,6 +1140,7 @@ async function handleChart(
 async function handleHistoryGraph(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
   await interaction.deferReply();
 
   const targetUser = interaction.options.getUser('user') ?? interaction.user;
@@ -1125,10 +1149,10 @@ async function handleHistoryGraph(
 
   if (!steamId) {
     const errorEmbed = createErrorEmbed(
-      TITLES.NOT_FOUND,
+      t('common.notFound', locale),
       targetUser.id === interaction.user.id
-        ? "You haven't linked your Steam account yet.\nUse `/steam register` to link your account."
-        : `**${targetUser.displayName}** has not linked their Steam account.`
+        ? t('steam.errors.notLinked', locale)
+        : t('steam.errors.userNotLinked', locale, { name: targetUser.displayName })
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -1138,8 +1162,8 @@ async function handleHistoryGraph(
 
   if (!playerInfo) {
     const errorEmbed = createErrorEmbed(
-      TITLES.ERROR,
-      'Could not retrieve Steam profile information.'
+      t('common.error', locale),
+      t('steam.errors.couldNotRetrieve', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -1147,8 +1171,8 @@ async function handleHistoryGraph(
 
   if (!playerInfo.isPublic) {
     const warningEmbed = createWarningEmbed(
-      TITLES.PRIVATE_PROFILE,
-      `**${playerInfo.name}** has a private profile.`
+      t('steam.profile.privateProfile', locale),
+      t('steam.errors.privateProfile', locale, { name: playerInfo.name })
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
@@ -1176,13 +1200,14 @@ async function handleHistoryGraph(
     const totalHours = Math.floor(totalPlaytime / 60);
 
     const warningEmbed = createWarningEmbed(
-      TITLES.WARNING,
-      `Not enough history data available.\n\n**Current Total Playtime:** ${totalHours.toLocaleString()} hours\n\nHistory is recorded daily at midnight (JST).`
+      t('common.warning', locale),
+      `${t('steam.history.notEnoughData', locale)}\n\n**${t('steam.history.currentTotalPlaytime', locale)}:** ${totalHours.toLocaleString()} ${t('units.hours', locale)}\n\n${t('steam.historyGraph.recordedDaily', locale)}`
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
   }
 
+  const dateLocale = locale === 'ja' ? 'ja-JP' : 'en-US';
   const labels = history.map((h) => {
     const date = new Date(h.recorded_at);
     // Use JST timezone to match the recording time (midnight JST)
@@ -1193,14 +1218,14 @@ async function handleHistoryGraph(
       day: 'numeric',
       ...(periodOption === '1y' && { year: '2-digit' }),
     };
-    return date.toLocaleDateString('ja-JP', options);
+    return date.toLocaleDateString(dateLocale, options);
   });
   const data = history.map((h) => Math.floor(h.total_playtime / 60));
 
   const chartBuffer = await createLineChart(
     labels,
     data,
-    'Total Playtime (hours)'
+    t('steam.chart.totalPlaytimeAxis', locale)
   );
 
   const attachment = new AttachmentBuilder(chartBuffer, { name: 'chart.png' });
@@ -1213,24 +1238,22 @@ async function handleHistoryGraph(
     (lastRecord.total_playtime - firstRecord.total_playtime) / 60
   );
 
-  const periodLabels: Record<string, string> = {
-    '7d': '7 Days',
-    '30d': '30 Days',
-    '90d': '90 Days',
-    '1y': '1 Year',
-  };
+  const periodLabels: Record<string, string> = locale === 'ja'
+    ? { '7d': '7日間', '30d': '30日間', '90d': '90日間', '1y': '1年' }
+    : { '7d': '7 Days', '30d': '30 Days', '90d': '90 Days', '1y': '1 Year' };
 
   const playtimePrefix = playtimeGain >= 0 ? '+' : '';
-  const playtimeLabel =
-    playtimeGain >= 0 ? 'Playtime Added' : 'Playtime Change';
+  const playtimeLabel = playtimeGain >= 0
+    ? t('steam.historyGraph.playtimeAdded', locale)
+    : t('steam.historyGraph.playtimeChange', locale);
 
   const embed = createEmbed({
-    title: `${playerInfo.name} - ${TITLES.HISTORY_GRAPH}`,
-    description: `**Period:** ${periodLabels[periodOption] ?? '30 Days'}\n**${playtimeLabel}:** ${playtimePrefix}${playtimeGain.toLocaleString()} hours`,
+    title: `${playerInfo.name} - ${t('steam.historyGraph.title', locale)}`,
+    description: `**${t('steam.historyGraph.period', locale)}:** ${periodLabels[periodOption] ?? periodLabels['30d']}\n**${playtimeLabel}:** ${playtimePrefix}${playtimeGain.toLocaleString()} ${t('units.hours', locale)}`,
     color: COLORS.STEAM,
     image: 'attachment://chart.png',
     thumbnail: playerInfo.avatarUrl,
-    footer: 'History is recorded daily at midnight (JST)',
+    footer: t('steam.historyGraph.recordedDaily', locale),
     timestamp: true,
   });
 

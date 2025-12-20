@@ -11,6 +11,7 @@ import { Command } from '../../types/index.js';
 import { createEmbed, createErrorEmbed } from '../../utils/embed.js';
 import { COLORS } from '../../utils/constants.js';
 import { logger } from '../../utils/logger.js';
+import { t, mapDiscordLocale } from '../../locales/index.js';
 
 /**
  * Animation delay in milliseconds
@@ -66,19 +67,31 @@ export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('roulette')
     .setDescription('Random selection from voice channel members')
+    .setDescriptionLocalizations({
+      ja: 'ボイスチャンネルのメンバーからランダム選択',
+    })
     .addSubcommand((subcommand) =>
       subcommand
         .setName('member')
         .setDescription('Randomly select one member from voice channel')
+        .setDescriptionLocalizations({
+          ja: 'ボイスチャンネルからランダムに1人選択',
+        })
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('team')
         .setDescription('Divide voice channel members into teams')
+        .setDescriptionLocalizations({
+          ja: 'ボイスチャンネルのメンバーをチーム分け',
+        })
         .addIntegerOption((option) =>
           option
             .setName('count')
             .setDescription('Number of teams to create')
+            .setDescriptionLocalizations({
+              ja: '作成するチーム数',
+            })
             .setRequired(true)
             .setMinValue(2)
             .setMaxValue(10)
@@ -108,13 +121,15 @@ export const command: Command = {
 async function handleMemberRoulette(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
   // Check if command is used in a guild
   if (!interaction.guild || !interaction.member) {
     await interaction.reply({
       embeds: [
         createErrorEmbed(
-          'Guild Only',
-          'This command can only be used in a server.'
+          t('common.error', locale),
+          t('common.guildOnly', locale)
         ),
       ],
       flags: MessageFlags.Ephemeral,
@@ -134,8 +149,8 @@ async function handleMemberRoulette(
     await interaction.reply({
       embeds: [
         createErrorEmbed(
-          'Not in Voice Channel',
-          'You must be in a voice channel to use this command.'
+          t('roulette.errors.notInVoice', locale),
+          t('roulette.errors.notInVoiceDesc', locale)
         ),
       ],
       flags: MessageFlags.Ephemeral,
@@ -150,8 +165,8 @@ async function handleMemberRoulette(
     await interaction.reply({
       embeds: [
         createErrorEmbed(
-          'No Members',
-          'No members found in the voice channel (bots are excluded).'
+          t('roulette.errors.noMembers', locale),
+          t('roulette.errors.noMembersDesc', locale)
         ),
       ],
       flags: MessageFlags.Ephemeral,
@@ -163,8 +178,8 @@ async function handleMemberRoulette(
     await interaction.reply({
       embeds: [
         createEmbed({
-          title: 'Roulette Result',
-          description: `Only one member in the channel!\n\nSelected: ${mentionMember(members[0])}`,
+          title: t('roulette.member.result', locale),
+          description: t('roulette.member.onlyOne', locale, { member: mentionMember(members[0]) }),
           color: COLORS.SUCCESS,
         }),
       ],
@@ -180,8 +195,8 @@ async function handleMemberRoulette(
     await interaction.editReply({
       embeds: [
         createEmbed({
-          title: 'Roulette',
-          description: `**${i}...**`,
+          title: t('roulette.member.title', locale),
+          description: `**${t('roulette.member.countdown', locale, { count: i })}**`,
           color: COLORS.WARNING,
         }),
       ],
@@ -194,8 +209,8 @@ async function handleMemberRoulette(
   await interaction.editReply({
     embeds: [
       createEmbed({
-        title: 'Roulette',
-        description: `Selecting from candidates...\n\n[${candidateList}]`,
+        title: t('roulette.member.title', locale),
+        description: t('roulette.member.selecting', locale, { candidates: candidateList }),
         color: COLORS.WARNING,
       }),
     ],
@@ -207,10 +222,10 @@ async function handleMemberRoulette(
   await interaction.editReply({
     embeds: [
       createEmbed({
-        title: 'Roulette Result',
-        description: `Selected: ${mentionMember(winner)}`,
+        title: t('roulette.member.result', locale),
+        description: `${mentionMember(winner)}`,
         color: COLORS.SUCCESS,
-        footer: `Selected from ${members.length} members in ${voiceChannel.name}`,
+        footer: t('roulette.member.footer', locale, { count: members.length, channel: voiceChannel.name }),
         timestamp: true,
       }),
     ],
@@ -227,13 +242,15 @@ async function handleMemberRoulette(
 async function handleTeamRoulette(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
   // Check if command is used in a guild
   if (!interaction.guild || !interaction.member) {
     await interaction.reply({
       embeds: [
         createErrorEmbed(
-          'Guild Only',
-          'This command can only be used in a server.'
+          t('common.error', locale),
+          t('common.guildOnly', locale)
         ),
       ],
       flags: MessageFlags.Ephemeral,
@@ -255,8 +272,8 @@ async function handleTeamRoulette(
     await interaction.reply({
       embeds: [
         createErrorEmbed(
-          'Not in Voice Channel',
-          'You must be in a voice channel to use this command.'
+          t('roulette.errors.notInVoice', locale),
+          t('roulette.errors.notInVoiceDesc', locale)
         ),
       ],
       flags: MessageFlags.Ephemeral,
@@ -271,8 +288,12 @@ async function handleTeamRoulette(
     await interaction.reply({
       embeds: [
         createErrorEmbed(
-          'Not Enough Members',
-          `Need at least ${teamCount} members for ${teamCount} teams.\nCurrent members: ${members.length} (bots excluded)`
+          t('roulette.errors.notEnough', locale),
+          t('roulette.errors.notEnoughDesc', locale, {
+            teams: teamCount,
+            required: teamCount,
+            current: members.length,
+          })
         ),
       ],
       flags: MessageFlags.Ephemeral,
@@ -288,8 +309,8 @@ async function handleTeamRoulette(
     await interaction.editReply({
       embeds: [
         createEmbed({
-          title: 'Team Assignment',
-          description: `**${i}...**`,
+          title: t('roulette.team.title', locale),
+          description: `**${t('roulette.member.countdown', locale, { count: i })}**`,
           color: COLORS.WARNING,
         }),
       ],
@@ -302,8 +323,12 @@ async function handleTeamRoulette(
   await interaction.editReply({
     embeds: [
       createEmbed({
-        title: 'Team Assignment',
-        description: `Shuffling ${members.length} members into ${teamCount} teams...\n\n[${candidateList}]`,
+        title: t('roulette.team.title', locale),
+        description: t('roulette.team.shuffling', locale, {
+          count: members.length,
+          teams: teamCount,
+          candidates: candidateList,
+        }),
         color: COLORS.WARNING,
       }),
     ],
@@ -321,8 +346,8 @@ async function handleTeamRoulette(
 
   // Build team fields
   const fields = teams.map((team, index) => ({
-    name: `Team ${index + 1} (${team.length} members)`,
-    value: team.map((m) => mentionMember(m)).join('\n') || 'No members',
+    name: t('roulette.team.teamName', locale, { number: index + 1, count: team.length }),
+    value: team.map((m) => mentionMember(m)).join('\n') || t('roulette.team.noMembers', locale),
     inline: true,
   }));
 
@@ -330,11 +355,14 @@ async function handleTeamRoulette(
   await interaction.editReply({
     embeds: [
       createEmbed({
-        title: 'Team Assignment Result',
-        description: `${members.length} members divided into ${teamCount} teams!`,
+        title: t('roulette.team.result', locale),
+        description: t('roulette.team.resultDesc', locale, {
+          count: members.length,
+          teams: teamCount,
+        }),
         color: COLORS.SUCCESS,
         fields,
-        footer: `Members from ${voiceChannel.name}`,
+        footer: t('roulette.team.footer', locale, { channel: voiceChannel.name }),
         timestamp: true,
       }),
     ],
