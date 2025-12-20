@@ -145,7 +145,11 @@ export async function handlePollVote(
   // Extract option index from customId (poll_vote_0, poll_vote_1, etc.)
   const optionIndex = parseInt(interaction.customId.split('_')[2], 10);
 
-  if (isNaN(optionIndex) || optionIndex < 0 || optionIndex >= poll.options.length) {
+  if (
+    isNaN(optionIndex) ||
+    optionIndex < 0 ||
+    optionIndex >= poll.options.length
+  ) {
     await interaction.reply({
       content: 'Invalid vote option.',
       flags: MessageFlags.Ephemeral,
@@ -183,10 +187,7 @@ export async function handlePollVote(
 /**
  * End a poll and show final results
  */
-async function endPoll(
-  messageId: string,
-  client?: Client
-): Promise<void> {
+async function endPoll(messageId: string, client?: Client): Promise<void> {
   const poll = pollStore.get(messageId);
   if (!poll) return;
 
@@ -304,7 +305,9 @@ export const command: Command = {
         .addIntegerOption((option) =>
           option
             .setName('duration')
-            .setDescription('Poll duration in minutes (leave empty for unlimited)')
+            .setDescription(
+              'Poll duration in minutes (leave empty for unlimited)'
+            )
             .setMinValue(1)
             .setMaxValue(1440)
         )
@@ -457,4 +460,3 @@ async function handleEndPoll(
 }
 
 export default command;
-

@@ -39,9 +39,7 @@ function shuffle<T>(array: T[]): T[] {
 /**
  * Get voice channel members (excluding bots)
  */
-function getVoiceMembers(
-  channel: VoiceChannel | StageChannel
-): GuildMember[] {
+function getVoiceMembers(channel: VoiceChannel | StageChannel): GuildMember[] {
   return Array.from(channel.members.values()).filter(
     (member) => !member.user.bot
   );
@@ -348,4 +346,3 @@ async function handleTeamRoulette(
 }
 
 export default command;
-
