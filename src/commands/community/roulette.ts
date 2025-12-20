@@ -110,6 +110,20 @@ export const command: Command = {
 async function handleMemberRoulette(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  // Check if command is used in a guild
+  if (!interaction.guild || !interaction.member) {
+    await interaction.reply({
+      embeds: [
+        createErrorEmbed(
+          'Guild Only',
+          'This command can only be used in a server.'
+        ),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
   // Check if user is in a voice channel
   const member = interaction.member as GuildMember;
   const voiceChannel = member.voice.channel;
@@ -215,6 +229,20 @@ async function handleMemberRoulette(
 async function handleTeamRoulette(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  // Check if command is used in a guild
+  if (!interaction.guild || !interaction.member) {
+    await interaction.reply({
+      embeds: [
+        createErrorEmbed(
+          'Guild Only',
+          'This command can only be used in a server.'
+        ),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
   const teamCount = interaction.options.getInteger('count', true);
 
   // Check if user is in a voice channel
