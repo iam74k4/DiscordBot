@@ -8,6 +8,7 @@ A modular Discord bot built with TypeScript and discord.js v14.
 - Steam integration (profile, playtime, game library, ranking)
 - Game start notifications
 - Playtime history tracking
+- Community features (polls, roulette)
 - Admin system (bot owner commands, server settings)
 - Audit logging for admin actions
 - Middleware system (permissions, cooldown)
@@ -141,6 +142,30 @@ npm start
 | `audit [channel]` | Set audit log channel       |
 | `logs`            | View recent audit logs      |
 
+### Poll (`/poll`)
+
+| Subcommand                                      | Description                              |
+| ----------------------------------------------- | ---------------------------------------- |
+| `create <question> <options...> [duration] [anonymous]` | Create a poll (2-10 options)   |
+| `end`                                           | End your active poll                     |
+
+**Options:**
+- `question`: Poll question (required)
+- `option1` to `option10`: Choices (at least 2 required)
+- `duration`: Duration in minutes (optional, unlimited if not set)
+- `anonymous`: Anonymous voting (default: false)
+
+### Roulette (`/roulette`)
+
+| Subcommand      | Description                                    |
+| --------------- | ---------------------------------------------- |
+| `member`        | Randomly select one member from voice channel  |
+| `team <count>`  | Divide voice channel members into N teams      |
+
+**Notes:**
+- User must be in a voice channel to use these commands
+- Bots are automatically excluded from selection
+
 ## Available Scripts
 
 | Script                 | Description                          |
@@ -172,6 +197,9 @@ src/
 │   ├── admin/
 │   │   ├── admin.ts          # /admin command (bot owner)
 │   │   └── settings.ts       # /settings command (server admin)
+│   ├── community/
+│   │   ├── poll.ts           # /poll command (voting)
+│   │   └── roulette.ts       # /roulette command (random selection)
 │   └── index.ts
 ├── events/               # Event handlers
 │   ├── client/

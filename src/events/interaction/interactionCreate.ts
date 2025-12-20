@@ -4,6 +4,7 @@ import { getCommand } from '../../handlers/commandHandler.js';
 import { runMiddleware } from '../../middleware/index.js';
 import { logger } from '../../utils/logger.js';
 import { createErrorEmbed } from '../../utils/embed.js';
+import { handlePollVote, pollStore } from '../../commands/community/index.js';
 
 /**
  * InteractionCreate event - handles slash command and autocomplete interactions
@@ -29,6 +30,34 @@ export const event: Event<typeof Events.InteractionCreate> = {
           error
         );
         await interaction.respond([]).catch(() => {});
+      }
+      return;
+    }
+
+    // Handle button interactions (poll votes)
+    if (interaction.isButton()) {
+      if (interaction.customId.startsWith('poll_vote_')) {
+        // Check if poll exists in store
+        if (pollStore.has(interaction.message.id)) {
+          try {
+            await handlePollVote(interaction);
+          } catch (error) {
+            logger.error('Error handling poll vote:', error);
+            await interaction
+              .reply({
+                content: 'An error occurred while processing your vote.',
+                flags: MessageFlags.Ephemeral,
+              })
+              .catch(() => {});
+          }
+        } else {
+          await interaction
+            .reply({
+              content: 'This poll has ended or no longer exists.',
+              flags: MessageFlags.Ephemeral,
+            })
+            .catch(() => {});
+        }
       }
       return;
     }
