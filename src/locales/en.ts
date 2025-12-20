@@ -69,7 +69,8 @@ export const en: TranslationKeys = {
     },
     team: {
       title: 'Team Assignment',
-      shuffling: 'Shuffling {count} members into {teams} teams...\n\n[{candidates}]',
+      shuffling:
+        'Shuffling {count} members into {teams} teams...\n\n[{candidates}]',
       result: 'Team Assignment Result',
       resultDesc: '{count} members divided into {teams} teams!',
       teamName: 'Team {number} ({count} members)',
@@ -80,9 +81,11 @@ export const en: TranslationKeys = {
       notInVoice: 'Not in Voice Channel',
       notInVoiceDesc: 'You must be in a voice channel to use this command.',
       noMembers: 'No Members',
-      noMembersDesc: 'No members found in the voice channel (bots are excluded).',
+      noMembersDesc:
+        'No members found in the voice channel (bots are excluded).',
       notEnough: 'Not Enough Members',
-      notEnoughDesc: 'Need at least {required} members for {teams} teams.\nCurrent members: {current} (bots excluded)',
+      notEnoughDesc:
+        'Need at least {required} members for {teams} teams.\nCurrent members: {current} (bots excluded)',
     },
   },
 
@@ -137,10 +140,12 @@ export const en: TranslationKeys = {
     register: {
       title: 'Account Linked',
       success: 'Your Steam account **{name}** has been linked!',
-      alreadyRegistered: 'You already have a linked Steam account.\nUse `/steam unregister` first to change accounts.',
+      alreadyRegistered:
+        'You already have a linked Steam account.\nUse `/steam unregister` first to change accounts.',
       confirm: 'Link this account?',
       confirmDesc: 'Steam Account: **{name}**\nSteam ID: `{steamId}`',
-      validFormats: '**Valid formats:**\n• Steam ID: `76561198xxxxxxxxx`\n• Custom URL: `customname`\n• Profile URL: `https://steamcommunity.com/id/customname`',
+      validFormats:
+        '**Valid formats:**\n• Steam ID: `76561198xxxxxxxxx`\n• Custom URL: `customname`\n• Profile URL: `https://steamcommunity.com/id/customname`',
       linked: 'Your Discord account is now linked to Steam!',
       updated: 'Your linked Steam account has been updated.',
       viewProfile: 'View Profile',
@@ -156,7 +161,8 @@ export const en: TranslationKeys = {
     },
     whoami: {
       title: 'Linked Account',
-      notRegistered: 'You do not have a linked Steam account.\nUse `/steam register` to link your account.',
+      notRegistered:
+        'You do not have a linked Steam account.\nUse `/steam register` to link your account.',
       info: 'Linked to: **{name}**\nSteam ID: `{steamId}`\nRegistered: {date}',
       linkedSince: 'Linked Since',
       viewProfile: 'View Profile',
@@ -210,14 +216,16 @@ export const en: TranslationKeys = {
       disabled: 'Notifications disabled.',
       setup: 'Notification channel set to <#{channel}>',
       howItWorks: 'How it works',
-      howItWorksDesc: 'Registered users will be notified when they start a game\nChecks run every 5 minutes\nUsers can opt-out with `/notify me off`',
+      howItWorksDesc:
+        'Registered users will be notified when they start a game\nChecks run every 5 minutes\nUsers can opt-out with `/notify me off`',
       statusOn: 'ON',
       statusOff: 'OFF',
       yourStatus: 'Your notification status: {status}',
       serverStatus: 'Server notifications: {status}',
       channel: 'Channel',
       configured: 'Configured',
-      notSetup: 'Notifications are not set up for this server.\n\nUse `/notify setup` to configure.',
+      notSetup:
+        'Notifications are not set up for this server.\n\nUse `/notify setup` to configure.',
       setupFirst: 'Please run `/notify setup` first.',
       noSettings: 'There are no notification settings to remove.',
       nowEnabled: 'Game notifications are now **enabled** for this server.',
@@ -235,13 +243,17 @@ export const en: TranslationKeys = {
     },
     help: {
       title: 'Steam Commands',
-      description: 'Link your Discord account to Steam for easy access to your stats!',
+      description:
+        'Link your Discord account to Steam for easy access to your stats!',
       accountSection: 'Account',
-      accountCommands: '`/steam register <steamid>` - Link account\n`/steam unregister` - Unlink account\n`/steam whoami` - Show linked account',
+      accountCommands:
+        '`/steam register <steamid>` - Link account\n`/steam unregister` - Unlink account\n`/steam whoami` - Show linked account',
       statsSection: 'Stats',
-      statsCommands: '`/steam profile` - View profile\n`/steam playtime [game]` - View playtime\n`/steam games` - Browse library\n`/steam recent` - Recent activity\n`/steam ranking` - Server leaderboard\n`/steam history` - Playtime over time',
+      statsCommands:
+        '`/steam profile` - View profile\n`/steam playtime [game]` - View playtime\n`/steam games` - Browse library\n`/steam recent` - Recent activity\n`/steam ranking` - Server leaderboard\n`/steam history` - Playtime over time',
       optionsSection: 'Options',
-      optionsDesc: '• `steamid` - Look up any Steam user\n• `user` - Look up a Discord user\n• `game` - Search for a specific game',
+      optionsDesc:
+        '• `steamid` - Look up any Steam user\n• `user` - Look up a Discord user\n• `game` - Search for a specific game',
       autocompleteHint: 'Use Tab to autocomplete game names!',
     },
     chart: {
@@ -263,11 +275,13 @@ export const en: TranslationKeys = {
       invalidSteamId: 'Invalid Steam ID format.',
       couldNotResolve: 'Could not resolve Steam ID.',
       userNotLinked: '**{name}** has not linked their Steam account.',
-      notLinked: "You haven't linked your Steam account yet.\nUse `/steam register` to link your account.",
+      notLinked:
+        "You haven't linked your Steam account yet.\nUse `/steam register` to link your account.",
       couldNotRetrieve: 'Could not retrieve Steam profile information.',
       privateProfile: '**{name}** has a private profile.',
       apiError: 'Failed to fetch Steam data. Please try again later.',
-      notRegistered: 'You need to register your Steam account first.\nUse `/steam register` to link your account.',
+      notRegistered:
+        'You need to register your Steam account first.\nUse `/steam register` to link your account.',
       gameNotFound: 'Could not find a game matching **"{game}"**.',
       onlyCommandUser: 'Only the command user can navigate.',
       cancelled: 'Action cancelled.',
@@ -299,4 +313,3 @@ export const en: TranslationKeys = {
     },
   },
 };
-

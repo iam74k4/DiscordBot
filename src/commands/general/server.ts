@@ -88,7 +88,11 @@ async function handleStats(
 
   // Create member status pie chart (chart labels stay in English for now)
   const memberChartBuffer = await createPieChart(
-    [t('server.stats.online', locale), t('server.stats.offline', locale), t('server.stats.bots', locale)],
+    [
+      t('server.stats.online', locale),
+      t('server.stats.offline', locale),
+      t('server.stats.bots', locale),
+    ],
     [online, offline, bots],
     t('server.stats.members', locale)
   );

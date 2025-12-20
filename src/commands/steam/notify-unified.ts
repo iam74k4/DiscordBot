@@ -49,9 +49,13 @@ async function handleSetup(
   const embed = createEmbed({
     title: t('steam.notify.title', locale),
     description:
-      t('steam.notify.setup', locale, { channel: channel.id }) + '\n\n' +
+      t('steam.notify.setup', locale, { channel: channel.id }) +
+      '\n\n' +
       `**${t('steam.notify.howItWorks', locale)}:**\n` +
-      t('steam.notify.howItWorksDesc', locale).split('\n').map(line => `• ${line}`).join('\n'),
+      t('steam.notify.howItWorksDesc', locale)
+        .split('\n')
+        .map((line) => `• ${line}`)
+        .join('\n'),
     color: COLORS.SUCCESS,
     timestamp: true,
   });

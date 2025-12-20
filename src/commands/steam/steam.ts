@@ -101,7 +101,9 @@ async function resolveSteamId(
     if (!steamId) {
       return {
         steamId: null,
-        error: t('steam.errors.userNotLinked', locale, { name: targetUser.displayName }),
+        error: t('steam.errors.userNotLinked', locale, {
+          name: targetUser.displayName,
+        }),
       };
     }
     return { steamId };
@@ -208,9 +210,13 @@ async function handleProfile(
   const profileInfo = [];
 
   if (playerInfo.realName)
-    profileInfo.push(`**${t('steam.profile.realName', locale)}:** ${playerInfo.realName}`);
+    profileInfo.push(
+      `**${t('steam.profile.realName', locale)}:** ${playerInfo.realName}`
+    );
   if (playerInfo.country)
-    profileInfo.push(`**${t('steam.profile.country', locale)}:** ${playerInfo.country}`);
+    profileInfo.push(
+      `**${t('steam.profile.country', locale)}:** ${playerInfo.country}`
+    );
   if (playerInfo.createdAt) {
     const dateLocale = locale === 'ja' ? 'ja-JP' : 'en-US';
     const memberSince = playerInfo.createdAt.toLocaleDateString(dateLocale, {
@@ -218,7 +224,9 @@ async function handleProfile(
       month: 'long',
       day: 'numeric',
     });
-    profileInfo.push(`**${t('steam.profile.memberSince', locale)}:** ${memberSince}`);
+    profileInfo.push(
+      `**${t('steam.profile.memberSince', locale)}:** ${memberSince}`
+    );
   }
 
   if (profileInfo.length > 0) {
@@ -365,7 +373,13 @@ async function handlePlaytime(
     title: `${playerInfo.name} - ${t('steam.playtime.title', locale)}`,
     description: `**${t('steam.playtime.total', locale)}:** ${formatPlaytime(totalMinutes)}\n**${t('steam.games.totalGames', locale)}:** ${games.length}+`,
     color: COLORS.STEAM,
-    fields: [{ name: t('steam.games.top5', locale), value: topGamesList, inline: false }],
+    fields: [
+      {
+        name: t('steam.games.top5', locale),
+        value: topGamesList,
+        inline: false,
+      },
+    ],
     thumbnail: playerInfo.avatarUrl,
     footer: `${totalHours.toLocaleString()}h`,
     timestamp: true,
@@ -620,7 +634,9 @@ async function handleRanking(
 
   const loadingEmbed = createEmbed({
     title: t('common.loading', locale),
-    description: t('steam.ranking.loading', locale, { count: registeredUsers.length }),
+    description: t('steam.ranking.loading', locale, {
+      count: registeredUsers.length,
+    }),
     color: COLORS.STEAM,
   });
   await interaction.editReply({ embeds: [loadingEmbed] });
@@ -713,7 +729,10 @@ async function handleRanking(
       title: `${guild.name} - ${t('steam.ranking.title', locale)}`,
       description: `**${t('steam.ranking.totalPlayers', locale)}:** ${rankedUsers.length}\n**${t('steam.ranking.combined', locale)}:** ${totalHours.toLocaleString()} ${t('units.hours', locale)}\n**${t('steam.ranking.average', locale)}:** ${avgHours.toLocaleString()} ${t('units.hoursPerPlayer', locale)}\n\n${rankingList}`,
       color: COLORS.STEAM,
-      footer: t('steam.ranking.page', locale, { current: page + 1, total: totalPages }),
+      footer: t('steam.ranking.page', locale, {
+        current: page + 1,
+        total: totalPages,
+      }),
       timestamp: true,
     });
   };
@@ -785,7 +804,9 @@ async function handleHistory(
       t('common.notFound', locale),
       targetUser.id === interaction.user.id
         ? t('steam.errors.notLinked', locale)
-        : t('steam.errors.userNotLinked', locale, { name: targetUser.displayName })
+        : t('steam.errors.userNotLinked', locale, {
+            name: targetUser.displayName,
+          })
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -803,28 +824,30 @@ async function handleHistory(
   }
 
   const now = Date.now();
-  const periods = locale === 'ja'
-    ? [
-        { name: '24時間', duration: ONE_DAY },
-        { name: '7日間', duration: ONE_WEEK },
-        { name: '30日間', duration: ONE_MONTH },
-        { name: '3ヶ月', duration: THREE_MONTHS },
-        { name: '6ヶ月', duration: SIX_MONTHS },
-        { name: '1年', duration: ONE_YEAR },
-      ]
-    : [
-        { name: '24 Hours', duration: ONE_DAY },
-        { name: '7 Days', duration: ONE_WEEK },
-        { name: '30 Days', duration: ONE_MONTH },
-        { name: '3 Months', duration: THREE_MONTHS },
-        { name: '6 Months', duration: SIX_MONTHS },
-        { name: '1 Year', duration: ONE_YEAR },
-      ];
+  const periods =
+    locale === 'ja'
+      ? [
+          { name: '24時間', duration: ONE_DAY },
+          { name: '7日間', duration: ONE_WEEK },
+          { name: '30日間', duration: ONE_MONTH },
+          { name: '3ヶ月', duration: THREE_MONTHS },
+          { name: '6ヶ月', duration: SIX_MONTHS },
+          { name: '1年', duration: ONE_YEAR },
+        ]
+      : [
+          { name: '24 Hours', duration: ONE_DAY },
+          { name: '7 Days', duration: ONE_WEEK },
+          { name: '30 Days', duration: ONE_MONTH },
+          { name: '3 Months', duration: THREE_MONTHS },
+          { name: '6 Months', duration: SIX_MONTHS },
+          { name: '1 Year', duration: ONE_YEAR },
+        ];
 
   const periodDisplay = periods
     .map((period) => {
       const change = getPlaytimeChange(discordId, now - period.duration, now);
-      if (change === 0) return `**${period.name}:** ${t('common.noData', locale)}`;
+      if (change === 0)
+        return `**${period.name}:** ${t('common.noData', locale)}`;
       const formatted = formatPlaytime(change);
       const dailyAvg = Math.round(change / (period.duration / ONE_DAY));
       return `**${period.name}:** +${formatted} (~${formatPlaytime(dailyAvg)}/${t('units.perDay', locale)})`;
@@ -838,7 +861,9 @@ async function handleHistory(
   if (!hasHistory) {
     const warningEmbed = createWarningEmbed(
       t('common.warning', locale),
-      t('steam.history.notEnoughData', locale) + '\n' + t('steam.history.recordedDaily', locale)
+      t('steam.history.notEnoughData', locale) +
+        '\n' +
+        t('steam.history.recordedDaily', locale)
     );
     await interaction.editReply({ embeds: [warningEmbed] });
     return;
@@ -880,7 +905,9 @@ async function handleRegister(
   if (!steamId) {
     const errorEmbed = createErrorEmbed(
       t('common.notFound', locale),
-      t('steam.errors.invalidSteamId', locale) + '\n\n' + t('steam.register.validFormats', locale)
+      t('steam.errors.invalidSteamId', locale) +
+        '\n\n' +
+        t('steam.register.validFormats', locale)
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -911,7 +938,11 @@ async function handleRegister(
         value: `**${playerInfo.name}**\n[${t('steam.register.viewProfile', locale)}](${playerInfo.profileUrl})`,
         inline: true,
       },
-      { name: t('steam.profile.steamId', locale), value: `\`${steamId}\``, inline: true },
+      {
+        name: t('steam.profile.steamId', locale),
+        value: `\`${steamId}\``,
+        inline: true,
+      },
     ],
     thumbnail: playerInfo.avatarUrl,
     timestamp: true,
@@ -1012,8 +1043,16 @@ async function handleWhoami(
     description: `**${playerInfo.name}**\n\n${statusDisplay}\n\n[${t('steam.whoami.viewProfile', locale)}](${playerInfo.profileUrl})`,
     color: embedColor,
     fields: [
-      { name: t('steam.profile.steamId', locale), value: `\`${steamUser.steam_id}\``, inline: true },
-      { name: t('steam.whoami.linkedSince', locale), value: registeredAt, inline: true },
+      {
+        name: t('steam.profile.steamId', locale),
+        value: `\`${steamUser.steam_id}\``,
+        inline: true,
+      },
+      {
+        name: t('steam.whoami.linkedSince', locale),
+        value: registeredAt,
+        inline: true,
+      },
     ],
     thumbnail: playerInfo.avatarUrl,
     timestamp: true,
@@ -1069,7 +1108,9 @@ async function handleChart(
       t('common.notFound', locale),
       targetUser.id === interaction.user.id
         ? t('steam.errors.notLinked', locale)
-        : t('steam.errors.userNotLinked', locale, { name: targetUser.displayName })
+        : t('steam.errors.userNotLinked', locale, {
+            name: targetUser.displayName,
+          })
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -1152,7 +1193,9 @@ async function handleHistoryGraph(
       t('common.notFound', locale),
       targetUser.id === interaction.user.id
         ? t('steam.errors.notLinked', locale)
-        : t('steam.errors.userNotLinked', locale, { name: targetUser.displayName })
+        : t('steam.errors.userNotLinked', locale, {
+            name: targetUser.displayName,
+          })
     );
     await interaction.editReply({ embeds: [errorEmbed] });
     return;
@@ -1238,14 +1281,16 @@ async function handleHistoryGraph(
     (lastRecord.total_playtime - firstRecord.total_playtime) / 60
   );
 
-  const periodLabels: Record<string, string> = locale === 'ja'
-    ? { '7d': '7日間', '30d': '30日間', '90d': '90日間', '1y': '1年' }
-    : { '7d': '7 Days', '30d': '30 Days', '90d': '90 Days', '1y': '1 Year' };
+  const periodLabels: Record<string, string> =
+    locale === 'ja'
+      ? { '7d': '7日間', '30d': '30日間', '90d': '90日間', '1y': '1年' }
+      : { '7d': '7 Days', '30d': '30 Days', '90d': '90 Days', '1y': '1 Year' };
 
   const playtimePrefix = playtimeGain >= 0 ? '+' : '';
-  const playtimeLabel = playtimeGain >= 0
-    ? t('steam.historyGraph.playtimeAdded', locale)
-    : t('steam.historyGraph.playtimeChange', locale);
+  const playtimeLabel =
+    playtimeGain >= 0
+      ? t('steam.historyGraph.playtimeAdded', locale)
+      : t('steam.historyGraph.playtimeChange', locale);
 
   const embed = createEmbed({
     title: `${playerInfo.name} - ${t('steam.historyGraph.title', locale)}`,

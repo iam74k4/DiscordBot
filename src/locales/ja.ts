@@ -64,12 +64,14 @@ export const ja: TranslationKeys = {
       countdown: '{count}...',
       selecting: '候補から選択中...\n\n[{candidates}]',
       result: 'ルーレット結果',
-      onlyOne: 'チャンネルにはメンバーが1人しかいません！\n\n選ばれたのは: {member}',
+      onlyOne:
+        'チャンネルにはメンバーが1人しかいません！\n\n選ばれたのは: {member}',
       footer: '{channel}の{count}人のメンバーから選択',
     },
     team: {
       title: 'チーム分け',
-      shuffling: '{count}人のメンバーを{teams}チームにシャッフル中...\n\n[{candidates}]',
+      shuffling:
+        '{count}人のメンバーを{teams}チームにシャッフル中...\n\n[{candidates}]',
       result: 'チーム分け結果',
       resultDesc: '{count}人のメンバーを{teams}チームに分けました！',
       teamName: 'チーム{number} ({count}人)',
@@ -78,11 +80,13 @@ export const ja: TranslationKeys = {
     },
     errors: {
       notInVoice: 'ボイスチャンネル未参加',
-      notInVoiceDesc: 'このコマンドを使用するにはボイスチャンネルに参加してください。',
+      notInVoiceDesc:
+        'このコマンドを使用するにはボイスチャンネルに参加してください。',
       noMembers: 'メンバーがいません',
       noMembersDesc: 'ボイスチャンネルにメンバーがいません（Botは除外）。',
       notEnough: 'メンバーが不足しています',
-      notEnoughDesc: '{teams}チームには最低{required}人のメンバーが必要です。\n現在のメンバー: {current}人（Bot除外）',
+      notEnoughDesc:
+        '{teams}チームには最低{required}人のメンバーが必要です。\n現在のメンバー: {current}人（Bot除外）',
     },
   },
 
@@ -131,16 +135,19 @@ export const ja: TranslationKeys = {
       viewOnSteam: 'Steamで見る',
       publicProfile: '公開プロフィール',
       privateProfile: '非公開プロフィール',
-      privacyNote: 'プライバシー設定により一部の情報が非表示になっている可能性があります。',
+      privacyNote:
+        'プライバシー設定により一部の情報が非表示になっている可能性があります。',
       playing: 'プレイ中',
     },
     register: {
       title: 'アカウント連携完了',
       success: 'Steamアカウント **{name}** を連携しました！',
-      alreadyRegistered: '既にSteamアカウントが連携されています。\nアカウントを変更するには先に `/steam unregister` を実行してください。',
+      alreadyRegistered:
+        '既にSteamアカウントが連携されています。\nアカウントを変更するには先に `/steam unregister` を実行してください。',
       confirm: 'このアカウントを連携しますか？',
       confirmDesc: 'Steamアカウント: **{name}**\nSteam ID: `{steamId}`',
-      validFormats: '**有効な形式:**\n• Steam ID: `76561198xxxxxxxxx`\n• カスタムURL: `customname`\n• プロフィールURL: `https://steamcommunity.com/id/customname`',
+      validFormats:
+        '**有効な形式:**\n• Steam ID: `76561198xxxxxxxxx`\n• カスタムURL: `customname`\n• プロフィールURL: `https://steamcommunity.com/id/customname`',
       linked: 'DiscordアカウントがSteamに連携されました！',
       updated: '連携済みSteamアカウントが更新されました。',
       viewProfile: 'プロフィールを見る',
@@ -156,7 +163,8 @@ export const ja: TranslationKeys = {
     },
     whoami: {
       title: '連携アカウント',
-      notRegistered: 'Steamアカウントが連携されていません。\n`/steam register` で連携してください。',
+      notRegistered:
+        'Steamアカウントが連携されていません。\n`/steam register` で連携してください。',
       info: '連携先: **{name}**\nSteam ID: `{steamId}`\n登録日: {date}',
       linkedSince: '連携日',
       viewProfile: 'プロフィールを見る',
@@ -210,14 +218,16 @@ export const ja: TranslationKeys = {
       disabled: '通知を無効にしました。',
       setup: '通知チャンネルを <#{channel}> に設定しました',
       howItWorks: '仕組み',
-      howItWorksDesc: '登録ユーザーがゲームを開始すると通知されます\n5分ごとにチェックします\nユーザーは `/notify me off` でオプトアウトできます',
+      howItWorksDesc:
+        '登録ユーザーがゲームを開始すると通知されます\n5分ごとにチェックします\nユーザーは `/notify me off` でオプトアウトできます',
       statusOn: 'オン',
       statusOff: 'オフ',
       yourStatus: 'あなたの通知状態: {status}',
       serverStatus: 'サーバー通知: {status}',
       channel: 'チャンネル',
       configured: '設定済み',
-      notSetup: 'このサーバーでは通知が設定されていません。\n\n`/notify setup` で設定してください。',
+      notSetup:
+        'このサーバーでは通知が設定されていません。\n\n`/notify setup` で設定してください。',
       setupFirst: '先に `/notify setup` を実行してください。',
       noSettings: '削除する通知設定がありません。',
       nowEnabled: 'このサーバーのゲーム通知を**有効**にしました。',
@@ -237,11 +247,14 @@ export const ja: TranslationKeys = {
       title: 'Steamコマンド一覧',
       description: 'DiscordアカウントをSteamに連携して、統計に簡単アクセス！',
       accountSection: 'アカウント',
-      accountCommands: '`/steam register <steamid>` - アカウント連携\n`/steam unregister` - 連携解除\n`/steam whoami` - 連携アカウントを表示',
+      accountCommands:
+        '`/steam register <steamid>` - アカウント連携\n`/steam unregister` - 連携解除\n`/steam whoami` - 連携アカウントを表示',
       statsSection: '統計',
-      statsCommands: '`/steam profile` - プロフィールを表示\n`/steam playtime [game]` - プレイ時間を表示\n`/steam games` - ライブラリを閲覧\n`/steam recent` - 最近のアクティビティ\n`/steam ranking` - サーバーランキング\n`/steam history` - プレイ時間の推移',
+      statsCommands:
+        '`/steam profile` - プロフィールを表示\n`/steam playtime [game]` - プレイ時間を表示\n`/steam games` - ライブラリを閲覧\n`/steam recent` - 最近のアクティビティ\n`/steam ranking` - サーバーランキング\n`/steam history` - プレイ時間の推移',
       optionsSection: 'オプション',
-      optionsDesc: '• `steamid` - 任意のSteamユーザーを検索\n• `user` - Discordユーザーを検索\n• `game` - 特定のゲームを検索',
+      optionsDesc:
+        '• `steamid` - 任意のSteamユーザーを検索\n• `user` - Discordユーザーを検索\n• `game` - 特定のゲームを検索',
       autocompleteHint: 'Tabキーでゲーム名を自動補完！',
     },
     chart: {
@@ -263,11 +276,14 @@ export const ja: TranslationKeys = {
       invalidSteamId: '無効なSteam ID形式です。',
       couldNotResolve: 'Steam IDを解決できませんでした。',
       userNotLinked: '**{name}**はSteamアカウントを連携していません。',
-      notLinked: 'Steamアカウントが連携されていません。\n`/steam register` で連携してください。',
+      notLinked:
+        'Steamアカウントが連携されていません。\n`/steam register` で連携してください。',
       couldNotRetrieve: 'Steamプロフィール情報を取得できませんでした。',
       privateProfile: '**{name}**のプロフィールは非公開です。',
-      apiError: 'Steamデータの取得に失敗しました。しばらくしてからお試しください。',
-      notRegistered: 'Steamアカウントの登録が必要です。\n`/steam register` で連携してください。',
+      apiError:
+        'Steamデータの取得に失敗しました。しばらくしてからお試しください。',
+      notRegistered:
+        'Steamアカウントの登録が必要です。\n`/steam register` で連携してください。',
       gameNotFound: '**「{game}」**に一致するゲームが見つかりませんでした。',
       onlyCommandUser: 'コマンドを実行したユーザーのみ操作できます。',
       cancelled: 'キャンセルしました。',
@@ -299,4 +315,3 @@ export const ja: TranslationKeys = {
     },
   },
 };
-

@@ -379,4 +379,3 @@ type FlattenKeys<T, Prefix extends string = ''> = T extends object
  * All available translation keys as string literals
  */
 export type TranslationKey = FlattenKeys<TranslationKeys>;
-

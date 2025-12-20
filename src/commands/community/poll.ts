@@ -408,7 +408,12 @@ async function handleCreatePoll(
 
   if (options.length < 2) {
     await interaction.reply({
-      embeds: [createErrorEmbed(t('common.error', locale), t('poll.errors.notEnoughOptions', locale))],
+      embeds: [
+        createErrorEmbed(
+          t('common.error', locale),
+          t('poll.errors.notEnoughOptions', locale)
+        ),
+      ],
       flags: MessageFlags.Ephemeral,
     });
     return;

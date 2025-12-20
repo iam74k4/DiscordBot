@@ -179,7 +179,9 @@ async function handleMemberRoulette(
       embeds: [
         createEmbed({
           title: t('roulette.member.result', locale),
-          description: t('roulette.member.onlyOne', locale, { member: mentionMember(members[0]) }),
+          description: t('roulette.member.onlyOne', locale, {
+            member: mentionMember(members[0]),
+          }),
           color: COLORS.SUCCESS,
         }),
       ],
@@ -210,7 +212,9 @@ async function handleMemberRoulette(
     embeds: [
       createEmbed({
         title: t('roulette.member.title', locale),
-        description: t('roulette.member.selecting', locale, { candidates: candidateList }),
+        description: t('roulette.member.selecting', locale, {
+          candidates: candidateList,
+        }),
         color: COLORS.WARNING,
       }),
     ],
@@ -225,7 +229,10 @@ async function handleMemberRoulette(
         title: t('roulette.member.result', locale),
         description: `${mentionMember(winner)}`,
         color: COLORS.SUCCESS,
-        footer: t('roulette.member.footer', locale, { count: members.length, channel: voiceChannel.name }),
+        footer: t('roulette.member.footer', locale, {
+          count: members.length,
+          channel: voiceChannel.name,
+        }),
         timestamp: true,
       }),
     ],
@@ -346,8 +353,13 @@ async function handleTeamRoulette(
 
   // Build team fields
   const fields = teams.map((team, index) => ({
-    name: t('roulette.team.teamName', locale, { number: index + 1, count: team.length }),
-    value: team.map((m) => mentionMember(m)).join('\n') || t('roulette.team.noMembers', locale),
+    name: t('roulette.team.teamName', locale, {
+      number: index + 1,
+      count: team.length,
+    }),
+    value:
+      team.map((m) => mentionMember(m)).join('\n') ||
+      t('roulette.team.noMembers', locale),
     inline: true,
   }));
 
@@ -362,7 +374,9 @@ async function handleTeamRoulette(
         }),
         color: COLORS.SUCCESS,
         fields,
-        footer: t('roulette.team.footer', locale, { channel: voiceChannel.name }),
+        footer: t('roulette.team.footer', locale, {
+          channel: voiceChannel.name,
+        }),
         timestamp: true,
       }),
     ],

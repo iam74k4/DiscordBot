@@ -3,6 +3,7 @@ import {
   ChatInputCommandInteraction,
   ChannelType,
   MessageFlags,
+  PermissionFlagsBits,
 } from 'discord.js';
 import { Command } from '../../types/index.js';
 import {
@@ -51,7 +52,11 @@ async function handleView(
     title: t('settings.title', locale),
     color: COLORS.INFO,
     fields: [
-      { name: t('settings.audit.name', locale), value: auditChannel, inline: true },
+      {
+        name: t('settings.audit.name', locale),
+        value: auditChannel,
+        inline: true,
+      },
     ],
     footer: t('settings.view.footer', locale),
     timestamp: true,
@@ -96,7 +101,9 @@ async function handleAudit(
 
     const embed = createEmbed({
       title: t('settings.audit.name', locale),
-      description: t('settings.audit.configured', locale, { channel: channel.id }),
+      description: t('settings.audit.configured', locale, {
+        channel: channel.id,
+      }),
       color: COLORS.SUCCESS,
       timestamp: true,
     });
@@ -162,7 +169,10 @@ async function handleLogs(
     title: t('settings.logs.title', locale),
     description: logList,
     color: COLORS.INFO,
-    footer: t('settings.logs.showing', locale, { count: logs.length, total: totalCount }),
+    footer: t('settings.logs.showing', locale, {
+      count: logs.length,
+      total: totalCount,
+    }),
     timestamp: true,
   });
 
@@ -178,6 +188,7 @@ export const command: Command = {
     .setDescriptionLocalizations({
       ja: 'サーバー設定の管理',
     })
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addSubcommand((sub) =>
       sub
         .setName('view')
