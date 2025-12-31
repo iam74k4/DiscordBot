@@ -1,6 +1,27 @@
 # Discord Bot
 
+![Build Status](https://img.shields.io/github/actions/workflow/status/iam74k4/DiscordBot/.github/workflows/ci.yml?style=flat-square)
+![Version](https://img.shields.io/github/v/release/iam74k4/DiscordBot?style=flat-square)
+![License](https://img.shields.io/github/license/iam74k4/DiscordBot?style=flat-square)
+![Node.js Version](https://img.shields.io/node/v/discord.js?style=flat-square)
+
 A modular Discord bot built with TypeScript and discord.js v14.
+
+## Table of Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Setup](#setup)
+- [Usage](#usage)
+- [Commands](#commands)
+- [Available Scripts](#available-scripts)
+- [Project Structure](#project-structure)
+- [Database](#database)
+- [Adding New Commands](#adding-new-commands)
+- [Adding New Middleware](#adding-new-middleware)
+- [Deployment](#deployment)
+- [CI/CD](#cicd)
+- [License](#license)
 
 ## Features
 
@@ -359,8 +380,15 @@ This project uses GitHub Actions for CI and Railway for deployment.
 
 | Trigger | Actions |
 | ------- | ------- |
-| PR to main/develop | Lint, Type check, Build (GitHub Actions) |
-| Push to main | Auto deploy to Railway |
+| PR to main/develop | Lint, Type check, Test, Build (GitHub Actions) |
+| Push to main/develop | Lint, Type check, Test, Build (GitHub Actions) |
+| Push tag (v*) | Build, Create GitHub Release |
+
+### Deployment
+
+Railway automatically deploys from the `main` branch when changes are pushed. Railway is configured to watch the GitHub repository and deploy automatically.
+
+For manual releases, create a tag (e.g., `v1.0.0`) to trigger the release workflow which creates a GitHub Release with build artifacts.
 
 ### Branch Strategy
 
@@ -370,7 +398,7 @@ fix/*     ──→ develop ──→ main
 chore/*   ──→ develop ──→ main
 ```
 
-- `main`: Production branch (auto-deploys to Railway)
+- `main`: Production branch (auto-deploys to Railway via Railway's GitHub integration)
 - `develop`: Development integration branch
 
 ## License
