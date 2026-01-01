@@ -88,13 +88,18 @@ export const command: Command = {
         .addIntegerOption((option) =>
           option
             .setName('count')
-            .setDescription('Number of teams to create')
+            .setDescription('Number of teams')
             .setDescriptionLocalizations({
               ja: '作成するチーム数',
             })
             .setRequired(true)
-            .setMinValue(2)
-            .setMaxValue(10)
+            .addChoices(
+              { name: '2 teams', value: 2 },
+              { name: '3 teams', value: 3 },
+              { name: '4 teams', value: 4 },
+              { name: '5 teams', value: 5 },
+              { name: '6 teams', value: 6 }
+            )
         )
     ),
 
