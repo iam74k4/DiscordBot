@@ -10,6 +10,7 @@ A modular Discord bot built with TypeScript and discord.js v14.
 ## Table of Contents
 
 - [Features](#features)
+- [Tech Stack](#tech-stack)
 - [Requirements](#requirements)
 - [Setup](#setup)
 - [Usage](#usage)
@@ -29,6 +30,7 @@ A modular Discord bot built with TypeScript and discord.js v14.
 - Steam integration (profile, playtime, game library, ranking)
 - Game start notifications
 - Playtime history tracking
+- **Voice channel recording** (record past audio with `/record` command)
 - Community features (polls, roulette)
 - Admin system (bot owner commands, server settings)
 - Audit logging for admin actions
@@ -37,6 +39,24 @@ A modular Discord bot built with TypeScript and discord.js v14.
 - Modular architecture for easy extension
 - TypeScript with strict type checking
 - ESLint + Prettier for code quality
+
+## Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| Language | TypeScript |
+| Runtime | Node.js 18+ |
+| Framework | discord.js v14 |
+| Voice | @discordjs/voice, prism-media |
+| Database | SQLite (better-sqlite3) |
+| Testing | Vitest |
+| Code Quality | ESLint, Prettier |
+| Build Tool | TypeScript Compiler |
+| Development | tsx (hot-reload) |
+| Charting | Chart.js, chartjs-node-canvas |
+| Scheduling | node-cron |
+| Deployment | Railway |
+| CI/CD | GitHub Actions |
 
 ## Requirements
 
@@ -55,16 +75,21 @@ npm install
 
 ### 2. Configure Environment Variables
 
-Create a `.env` file in the project root:
+Copy `.env.example` to `.env` and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
 
 ```env
 DISCORD_TOKEN=your_discord_bot_token
 DISCORD_CLIENT_ID=your_discord_client_id
-DISCORD_GUILD_ID=your_guild_id  # Optional, for development
-BOT_OWNER_IDS=your_discord_user_id  # Comma-separated for multiple owners
 STEAM_API_KEY=your_steam_api_key
-NODE_ENV=development
 ```
+
+See `.env.example` for all available configuration options including voice recording settings.
 
 ### 3. Get Discord Credentials
 
@@ -107,9 +132,10 @@ npm start
 
 ### General
 
-| Command | Description       |
-| ------- | ----------------- |
-| `/ping` | Check bot latency |
+| Command | Description                |
+| ------- | -------------------------- |
+| `/ping` | Check bot latency          |
+| `/help` | Show command list and help |
 
 ### Server (`/server`)
 
@@ -187,6 +213,26 @@ npm start
 - User must be in a voice channel to use these commands
 - Bots are automatically excluded from selection
 
+### Voice Recording (`/record`)
+
+| Command             | Description                          |
+| ------------------- | ------------------------------------ |
+| `/record <duration>` | Record past audio from voice channel |
+
+**Options:**
+- `duration`: Recording duration (e.g., `30s`, `1m`, `5m`, max 5 minutes)
+
+**Features:**
+- Auto-join: Bot automatically joins voice channels when users enter
+- Hybrid buffering: Stores 10 minutes of audio (2 min in memory, 8 min on disk)
+- WAV format output at 32kHz/16bit/mono (~18.3MB for 5 minutes)
+- Automatic file cleanup after 24 hours
+- Memory monitoring with automatic disconnection when threshold exceeded
+
+**Notes:**
+- Bot must be in the same voice channel
+- Maximum concurrent VC connections: 5 (configurable)
+
 ## Available Scripts
 
 | Script                 | Description                          |
@@ -211,7 +257,8 @@ src/
 │   └── env.ts
 ├── commands/             # Slash commands (by category)
 │   ├── general/
-│   │   └── ping.ts
+│   │   ├── ping.ts
+│   │   └── help.ts
 │   ├── steam/
 │   │   ├── steam.ts          # /steam command with subcommands
 │   │   └── notify-unified.ts # /notify command with subcommands
@@ -221,10 +268,14 @@ src/
 │   ├── community/
 │   │   ├── poll.ts           # /poll command (voting)
 │   │   └── roulette.ts       # /roulette command (random selection)
+│   ├── voice/
+│   │   └── record.ts         # /record command (VC recording)
 │   └── index.ts
 ├── events/               # Event handlers
 │   ├── client/
 │   │   └── ready.ts
+│   ├── guild/
+│   │   └── voiceStateUpdate.ts  # VC auto-join event
 │   ├── interaction/
 │   │   └── interactionCreate.ts
 │   └── index.ts
@@ -245,6 +296,13 @@ src/
 │   │   ├── types.ts
 │   │   ├── utils.ts
 │   │   └── index.ts
+│   ├── voice/            # Voice recording service
+│   │   ├── connectionManager.ts  # VC connection management
+│   │   ├── audioBuffer.ts        # Hybrid audio buffering
+│   │   ├── recordingService.ts   # Recording & WAV conversion
+│   │   ├── memoryMonitor.ts      # Memory usage monitoring
+│   │   ├── fileCleanup.ts        # Auto file cleanup
+│   │   └── index.ts
 │   ├── notifications/    # Game start notification system
 │   │   └── index.ts
 │   ├── audit/            # Audit log service
@@ -259,7 +317,8 @@ src/
     ├── index.ts
     ├── command.ts
     ├── event.ts
-    └── middleware.ts
+    ├── middleware.ts
+    └── voice.ts          # Voice recording types
 ```
 
 ## Database
@@ -359,6 +418,9 @@ In Railway dashboard, add the following variables:
 | `STEAM_API_KEY`     | Steam Web API key               | Yes      |
 | `BOT_OWNER_IDS`     | Bot owner Discord IDs (comma-separated) | No |
 | `NODE_ENV`          | Set to `production`             | No       |
+| `MAX_RECORDING_DURATION` | Max recording time in seconds (default: 300) | No |
+| `AUDIO_BUFFER_DURATION` | Audio buffer time in seconds (default: 600) | No |
+| `MAX_CONCURRENT_VC_CONNECTIONS` | Max concurrent VC connections (default: 5) | No |
 
 #### 4. Deploy
 
