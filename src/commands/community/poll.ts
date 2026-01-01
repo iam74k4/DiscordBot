@@ -342,14 +342,18 @@ export const command: Command = {
         .addIntegerOption((option) =>
           option
             .setName('duration')
-            .setDescription(
-              'Poll duration in minutes (leave empty for unlimited)'
-            )
+            .setDescription('Poll duration in minutes')
             .setDescriptionLocalizations({
-              ja: '投票の期間（分）（空で無制限）',
+              ja: '投票の期間（分）',
             })
-            .setMinValue(1)
-            .setMaxValue(1440)
+            .addChoices(
+              { name: '5 minutes', value: 5 },
+              { name: '10 minutes', value: 10 },
+              { name: '30 minutes', value: 30 },
+              { name: '1 hour', value: 60 },
+              { name: '3 hours', value: 180 },
+              { name: '24 hours', value: 1440 }
+            )
         )
         .addBooleanOption((option) =>
           option
