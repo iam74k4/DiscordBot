@@ -134,6 +134,14 @@ src/
 ├── services/                   # ビジネスロジック
 │   ├── audit/
 │   ├── database/
+│   ├── maintenance/           # ⚠️ メンテナンス機能（新規推奨）
+│   │   ├── index.ts
+│   │   ├── fileCleanup.ts    # 汎用的なファイルクリーンアップ
+│   │   └── diskCleanup.ts    # ディスク使用量監視とクリーンアップ
+│   ├── monitoring/            # ⚠️ 監視機能（新規推奨）
+│   │   ├── index.ts
+│   │   ├── memoryMonitor.ts  # アプリケーション全体のメモリ監視
+│   │   └── resourceMonitor.ts # リソース監視（メモリ、ディスク、CPU等）
 │   ├── notifications/
 │   ├── scheduler/
 │   ├── steam/
@@ -225,13 +233,16 @@ logs/                           # ログディレクトリ（.gitignore対象）
 ## 🎯 優先度別の改善タスク
 
 ### 高優先度
-1. ✅ **ログ機能の強化**（ファイル出力、ログローテーション）
+1. ⚠️ **ファイルクリーンアップとメモリ監視の汎用化**（アプリケーション全体で利用可能に）
+2. ✅ **ログ機能の強化**（ファイル出力、ログローテーション）
 
 ### 中優先度
-2. ⚠️ **データディレクトリの明確化**（ドキュメント化）
+3. ⚠️ **データディレクトリの明確化**（ドキュメント化）
+4. ⚠️ **Voice機能のテスト追加**（接続管理、バッファ管理、録音機能）
 
 ### 低優先度
-3. 📝 **scripts/ディレクトリの整理**（必要に応じて）
+5. 📝 **scripts/ディレクトリの整理**（必要に応じて）
+6. 📁 **Voice機能のディレクトリ構造改善**（サブディレクトリ化を検討）
 
 ---
 
@@ -283,7 +294,88 @@ src/
 
 ### ⚠️ 改善が必要な点
 
-#### 1. ディレクトリ構造の改善（重要度: 中）
+#### 1. ファイルクリーンアップとメモリ監視の汎用化（重要度: 高）⚠️
+
+**現状の問題点:**
+- `services/voice/fileCleanup.ts`: 録音ファイルのクリーンアップ（voice専用）
+- `services/voice/memoryMonitor.ts`: voice機能専用のメモリ監視
+- `services/database/index.ts`: `cleanupOldPlaytimeRecords`関数（データベースのクリーンアップ）
+- `services/voice/audioBuffer.ts`: バッファファイルのクリーンアップ（voice専用）
+
+**問題:**
+- ファイルクリーンアップやメモリ監視は**アプリケーション全体で必要な機能**
+- 現在はvoice機能配下に配置されているため、他の機能（Steamキャッシュ、ログファイル、一時ファイル等）でも同様の機能が必要になった場合、重複実装になる可能性がある
+- 汎用的な機能が特定の機能配下に配置されているため、再利用性が低い
+
+**推奨改善:**
+```
+src/
+├── services/
+│   ├── maintenance/              # メンテナンス機能（新規）
+│   │   ├── index.ts
+│   │   ├── fileCleanup.ts       # 汎用的なファイルクリーンアップ
+│   │   └── diskCleanup.ts       # ディスク使用量監視とクリーンアップ
+│   ├── monitoring/               # 監視機能（新規）
+│   │   ├── index.ts
+│   │   ├── memoryMonitor.ts     # アプリケーション全体のメモリ監視
+│   │   └── resourceMonitor.ts   # リソース監視（メモリ、ディスク、CPU等）
+│   └── voice/
+│       ├── connectionManager.ts
+│       ├── audioBuffer.ts
+│       ├── recordingService.ts
+│       └── voiceMemoryMonitor.ts # voice専用の監視（汎用監視を利用）
+```
+
+**実装方針:**
+1. **汎用的なファイルクリーンアップサービス**を作成
+   - ディレクトリパス、保持期間、ファイルパターンを設定可能に
+   - 複数のクリーンアップタスクを登録可能に
+
+2. **汎用的なメモリ監視サービス**を作成
+   - アプリケーション全体のメモリ使用量を監視
+   - 閾値超過時のコールバック機能
+   - voice機能は汎用監視を利用し、voice専用の処理を追加
+
+3. **既存のvoice機能のリファクタリング**
+   - `fileCleanup.ts` → 汎用サービスを利用するように変更
+   - `memoryMonitor.ts` → 汎用監視を利用し、voice専用処理を追加
+
+**例: 汎用ファイルクリーンアップサービス**
+```typescript
+// services/maintenance/fileCleanup.ts
+export interface CleanupTask {
+  name: string;
+  directory: string;
+  pattern: RegExp | string;
+  retentionHours: number;
+  onCleanup?: (deletedCount: number, totalSizeMB: number) => void;
+}
+
+export class FileCleanupService {
+  private tasks: CleanupTask[] = [];
+  
+  registerTask(task: CleanupTask): void { ... }
+  async cleanup(taskName?: string): Promise<void> { ... }
+}
+```
+
+**例: 汎用メモリ監視サービス**
+```typescript
+// services/monitoring/memoryMonitor.ts
+export interface MemoryThreshold {
+  warning: number;  // MB
+  critical: number; // MB
+  onWarning?: (usageMB: number) => void;
+  onCritical?: (usageMB: number) => void;
+}
+
+export class MemoryMonitor {
+  start(threshold: MemoryThreshold): void { ... }
+  getStats(): MemoryStats { ... }
+}
+```
+
+#### 2. ディレクトリ構造の改善（重要度: 中）
 
 **現状の問題点:**
 - `services/voice/`配下に全ての機能が混在
@@ -382,15 +474,16 @@ src/__tests__/
 ### 🎯 Voice機能の優先度別改善タスク
 
 #### 高優先度
-1. ⚠️ **テストの追加**（接続管理、バッファ管理、録音機能）
+1. ⚠️ **ファイルクリーンアップとメモリ監視の汎用化**（アプリケーション全体で利用可能に）
+2. ⚠️ **テストの追加**（接続管理、バッファ管理、録音機能）
 
 #### 中優先度
-2. ⚠️ **エラーハンドリングの強化**（リトライ処理、ロールバック）
-3. 📁 **ディレクトリ構造の改善**（サブディレクトリ化を検討）
+3. ⚠️ **エラーハンドリングの強化**（リトライ処理、ロールバック）
+4. 📁 **ディレクトリ構造の改善**（サブディレクトリ化を検討）
 
 #### 低優先度
-4. 📝 **設定の外部化**（リサンプリング方式等）
-5. 📊 **ログ出力の改善**（統計情報の追加）
+5. 📝 **設定の外部化**（リサンプリング方式等）
+6. 📊 **ログ出力の改善**（統計情報の追加）
 
 ---
 
@@ -400,19 +493,24 @@ src/__tests__/
 
 ### 主な改善点
 
-1. **ログ機能の強化**（重要度: 高）
+1. **ファイルクリーンアップとメモリ監視の汎用化**（重要度: 高）⚠️
+   - 現在voice機能配下にあるが、アプリケーション全体で必要な機能
+   - `services/maintenance/`と`services/monitoring/`を作成し、汎用化
+   - voice機能は汎用サービスを利用するようにリファクタリング
+
+2. **ログ機能の強化**（重要度: 高）
    - ファイル出力とログローテーション機能の追加
 
-2. **Voice機能のテスト追加**（重要度: 高）
+3. **Voice機能のテスト追加**（重要度: 高）
    - 接続管理、バッファ管理、録音機能のテスト
 
-3. **Voice機能のエラーハンドリング強化**（重要度: 中）
+4. **Voice機能のエラーハンドリング強化**（重要度: 中）
    - リトライ処理とロールバック処理の改善
 
-4. **データディレクトリの明確化**（重要度: 中）
+5. **データディレクトリの明確化**（重要度: 中）
    - ドキュメント化と構造の明確化
 
-5. **Voice機能のディレクトリ構造改善**（重要度: 中）
+6. **Voice機能のディレクトリ構造改善**（重要度: 中）
    - サブディレクトリ化の検討
 
 その他の点については、現状の構造で十分に機能していますが、上記の改善を実施することで、より堅牢なシステムになります。
