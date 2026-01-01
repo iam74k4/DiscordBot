@@ -14,6 +14,7 @@ import {
 import { COLORS } from '../../utils/constants.js';
 import {
   getGuildSettings,
+  setGuildSettings,
   setAuditChannel,
   getAuditLogs,
   getAuditLogsCount,
@@ -44,6 +45,9 @@ async function handleView(
 
   const guildSettings = getGuildSettings(interaction.guild.id);
 
+  const language = guildSettings?.language ?? 'ja';
+  const languageDisplay = language === 'ja' ? '日本語' : 'English';
+
   const auditChannel = guildSettings?.audit_channel_id
     ? `<#${guildSettings.audit_channel_id}>`
     : t('settings.audit.notSet', locale);
@@ -52,6 +56,11 @@ async function handleView(
     title: t('settings.title', locale),
     color: COLORS.INFO,
     fields: [
+      {
+        name: t('settings.language.name', locale),
+        value: languageDisplay,
+        inline: true,
+      },
       {
         name: t('settings.audit.name', locale),
         value: auditChannel,
@@ -179,6 +188,53 @@ async function handleLogs(
   await interaction.reply({ embeds: [embed] });
 }
 
+/**
+ * Handle language subcommand
+ */
+async function handleLanguage(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+
+  if (!interaction.guild) {
+    const errorEmbed = createErrorEmbed(
+      t('common.error', locale),
+      t('common.guildOnly', locale)
+    );
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const lang = interaction.options.getString('lang', true);
+
+  setGuildSettings(interaction.guild.id, { language: lang });
+
+  await logAuditAction(
+    interaction.client,
+    interaction.guild.id,
+    interaction.user.id,
+    'SETTINGS_CHANGE',
+    undefined,
+    `Language changed to: ${lang}`
+  );
+
+  const languageDisplay = lang === 'ja' ? '日本語' : 'English';
+
+  const embed = createEmbed({
+    title: t('settings.language.name', locale),
+    description: t('settings.language.changed', locale, {
+      language: languageDisplay,
+    }),
+    color: COLORS.SUCCESS,
+    timestamp: true,
+  });
+
+  await interaction.reply({ embeds: [embed] });
+}
+
 // ============ Command Definition ============
 
 export const command: Command = {
@@ -221,6 +277,27 @@ export const command: Command = {
         .setDescriptionLocalizations({
           ja: '最近の監査ログを表示',
         })
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('language')
+        .setDescription('Set server default language')
+        .setDescriptionLocalizations({
+          ja: 'サーバーのデフォルト言語を設定',
+        })
+        .addStringOption((opt) =>
+          opt
+            .setName('lang')
+            .setDescription('Language')
+            .setDescriptionLocalizations({
+              ja: '言語',
+            })
+            .setRequired(true)
+            .addChoices(
+              { name: 'English', value: 'en' },
+              { name: '日本語', value: 'ja' }
+            )
+        )
     ),
 
   async execute(interaction) {
@@ -235,6 +312,9 @@ export const command: Command = {
         break;
       case 'logs':
         await handleLogs(interaction);
+        break;
+      case 'language':
+        await handleLanguage(interaction);
         break;
     }
   },
