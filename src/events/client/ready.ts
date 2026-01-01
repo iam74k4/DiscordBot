@@ -1,4 +1,4 @@
-import { ActivityType, Events } from 'discord.js';
+import { Events } from 'discord.js';
 import { Event } from '../../types/index.js';
 import { logger } from '../../utils/logger.js';
 import { registerCommands } from '../../handlers/commandHandler.js';
@@ -15,14 +15,9 @@ export const event: Event<typeof Events.ClientReady> = {
     logger.info(`Logged in as ${client.user.tag}`);
     logger.info(`Serving ${client.guilds.cache.size} guilds`);
 
-    // Set bot presence
+    // Set bot presence (no activity status)
     client.user.setPresence({
-      activities: [
-        {
-          name: '/ping',
-          type: ActivityType.Listening,
-        },
-      ],
+      activities: [],
       status: 'online',
     });
 
