@@ -25,6 +25,11 @@ export const en: TranslationKeys = {
   settings: {
     title: 'Server Settings',
     updated: 'Settings Updated',
+    language: {
+      name: 'Language',
+      changed: 'Language changed to {language}',
+      current: 'Current Language',
+    },
     audit: {
       name: 'Audit Channel',
       notSet: 'Not set',
@@ -310,6 +315,44 @@ export const en: TranslationKeys = {
     deploy: {
       title: 'Commands Deployed',
       success: 'All commands have been deployed to Discord.',
+    },
+  },
+
+  help: {
+    title: 'Command List',
+    description: 'List of available commands. Use `/help <command>` for details.',
+    usage: 'Usage',
+    footer: 'Use /help <command> for details',
+    commandNotFound: 'Command Not Found',
+    commandNotFoundDesc: 'Command `{command}` does not exist.',
+  },
+
+  record: {
+    title: 'Recording',
+    recording: 'Recording...',
+    recordingDesc: 'Recording {duration} of past audio.',
+    success: 'Recording Complete',
+    successDesc: 'Recorded {duration} of past audio.',
+    processing: 'Processing recording file...',
+    errors: {
+      notInVoice: 'Not in Voice Channel',
+      notInVoiceDesc: 'You must be in a voice channel to use this command.',
+      botNotInVoice: 'Bot Not in Voice Channel',
+      botNotInVoiceDesc: 'Bot is not connected to this voice channel.',
+      invalidDuration: 'Invalid Duration',
+      invalidDurationDesc: 'Invalid duration format. Examples: 30s, 1m, 5m',
+      durationTooLong: 'Duration Too Long',
+      durationTooLongDesc: 'Maximum recording duration is {max} seconds.',
+      durationExceedsBuffer: 'Duration Exceeds Buffer',
+      durationExceedsBufferDesc: 'Specified duration exceeds buffer range ({buffer} seconds).',
+      noPermission: 'No Permission',
+      noPermissionDesc: 'Bot does not have permission to send files.',
+      connectionLimit: 'Connection Limit',
+      connectionLimitDesc: 'Maximum concurrent connections reached.',
+      recordingInProgress: 'Recording In Progress',
+      recordingInProgressDesc: 'Recording is already in progress for this channel.',
+      failed: 'Recording Failed',
+      failedDesc: 'An error occurred while processing the recording: {error}',
     },
   },
 };

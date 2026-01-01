@@ -25,6 +25,11 @@ export const ja: TranslationKeys = {
   settings: {
     title: 'サーバー設定',
     updated: '設定を更新しました',
+    language: {
+      name: '言語',
+      changed: '言語を {language} に変更しました',
+      current: '現在の言語',
+    },
     audit: {
       name: '監査ログチャンネル',
       notSet: '未設定',
@@ -312,6 +317,44 @@ export const ja: TranslationKeys = {
     deploy: {
       title: 'コマンドデプロイ',
       success: 'すべてのコマンドをDiscordにデプロイしました。',
+    },
+  },
+
+  help: {
+    title: 'コマンド一覧',
+    description: '利用可能なコマンドの一覧です。詳細は `/help <コマンド名>` で確認できます。',
+    usage: '使い方',
+    footer: '/help <コマンド名> で詳細を表示',
+    commandNotFound: 'コマンドが見つかりません',
+    commandNotFoundDesc: '`{command}` というコマンドは存在しません。',
+  },
+
+  record: {
+    title: '録音',
+    recording: '録音中...',
+    recordingDesc: '過去{duration}の音声を録音しています。',
+    success: '録音完了',
+    successDesc: '過去{duration}の音声を録音しました。',
+    processing: '録音ファイルを処理中...',
+    errors: {
+      notInVoice: 'ボイスチャンネル未参加',
+      notInVoiceDesc: 'このコマンドを使用するにはボイスチャンネルに参加してください。',
+      botNotInVoice: 'BotがVCに参加していません',
+      botNotInVoiceDesc: 'Botがこのボイスチャンネルに参加していません。',
+      invalidDuration: '無効な期間',
+      invalidDurationDesc: '期間の形式が正しくありません。例: 30s, 1m, 5m',
+      durationTooLong: '期間が長すぎます',
+      durationTooLongDesc: '最大録音時間は{max}秒です。',
+      durationExceedsBuffer: 'バッファ範囲外',
+      durationExceedsBufferDesc: '指定された期間がバッファ範囲（{buffer}秒）を超えています。',
+      noPermission: '権限不足',
+      noPermissionDesc: 'Botがファイルを送信する権限がありません。',
+      connectionLimit: '接続数上限',
+      connectionLimitDesc: '同時接続数の上限に達しています。',
+      recordingInProgress: '録音中',
+      recordingInProgressDesc: 'このチャンネルで既に録音が進行中です。',
+      failed: '録音失敗',
+      failedDesc: '録音の処理中にエラーが発生しました: {error}',
     },
   },
 };

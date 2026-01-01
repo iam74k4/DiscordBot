@@ -80,6 +80,11 @@ export interface TranslationKeys {
   settings: {
     title: string;
     updated: string;
+    language: {
+      name: string;
+      changed: string;
+      current: string;
+    };
     audit: {
       name: string;
       notSet: string;
@@ -357,6 +362,46 @@ export interface TranslationKeys {
     deploy: {
       title: string;
       success: string;
+    };
+  };
+
+  // Help command
+  help: {
+    title: string;
+    description: string;
+    usage: string;
+    footer: string;
+    commandNotFound: string;
+    commandNotFoundDesc: string;
+  };
+
+  // Record command
+  record: {
+    title: string;
+    recording: string;
+    recordingDesc: string;
+    success: string;
+    successDesc: string;
+    processing: string;
+    errors: {
+      notInVoice: string;
+      notInVoiceDesc: string;
+      botNotInVoice: string;
+      botNotInVoiceDesc: string;
+      invalidDuration: string;
+      invalidDurationDesc: string;
+      durationTooLong: string;
+      durationTooLongDesc: string;
+      durationExceedsBuffer: string;
+      durationExceedsBufferDesc: string;
+      noPermission: string;
+      noPermissionDesc: string;
+      connectionLimit: string;
+      connectionLimitDesc: string;
+      recordingInProgress: string;
+      recordingInProgressDesc: string;
+      failed: string;
+      failedDesc: string;
     };
   };
 }
