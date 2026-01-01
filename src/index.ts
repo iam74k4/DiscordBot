@@ -5,6 +5,8 @@ import { loadEvents } from './handlers/eventHandler.js';
 import { logger } from './utils/logger.js';
 import { startScheduler } from './services/scheduler/index.js';
 import { startNotificationSystem } from './services/notifications/index.js';
+import { memoryMonitor } from './services/voice/memoryMonitor.js';
+import { fileCleanupService } from './services/voice/fileCleanup.js';
 
 /**
  * Main entry point
@@ -27,6 +29,12 @@ async function main(): Promise<void> {
 
   // Start notification system after login
   startNotificationSystem(client);
+
+  // Start memory monitor
+  memoryMonitor.start();
+
+  // Start file cleanup service
+  fileCleanupService.start();
 }
 
 // Run the bot

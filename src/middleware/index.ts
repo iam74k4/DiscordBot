@@ -8,6 +8,7 @@ import {
 import { permissionsMiddleware } from './permissions.js';
 import { cooldownMiddleware } from './cooldown.js';
 import { createErrorEmbed } from '../utils/embed.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Middleware registry
@@ -31,7 +32,7 @@ export async function runMiddleware(
     const middleware = middlewareRegistry[name];
 
     if (!middleware) {
-      console.warn(`Unknown middleware: ${name}`);
+      logger.warn(`Unknown middleware: ${name}`);
       continue;
     }
 
