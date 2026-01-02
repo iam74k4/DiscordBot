@@ -25,68 +25,6 @@ export const COLORS = {
 } as const;
 
 /**
- * Default cooldown in milliseconds
- */
-export const DEFAULT_COOLDOWN = 3000;
-
-/**
- * Bot metadata
- */
-export const BOT_INFO = {
-  NAME: 'Discord Bot',
-  VERSION: '1.0.0',
-} as const;
-
-/**
- * Steam status indicators (text-based, minimal)
- */
-export const STEAM_STATUS = {
-  ONLINE: 'Online',
-  OFFLINE: 'Offline',
-  AWAY: 'Away',
-  BUSY: 'Busy',
-  INGAME: 'In-Game',
-  PRIVATE: 'Private',
-  PUBLIC: 'Public',
-} as const;
-
-/**
- * Section titles (no icons, text only)
- */
-export const TITLES = {
-  PROFILE: 'Steam Profile',
-  PLAYTIME: 'Playtime Stats',
-  GAMES: 'Game Library',
-  RECENT: 'Recent Activity',
-  RANKING: 'Server Ranking',
-  HISTORY: 'Playtime History',
-  CHART: 'Playtime Chart',
-  HISTORY_GRAPH: 'Playtime Graph',
-  SERVER_STATS: 'Server Statistics',
-  REGISTER: 'Account Linked',
-  UNREGISTER: 'Account Unlinked',
-  WHOAMI: 'Linked Account',
-  HELP: 'Steam Commands',
-  NOTIFY: 'Notifications',
-  NOTIFY_ME: 'Your Notifications',
-  NOW_PLAYING: 'Now Playing',
-  ERROR: 'Error',
-  WARNING: 'Warning',
-  NOT_FOUND: 'Not Found',
-  PRIVATE_PROFILE: 'Private Profile',
-  LOADING: 'Loading...',
-} as const;
-
-/**
- * Progress bar characters
- */
-export const PROGRESS_BAR = {
-  FILLED: '█',
-  EMPTY: '░',
-  LENGTH: 10,
-} as const;
-
-/**
  * Chart colors (dark theme for Discord)
  */
 export const CHART_COLORS = {
@@ -108,3 +46,4 @@ export const CHART_COLORS = {
     '#1abc9c', // Teal
   ],
 } as const;
+

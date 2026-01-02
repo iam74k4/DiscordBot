@@ -1,7 +1,7 @@
 import { Client, TextChannel, PermissionFlagsBits } from 'discord.js';
 import { logger } from '../../utils/logger.js';
 import { createEmbed } from '../../utils/embed.js';
-import { COLORS, TITLES } from '../../utils/constants.js';
+import { COLORS, TITLES } from '../../utils/constants/index.js';
 import { steamClient } from '../steam/index.js';
 import { getAllSteamUsers } from '../database/index.js';
 import {
@@ -150,8 +150,9 @@ async function processNotifications(): Promise<void> {
           continue;
         }
 
-        // Get guild member IDs
-        await guild.members.fetch();
+        // Get guild member IDs from cache to avoid rate limits
+        // Note: Uses cache to prevent excessive API calls during periodic checks
+        // New members joining will be picked up on next check cycle
         const memberIds = new Set(guild.members.cache.map((m) => m.id));
 
         // Send notifications for guild members

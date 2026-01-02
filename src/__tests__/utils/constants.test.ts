@@ -7,7 +7,7 @@ import {
   TITLES,
   PROGRESS_BAR,
   CHART_COLORS,
-} from '../../utils/constants.js';
+} from '../../utils/constants/index.js';
 
 describe('COLORS', () => {
   it('should have all required color values', () => {
