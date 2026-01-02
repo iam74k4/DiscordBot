@@ -81,10 +81,13 @@ export class VoiceConnectionManager {
 
     try {
       // Create voice connection
+      // selfDeaf: false is required to receive audio for recording
       const connection = joinVoiceChannel({
         channelId: channel.id,
         guildId: guild.id,
         adapterCreator: guild.voiceAdapterCreator,
+        selfDeaf: false,
+        selfMute: true, // Bot doesn't need to speak
       });
 
       // Create audio player
