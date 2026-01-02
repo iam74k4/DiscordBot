@@ -11,7 +11,7 @@ import {
   createErrorEmbed,
   createWarningEmbed,
 } from '../../utils/embed.js';
-import { COLORS } from '../../utils/constants.js';
+import { COLORS } from '../../utils/constants/index.js';
 import {
   setNotificationChannel,
   getNotificationSettings,
@@ -429,3 +429,4 @@ export const command: Command = {
 };
 
 export default command;
+
