@@ -98,8 +98,6 @@ export class VoiceConnectionManager {
 
       // Set up audio reception for all users
       connection.receiver.speaking.on('start', (userId) => {
-        logger.debug(`[AUDIO] Speaking started: user=${userId}, channel=${channelId}`);
-        
         // Get buffer for this channel
         const buffer = audioBufferManager.getBuffer(channelId);
 
@@ -122,61 +120,40 @@ export class VoiceConnectionManager {
         // Pipe Opus stream through decoder
         const pcmStream = opusStream.pipe(decoder);
 
-        let chunkCount = 0;
-        let totalBytes = 0;
-
         // Process decoded PCM audio
         pcmStream.on('data', (chunk: Buffer) => {
-          chunkCount++;
-          
           // Convert stereo (2 channels) to mono by averaging left and right channels
           // Input: 16-bit signed LE stereo (L R L R L R...)
           // Output: 16-bit signed LE mono
           const monoSamples = chunk.length / 4; // 4 bytes per stereo sample (2 bytes * 2 channels)
           const monoChunk = Buffer.allocUnsafe(monoSamples * 2);
-          
+
           for (let i = 0; i < monoSamples; i++) {
             const left = chunk.readInt16LE(i * 4);
             const right = chunk.readInt16LE(i * 4 + 2);
             const mono = Math.round((left + right) / 2);
             monoChunk.writeInt16LE(mono, i * 2);
           }
-          
-          totalBytes += monoChunk.length;
-          
-          // Log first chunk and every 100th chunk
-          if (chunkCount === 1 || chunkCount % 100 === 0) {
-            logger.debug(`[AUDIO] Decoded PCM chunk #${chunkCount}: stereo=${chunk.length} -> mono=${monoChunk.length} bytes, total=${totalBytes} bytes`);
-          }
-          
+
           // Duration calculation: chunk size / (48000 samples/sec * 2 bytes/sample) for mono
           const duration = (monoChunk.length / (48000 * 2)) * 1000; // in milliseconds
 
           buffer.addChunk(monoChunk, duration);
         });
 
-        pcmStream.on('end', () => {
-          logger.debug(`[AUDIO] PCM stream ended: user=${userId}, chunks=${chunkCount}, totalBytes=${totalBytes}`);
-        });
-
         pcmStream.on('error', (error) => {
-          logger.warn(
-            `[AUDIO] PCM stream error for user ${userId} in channel ${channelId}:`,
+          logger.debug(
+            `Audio decode error for user ${userId}:`,
             error instanceof Error ? error.message : error
           );
         });
 
         opusStream.on('error', (error) => {
-          logger.warn(
-            `[AUDIO] Opus stream error for user ${userId} in channel ${channelId}:`,
+          logger.debug(
+            `Audio stream error for user ${userId}:`,
             error instanceof Error ? error.message : error
           );
         });
-      });
-      
-      // Log when speaking map changes
-      connection.receiver.speaking.on('end', (userId) => {
-        logger.debug(`[AUDIO] Speaking ended: user=${userId}, channel=${channelId}`);
       });
 
       // Set up connection state handlers
