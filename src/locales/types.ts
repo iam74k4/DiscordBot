@@ -74,6 +74,8 @@ export interface TranslationKeys {
     hours: string;
     hoursPerPlayer: string;
     perDay: string;
+    minutes: string;
+    hoursAndMinutes: string;
   };
 
   // Settings command
@@ -251,6 +253,14 @@ export interface TranslationKeys {
       trackedFrom: string;
       notEnoughData: string;
       currentTotalPlaytime: string;
+      periods: {
+        day: string;
+        week: string;
+        month: string;
+        threeMonths: string;
+        sixMonths: string;
+        year: string;
+      };
     };
     games: {
       title: string;
@@ -346,6 +356,10 @@ export interface TranslationKeys {
       inGame: string;
       private: string;
       public: string;
+      snooze: string;
+      lookingToTrade: string;
+      lookingToPlay: string;
+      unknown: string;
     };
     buttons: {
       confirm: string;

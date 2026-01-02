@@ -20,6 +20,8 @@ export const ja: TranslationKeys = {
     hours: '時間',
     hoursPerPlayer: '時間/人',
     perDay: '日',
+    minutes: '分',
+    hoursAndMinutes: '{hours}時間 {minutes}分',
   },
 
   settings: {
@@ -199,6 +201,14 @@ export const ja: TranslationKeys = {
       trackedFrom: '履歴は登録日から記録されます',
       notEnoughData: '十分な履歴データがありません。',
       currentTotalPlaytime: '現在の総プレイ時間',
+      periods: {
+        day: '24時間',
+        week: '7日間',
+        month: '30日間',
+        threeMonths: '3ヶ月',
+        sixMonths: '6ヶ月',
+        year: '1年',
+      },
     },
     games: {
       title: 'ゲームライブラリ',
@@ -302,6 +312,10 @@ export const ja: TranslationKeys = {
       inGame: 'ゲーム中',
       private: '非公開',
       public: '公開',
+      snooze: 'スヌーズ',
+      lookingToTrade: 'トレード希望',
+      lookingToPlay: 'プレイ希望',
+      unknown: '不明',
     },
     buttons: {
       confirm: '確認',

@@ -20,6 +20,8 @@ export const en: TranslationKeys = {
     hours: 'hours',
     hoursPerPlayer: 'hours/player',
     perDay: 'day',
+    minutes: 'min',
+    hoursAndMinutes: '{hours}h {minutes}m',
   },
 
   settings: {
@@ -197,6 +199,14 @@ export const en: TranslationKeys = {
       trackedFrom: 'History is tracked from registration date',
       notEnoughData: 'Not enough history data available.',
       currentTotalPlaytime: 'Current Total Playtime',
+      periods: {
+        day: '24 Hours',
+        week: '7 Days',
+        month: '30 Days',
+        threeMonths: '3 Months',
+        sixMonths: '6 Months',
+        year: '1 Year',
+      },
     },
     games: {
       title: 'Game Library',
@@ -300,6 +310,10 @@ export const en: TranslationKeys = {
       inGame: 'In-Game',
       private: 'Private',
       public: 'Public',
+      snooze: 'Snooze',
+      lookingToTrade: 'Looking to Trade',
+      lookingToPlay: 'Looking to Play',
+      unknown: 'Unknown',
     },
     buttons: {
       confirm: 'Confirm',
