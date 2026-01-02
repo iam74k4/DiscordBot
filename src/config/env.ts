@@ -97,6 +97,13 @@ export const env = {
     process.env.AUDIO_MEMORY_BUFFER_DURATION,
     120
   ),
+  // Data directories
+  /** Base data directory (default: data/) */
+  DATA_DIR: process.env.DATA_DIR || 'data/',
+  /** Database file path (default: data/bot.db) */
+  DATABASE_PATH: process.env.DATABASE_PATH || 'data/bot.db',
+  /** Recordings directory (default: data/recordings/) */
+  RECORDINGS_DIR: process.env.RECORDINGS_DIR || 'data/recordings/',
   /** Disk buffer directory (default: data/buffers/) */
   AUDIO_DISK_BUFFER_DIR: process.env.AUDIO_DISK_BUFFER_DIR || 'data/buffers/',
   /** Discord max file size in MB (default: 25) */
@@ -146,6 +153,18 @@ export const env = {
     process.env.DISK_WARNING_THRESHOLD_MB,
     1000
   ),
+
+  // Backup settings
+  /** Backup directory (default: data/backups/) */
+  BACKUP_DIR: process.env.BACKUP_DIR || 'data/backups/',
+  /** Backup retention days (default: 7) */
+  BACKUP_RETENTION_DAYS: parseNumber(process.env.BACKUP_RETENTION_DAYS, 7),
+  /** Backup cron schedule (default: 0 4 * * * = daily at 4am) */
+  BACKUP_CRON: process.env.BACKUP_CRON || '0 4 * * *',
+
+  // Alert settings
+  /** Discord Webhook URL for alerts (optional) */
+  ALERT_WEBHOOK_URL: process.env.ALERT_WEBHOOK_URL || '',
 } as const;
 
 /**
