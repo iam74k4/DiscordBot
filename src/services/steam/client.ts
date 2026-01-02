@@ -1,5 +1,7 @@
 import { env } from '../../config/index.js';
 import { logger } from '../../utils/logger.js';
+import { withRetry } from '../../utils/retry.js';
+import { metrics } from '../metrics/index.js';
 import {
   GetPlayerSummariesResponse,
   GetOwnedGamesResponse,
@@ -35,7 +37,7 @@ export class SteamClient {
   }
 
   /**
-   * Make API request to Steam
+   * Make API request to Steam with automatic retry
    */
   private async request<T>(
     endpoint: string,
@@ -50,13 +52,45 @@ export class SteamClient {
 
     logger.debug(`Steam API request: ${endpoint}`);
 
-    const response = await fetch(url.toString());
+    return withRetry(
+      async () => {
+        metrics.incrementSteamCall();
 
-    if (!response.ok) {
-      throw new Error(`Steam API error: ${response.status}`);
-    }
+        const response = await fetch(url.toString());
 
-    return response.json() as Promise<T>;
+        if (!response.ok) {
+          // Track errors
+          if (response.status >= 500) {
+            metrics.incrementSteamError();
+          }
+          throw new Error(`Steam API error: ${response.status}`);
+        }
+
+        return response.json() as Promise<T>;
+      },
+      {
+        maxRetries: 3,
+        baseDelayMs: 1000,
+        operationName: `Steam API ${endpoint}`,
+        shouldRetry: (error) => {
+          // Retry on 5xx errors and network errors
+          if (error instanceof Error) {
+            const message = error.message;
+            if (
+              message.includes('500') ||
+              message.includes('502') ||
+              message.includes('503') ||
+              message.includes('504') ||
+              message.includes('network') ||
+              message.includes('timeout')
+            ) {
+              return true;
+            }
+          }
+          return false;
+        },
+      }
+    );
   }
 
   /**
