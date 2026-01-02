@@ -1,15 +1,12 @@
 import Database, { Database as DatabaseType } from 'better-sqlite3';
 import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { existsSync, mkdirSync } from 'fs';
 import { logger } from '../../utils/logger.js';
+import { env } from '../../config/index.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Database file path
-const DATA_DIR = join(__dirname, '..', '..', '..', 'data');
-const DB_PATH = join(DATA_DIR, 'bot.db');
+// Database file path from config
+const DB_PATH = join(process.cwd(), env.DATABASE_PATH);
+const DATA_DIR = dirname(DB_PATH);
 
 // Ensure data directory exists
 if (!existsSync(DATA_DIR)) {
@@ -20,10 +17,19 @@ if (!existsSync(DATA_DIR)) {
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 
+// Flag to track initialization status
+let isInitialized = false;
+
 /**
- * Initialize database tables
+ * Initialize database tables (called explicitly from main)
+ * This should only be called once at startup
  */
-function initializeTables(): void {
+export function initializeDatabase(): void {
+  if (isInitialized) {
+    logger.warn('Database already initialized, skipping');
+    return;
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS steam_users (
       discord_id TEXT PRIMARY KEY,
@@ -83,11 +89,15 @@ function initializeTables(): void {
     )
   `);
 
-  logger.debug('Database tables initialized');
+  // Initialize settings tables (guild_settings, audit_logs)
+  initializeSettingsTables();
+
+  isInitialized = true;
+  logger.info('Database initialized');
 }
 
-// Initialize on import
-initializeTables();
+// Import settings initialization function
+import { initializeSettingsTables } from './settings.js';
 
 /**
  * Steam user record
@@ -327,5 +337,39 @@ export function cleanupOldPlaytimeRecords(daysToKeep: number = 365): number {
   return result.changes;
 }
 
-// Export database instance for advanced queries
+/**
+ * Allowed table names for row count queries (security whitelist)
+ */
+const ALLOWED_TABLES = new Set([
+  'steam_users',
+  'playtime_history',
+  'game_activity_cache',
+  'guild_settings',
+  'notification_settings',
+  'user_notification_prefs',
+  'audit_logs',
+]);
+
+/**
+ * Get row count for a specific table
+ * @param tableName Table name (must be in whitelist)
+ * @returns Row count or null if table not allowed or doesn't exist
+ */
+export function getTableRowCount(tableName: string): number | null {
+  if (!ALLOWED_TABLES.has(tableName)) {
+    return null;
+  }
+
+  try {
+    // Table name is validated against whitelist, safe to use in query
+    const stmt = db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`);
+    const result = stmt.get() as { count: number } | undefined;
+    return result?.count ?? null;
+  } catch {
+    // Table doesn't exist yet
+    return null;
+  }
+}
+
+// Export database instance for advanced queries (legacy - avoid direct use)
 export const database: DatabaseType = db;
