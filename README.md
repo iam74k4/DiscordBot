@@ -75,7 +75,7 @@ npm install
 
 ### 2. Configure Environment Variables
 
-Copy `.env.example` to `.env` and fill in your values:
+Create a `.env` file in the project root (you can copy from `.env.example`):
 
 ```bash
 cp .env.example .env
@@ -235,33 +235,38 @@ npm start
 
 ## Available Scripts
 
-| Script                 | Description                          |
-| ---------------------- | ------------------------------------ |
-| `npm run dev`          | Start with hot-reload (development)  |
-| `npm run build`        | Compile TypeScript to JavaScript     |
-| `npm start`            | Run compiled JavaScript (production) |
-| `npm run lint`         | Check code with ESLint               |
-| `npm run lint:fix`     | Fix ESLint errors automatically      |
-| `npm run format`       | Format code with Prettier            |
-| `npm run format:check` | Check code formatting                |
-| `npm run type-check`   | Check TypeScript types               |
+| Script                   | Description                            |
+| ------------------------ | -------------------------------------- |
+| `npm run dev`            | Start with hot-reload (development)    |
+| `npm run build`          | Compile TypeScript to JavaScript       |
+| `npm start`              | Run compiled JavaScript (production)   |
+| `npm run lint`           | Check code with ESLint                 |
+| `npm run lint:fix`       | Fix ESLint errors automatically        |
+| `npm run format`         | Format code with Prettier              |
+| `npm run format:check`   | Check code formatting                  |
+| `npm run type-check`     | Check TypeScript types                 |
+| `npm test`               | Run unit tests                         |
+| `npm run test:watch`     | Run tests in watch mode                |
+| `npm run test:coverage`  | Run tests with coverage report         |
 
 ## Project Structure
 
 ```
 src/
-├── index.ts              # Entry point
+├── index.ts              # Entry point with graceful shutdown
 ├── client.ts             # Discord client configuration
 ├── config/               # Configuration management
 │   ├── index.ts
-│   └── env.ts
+│   └── env.ts            # Environment variables (with validation)
 ├── commands/             # Slash commands (by category)
 │   ├── general/
 │   │   ├── ping.ts
-│   │   └── help.ts
+│   │   ├── help.ts
+│   │   └── server.ts
 │   ├── steam/
 │   │   ├── steam.ts          # /steam command with subcommands
-│   │   └── notify-unified.ts # /notify command with subcommands
+│   │   ├── notification.ts   # /notify command with subcommands
+│   │   └── shared.ts         # Shared utilities for steam commands
 │   ├── admin/
 │   │   ├── admin.ts          # /admin command (bot owner)
 │   │   └── settings.ts       # /settings command (server admin)
@@ -305,6 +310,13 @@ src/
 │   │   └── index.ts
 │   ├── notifications/    # Game start notification system
 │   │   └── index.ts
+│   ├── poll/             # Poll management service
+│   │   ├── pollStore.ts
+│   │   ├── pollService.ts
+│   │   └── index.ts
+│   ├── cooldown/         # Cooldown management service
+│   │   ├── cooldownStore.ts
+│   │   └── index.ts
 │   ├── audit/            # Audit log service
 │   │   └── index.ts
 │   └── scheduler/        # Scheduled tasks (playtime recording)
@@ -312,7 +324,20 @@ src/
 ├── utils/                # Utilities
 │   ├── logger.ts
 │   ├── embed.ts
-│   └── constants.ts
+│   ├── lruCache.ts       # LRU cache implementation
+│   ├── fuzzy.ts          # Fuzzy search for autocomplete
+│   ├── chart.ts          # Chart generation
+│   └── constants/        # Constants (domain-separated)
+│       ├── colors.ts
+│       ├── steam.ts
+│       ├── ui.ts
+│       ├── bot.ts
+│       └── index.ts
+├── locales/              # Internationalization (i18n)
+│   ├── en.ts
+│   ├── ja.ts
+│   ├── types.ts
+│   └── index.ts
 └── types/                # Type definitions
     ├── index.ts
     ├── command.ts
