@@ -176,11 +176,13 @@ describe('retry utility', () => {
 
       const fn = vi.fn().mockRejectedValue(new Error('500'));
 
-      const resultPromise = wrapper(fn, { maxRetries: 0, shouldRetry: () => true });
+      const resultPromise = wrapper(fn, {
+        maxRetries: 0,
+        shouldRetry: () => true,
+      });
 
       await expect(resultPromise).rejects.toThrow('500');
       expect(fn).toHaveBeenCalledTimes(1);
     });
   });
 });
-

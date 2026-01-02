@@ -166,4 +166,3 @@ export function clearAllMocks(): void {
 export function resetAllMocks(): void {
   vi.resetAllMocks();
 }
-

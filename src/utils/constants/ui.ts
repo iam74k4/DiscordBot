@@ -34,4 +34,3 @@ export const PROGRESS_BAR = {
   EMPTY: '░',
   LENGTH: 10,
 } as const;
-

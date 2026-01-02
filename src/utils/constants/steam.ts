@@ -11,4 +11,3 @@ export const STEAM_STATUS = {
   PRIVATE: 'Private',
   PUBLIC: 'Public',
 } as const;
-

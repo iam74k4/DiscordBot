@@ -3,10 +3,7 @@ import { env } from './config/index.js';
 import { loadCommands } from './handlers/commandHandler.js';
 import { loadEvents } from './handlers/eventHandler.js';
 import { logger } from './utils/logger.js';
-import {
-  startScheduler,
-  stopScheduler,
-} from './services/scheduler/index.js';
+import { startScheduler, stopScheduler } from './services/scheduler/index.js';
 import {
   startNotificationSystem,
   stopNotificationSystem,

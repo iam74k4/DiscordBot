@@ -265,7 +265,11 @@ async function handlePlaytime(
             : index === 2
               ? '3.'
               : `${index + 1}.`;
-      const bar = formatPlaytimeWithBar(game.playtimeForever, maxPlaytime, locale);
+      const bar = formatPlaytimeWithBar(
+        game.playtimeForever,
+        maxPlaytime,
+        locale
+      );
       return `${medal} **${game.name}**\n${bar}`;
     })
     .join('\n\n');
@@ -420,7 +424,9 @@ async function handleGames(
     await interaction
       .editReply({ components: [buildButtons(currentPage, totalPages, true)] })
       .catch((e) => {
-        logger.debug(`Failed to disable games pagination buttons: ${e.message}`);
+        logger.debug(
+          `Failed to disable games pagination buttons: ${e.message}`
+        );
       });
   });
 }
@@ -485,7 +491,11 @@ async function handleRecent(
   const gamesList = recentGames
     .map((game, index) => {
       const medal = index < 3 ? `${index + 1}.` : `${index + 1}.`;
-      const bar = formatPlaytimeWithBar(game.playtime_2weeks, maxRecent, locale);
+      const bar = formatPlaytimeWithBar(
+        game.playtime_2weeks,
+        maxRecent,
+        locale
+      );
       const totalTime = formatPlaytime(game.playtime_forever, locale);
       return `${medal} **[${game.name}](${getStoreUrl(game.appid)})**\n    ${bar}\n    ${t('steam.playtime.total', locale)}: ${totalTime}`;
     })
@@ -695,7 +705,9 @@ async function handleRanking(
     await interaction
       .editReply({ components: [buildButtons(currentPage, totalPages, true)] })
       .catch((e) => {
-        logger.debug(`Failed to disable ranking pagination buttons: ${e.message}`);
+        logger.debug(
+          `Failed to disable ranking pagination buttons: ${e.message}`
+        );
       });
   });
 }

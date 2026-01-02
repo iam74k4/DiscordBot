@@ -161,4 +161,3 @@ describe('BoundedMap', () => {
     expect(map.size).toBe(3);
   });
 });
-

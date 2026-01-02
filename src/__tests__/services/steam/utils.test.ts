@@ -119,7 +119,9 @@ describe('getStatusText', () => {
     expect(getStatusText(PersonaState.Busy, 'ja')).toBe('取り込み中');
     expect(getStatusText(PersonaState.Away, 'ja')).toBe('離席中');
     expect(getStatusText(PersonaState.Snooze, 'ja')).toBe('スヌーズ');
-    expect(getStatusText(PersonaState.LookingToTrade, 'ja')).toBe('トレード希望');
+    expect(getStatusText(PersonaState.LookingToTrade, 'ja')).toBe(
+      'トレード希望'
+    );
     expect(getStatusText(PersonaState.LookingToPlay, 'ja')).toBe('プレイ希望');
   });
 
@@ -133,8 +135,12 @@ describe('getStatusText', () => {
     expect(getStatusText(PersonaState.Busy, 'en')).toBe('Busy');
     expect(getStatusText(PersonaState.Away, 'en')).toBe('Away');
     expect(getStatusText(PersonaState.Snooze, 'en')).toBe('Snooze');
-    expect(getStatusText(PersonaState.LookingToTrade, 'en')).toBe('Looking to Trade');
-    expect(getStatusText(PersonaState.LookingToPlay, 'en')).toBe('Looking to Play');
+    expect(getStatusText(PersonaState.LookingToTrade, 'en')).toBe(
+      'Looking to Trade'
+    );
+    expect(getStatusText(PersonaState.LookingToPlay, 'en')).toBe(
+      'Looking to Play'
+    );
   });
 
   it('should return "Unknown" for unknown state (en)', () => {
@@ -227,7 +233,9 @@ describe('formatTimestamp', () => {
 
     expect(result).toContain(String(expectedYear));
     // English format contains month name (January, etc.)
-    expect(result).toMatch(/January|February|March|April|May|June|July|August|September|October|November|December/);
+    expect(result).toMatch(
+      /January|February|March|April|May|June|July|August|September|October|November|December/
+    );
   });
 });
 

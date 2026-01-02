@@ -13,7 +13,10 @@ import {
   getTableRowCount,
 } from '../../services/database/index.js';
 import { t, mapDiscordLocale } from '../../locales/index.js';
-import { getHealthStatus, formatHealthStatus } from '../../services/health/index.js';
+import {
+  getHealthStatus,
+  formatHealthStatus,
+} from '../../services/health/index.js';
 import { backupService } from '../../services/backup/index.js';
 import { metrics } from '../../services/metrics/index.js';
 

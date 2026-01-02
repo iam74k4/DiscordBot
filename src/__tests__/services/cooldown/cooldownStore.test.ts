@@ -42,15 +42,15 @@ describe('CooldownStore', () => {
     });
 
     it('should return 0 for user not on cooldown', () => {
-      expect(
-        cooldownStore.getRemainingCooldown('test-command', 'user1')
-      ).toBe(0);
+      expect(cooldownStore.getRemainingCooldown('test-command', 'user1')).toBe(
+        0
+      );
     });
 
     it('should return 0 for non-existent command', () => {
-      expect(
-        cooldownStore.getRemainingCooldown('non-existent', 'user1')
-      ).toBe(0);
+      expect(cooldownStore.getRemainingCooldown('non-existent', 'user1')).toBe(
+        0
+      );
     });
   });
 
@@ -103,4 +103,3 @@ describe('CooldownStore', () => {
     });
   });
 });
-

@@ -135,4 +135,3 @@ export function buildButtons(
       .setDisabled(disabled || page >= totalPages - 1)
   );
 }
-

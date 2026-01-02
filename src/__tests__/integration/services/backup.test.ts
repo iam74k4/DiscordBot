@@ -52,20 +52,26 @@ describe('BackupService', () => {
       const { database } = await import('../../../services/database/index.js');
 
       // Mock backup to actually create a file
-      vi.mocked(database.backup).mockImplementation(async (filePath: string) => {
-        fs.writeFileSync(filePath, 'mock backup content');
-      });
+      vi.mocked(database.backup).mockImplementation(
+        async (filePath: string) => {
+          fs.writeFileSync(filePath, 'mock backup content');
+        }
+      );
 
       const result = await backupService.runBackup();
 
       expect(result.success).toBe(true);
-      expect(result.filename).toMatch(/^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.db$/);
+      expect(result.filename).toMatch(
+        /^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.db$/
+      );
     });
 
     it('should return error on failure', async () => {
       // Mock backup to fail
       const { database } = await import('../../../services/database/index.js');
-      vi.mocked(database.backup).mockRejectedValueOnce(new Error('Backup failed'));
+      vi.mocked(database.backup).mockRejectedValueOnce(
+        new Error('Backup failed')
+      );
 
       const result = await backupService.runBackup();
 
@@ -82,7 +88,10 @@ describe('BackupService', () => {
 
     it('should list existing backup files', async () => {
       // Create a mock backup file
-      const backupFile = path.join(testBackupDir, 'backup-2024-01-01T00-00-00.db');
+      const backupFile = path.join(
+        testBackupDir,
+        'backup-2024-01-01T00-00-00.db'
+      );
       fs.writeFileSync(backupFile, 'test content');
 
       const backups = backupService.listBackups();
@@ -113,7 +122,10 @@ describe('BackupService', () => {
   describe('deleteOldBackups', () => {
     it('should delete backups older than retention period', () => {
       // Create an old backup file (modify the file time)
-      const oldBackupFile = path.join(testBackupDir, 'backup-2020-01-01T00-00-00.db');
+      const oldBackupFile = path.join(
+        testBackupDir,
+        'backup-2020-01-01T00-00-00.db'
+      );
       fs.writeFileSync(oldBackupFile, 'old content');
 
       // Modify the file time to be old (more than 7 days ago)
@@ -154,7 +166,10 @@ describe('BackupService', () => {
 
     it('should format backup list correctly', () => {
       // Create a backup file
-      const backupFile = path.join(testBackupDir, 'backup-2024-01-01T00-00-00.db');
+      const backupFile = path.join(
+        testBackupDir,
+        'backup-2024-01-01T00-00-00.db'
+      );
       fs.writeFileSync(backupFile, 'test content');
 
       const formatted = backupService.formatBackupList();
@@ -164,4 +179,3 @@ describe('BackupService', () => {
     });
   });
 });
-
