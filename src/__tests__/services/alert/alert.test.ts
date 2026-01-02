@@ -102,7 +102,10 @@ describe('Alert Service', () => {
     });
 
     it('should send critical alerts', async () => {
-      const result = await alertCritical('Critical Title', 'Critical Description');
+      const result = await alertCritical(
+        'Critical Title',
+        'Critical Description'
+      );
       expect(result).toBe(true);
     });
   });
@@ -146,4 +149,3 @@ describe('Alert Service', () => {
     });
   });
 });
-

@@ -10,9 +10,9 @@ export type AlertLevel = 'info' | 'warn' | 'error' | 'critical';
  * Alert colors for Discord embeds
  */
 const ALERT_COLORS: Record<AlertLevel, number> = {
-  info: 0x3498db,     // Blue
-  warn: 0xf39c12,     // Orange
-  error: 0xe74c3c,    // Red
+  info: 0x3498db, // Blue
+  warn: 0xf39c12, // Orange
+  error: 0xe74c3c, // Red
   critical: 0x9b59b6, // Purple
 };
 
@@ -192,4 +192,3 @@ export async function alertCritical(
 export function clearRateLimits(): void {
   recentAlerts.clear();
 }
-

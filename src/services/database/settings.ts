@@ -220,5 +220,5 @@ export function deleteOldAuditLogs(daysOld: number): number {
   return result.changes;
 }
 
-// Initialize tables on import
-initializeSettingsTables();
+// Note: initializeSettingsTables() is called by initializeDatabase() in index.ts
+// Do not call it here to avoid circular dependency issues

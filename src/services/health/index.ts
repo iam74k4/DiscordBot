@@ -57,9 +57,7 @@ function checkDatabase(): { connected: boolean; tables: number } {
   try {
     // Try to run a simple query
     const result = database
-      .prepare(
-        "SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'"
-      )
+      .prepare("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'")
       .get() as { count: number } | undefined;
 
     return {
@@ -171,4 +169,3 @@ export function formatHealthStatus(health: HealthStatus): string {
 
   return lines.join('\n');
 }
-

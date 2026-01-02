@@ -3,6 +3,12 @@ import { join } from 'path';
 import { env } from '../../config/index.js';
 import { logger } from '../../utils/logger.js';
 import { AudioBufferConfig, AudioChunk } from '../../types/voice.js';
+import { BoundedMap } from '../../utils/lruCache.js';
+
+// Maximum number of disk buffer files per channel
+const MAX_DISK_BUFFER_FILES_PER_CHANNEL = 100;
+// Maximum number of active channel buffers
+const MAX_CHANNEL_BUFFERS = 50;
 
 /**
  * Hybrid audio buffer (memory + disk)
@@ -16,7 +22,9 @@ export class HybridAudioBuffer {
   private readonly channels: number;
   private readonly diskBufferDir: string;
   private readonly channelId: string;
-  private diskBufferFiles: Map<number, string> = new Map(); // timestamp -> file path
+  private diskBufferFiles = new BoundedMap<number, string>(
+    MAX_DISK_BUFFER_FILES_PER_CHANNEL
+  ); // timestamp -> file path
   private readonly bytesPerSecond: number;
 
   constructor(channelId: string, config: AudioBufferConfig) {
@@ -184,6 +192,7 @@ export class HybridAudioBuffer {
       (sum, chunk) => sum + chunk.data.length,
       0
     );
+
     const result = Buffer.allocUnsafe(totalSize);
     let offset = 0;
 
@@ -278,7 +287,9 @@ export class HybridAudioBuffer {
  * Audio buffer manager
  */
 export class AudioBufferManager {
-  private buffers: Map<string, HybridAudioBuffer> = new Map();
+  private buffers = new BoundedMap<string, HybridAudioBuffer>(
+    MAX_CHANNEL_BUFFERS
+  );
   private readonly config: AudioBufferConfig;
   private cleanupInterval: NodeJS.Timeout | null = null;
 

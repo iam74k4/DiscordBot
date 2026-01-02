@@ -54,7 +54,9 @@ export const event: Event<typeof Events.InteractionCreate> = {
                 flags: MessageFlags.Ephemeral,
               })
               .catch((e) => {
-                logger.debug(`Failed to reply to poll vote error: ${e.message}`);
+                logger.debug(
+                  `Failed to reply to poll vote error: ${e.message}`
+                );
               });
           }
         } else {

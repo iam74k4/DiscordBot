@@ -16,7 +16,9 @@ export interface RetryOptions {
   operationName?: string;
 }
 
-const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'shouldRetry' | 'operationName'>> = {
+const DEFAULT_OPTIONS: Required<
+  Omit<RetryOptions, 'shouldRetry' | 'operationName'>
+> = {
   maxRetries: 3,
   baseDelayMs: 1000,
   maxDelayMs: 10000,
@@ -56,7 +58,12 @@ function defaultShouldRetry(error: unknown): boolean {
       return true;
     }
     // Retry on 5xx errors
-    if (message.includes('500') || message.includes('502') || message.includes('503') || message.includes('504')) {
+    if (
+      message.includes('500') ||
+      message.includes('502') ||
+      message.includes('503') ||
+      message.includes('504')
+    ) {
       return true;
     }
   }
@@ -127,4 +134,3 @@ export function createRetryWrapper(defaultOptions: RetryOptions) {
     return withRetry(fn, { ...defaultOptions, ...options });
   };
 }
-

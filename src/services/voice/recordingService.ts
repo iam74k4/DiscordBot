@@ -3,11 +3,18 @@ import { join } from 'path';
 import { env } from '../../config/index.js';
 import { audioBufferManager } from './audioBuffer.js';
 import { RecordingOptions, RecordingResult } from '../../types/voice.js';
+import { BoundedMap } from '../../utils/lruCache.js';
+
+// Maximum concurrent recordings to prevent resource exhaustion
+const MAX_CONCURRENT_RECORDINGS = 100;
 
 /**
- * Recording queue per channel
+ * Recording queue per channel (using BoundedMap to prevent memory issues)
+ * Note: Entries are automatically deleted after recording completes
  */
-const recordingQueues: Map<string, Promise<RecordingResult>> = new Map();
+const recordingQueues = new BoundedMap<string, Promise<RecordingResult>>(
+  MAX_CONCURRENT_RECORDINGS
+);
 
 /**
  * Format duration string to seconds
@@ -190,7 +197,7 @@ export async function recordAudio(
       );
 
       // Ensure recordings directory exists
-      const recordingsDir = join(process.cwd(), 'data', 'recordings');
+      const recordingsDir = join(process.cwd(), env.RECORDINGS_DIR);
       if (!existsSync(recordingsDir)) {
         mkdirSync(recordingsDir, { recursive: true });
       }
