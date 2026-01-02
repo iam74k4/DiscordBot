@@ -97,6 +97,8 @@ export class VoiceConnectionManager {
 
       // Set up audio reception for all users
       connection.receiver.speaking.on('start', (userId) => {
+        logger.debug(`[AUDIO] Speaking started: user=${userId}, channel=${channelId}`);
+        
         // Get buffer for this channel
         const buffer = audioBufferManager.getBuffer(channelId);
 
@@ -107,21 +109,41 @@ export class VoiceConnectionManager {
           },
         });
 
+        let chunkCount = 0;
+        let totalBytes = 0;
+
         // Discord sends PCM at 48kHz, 16-bit, mono
         // Process audio stream
         audioStream.on('data', (chunk: Buffer) => {
+          chunkCount++;
+          totalBytes += chunk.length;
+          
+          // Log first chunk and every 100th chunk
+          if (chunkCount === 1 || chunkCount % 100 === 0) {
+            logger.debug(`[AUDIO] Received chunk #${chunkCount}: ${chunk.length} bytes, total=${totalBytes} bytes`);
+          }
+          
           // Duration calculation: chunk size / (48000 samples/sec * 2 bytes/sample)
           const duration = (chunk.length / (48000 * 2)) * 1000; // in milliseconds
 
           buffer.addChunk(chunk, duration);
         });
 
+        audioStream.on('end', () => {
+          logger.debug(`[AUDIO] Stream ended: user=${userId}, chunks=${chunkCount}, totalBytes=${totalBytes}`);
+        });
+
         audioStream.on('error', (error) => {
-          logger.debug(
-            `Audio stream error for user ${userId} in channel ${channelId}:`,
+          logger.warn(
+            `[AUDIO] Stream error for user ${userId} in channel ${channelId}:`,
             error instanceof Error ? error.message : error
           );
         });
+      });
+      
+      // Log when speaking map changes
+      connection.receiver.speaking.on('end', (userId) => {
+        logger.debug(`[AUDIO] Speaking ended: user=${userId}, channel=${channelId}`);
       });
 
       // Set up connection state handlers

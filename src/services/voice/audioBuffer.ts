@@ -56,6 +56,12 @@ export class HybridAudioBuffer {
 
     this.memoryBuffer.push(chunk);
 
+    // Log every 50th chunk to show buffer is receiving data
+    if (this.memoryBuffer.length % 50 === 1) {
+      const totalBytes = this.memoryBuffer.reduce((sum, c) => sum + c.data.length, 0);
+      logger.debug(`[BUFFER] addChunk: channel=${this.channelId}, chunks=${this.memoryBuffer.length}, totalBytes=${totalBytes}`);
+    }
+
     // Check if memory buffer exceeds duration
     const totalDuration = this.memoryBuffer.reduce(
       (sum, c) => sum + c.duration,
@@ -152,6 +158,8 @@ export class HybridAudioBuffer {
     const durationMs = duration * 1000;
     const cutoffTime = Date.now() - durationMs;
 
+    logger.debug(`[BUFFER] getAudioData: duration=${duration}s, cutoffTime=${cutoffTime}, memoryBuffer.length=${this.memoryBuffer.length}, diskFiles=${this.diskBufferFiles.size}`);
+
     const memoryChunks: AudioChunk[] = [];
     const diskChunks: AudioChunk[] = [];
 
@@ -161,6 +169,8 @@ export class HybridAudioBuffer {
         memoryChunks.push(chunk);
       }
     }
+
+    logger.debug(`[BUFFER] Found ${memoryChunks.length} memory chunks within duration`);
 
     // Collect chunks from disk
     for (const [timestamp, filePath] of this.diskBufferFiles.entries()) {
@@ -182,6 +192,8 @@ export class HybridAudioBuffer {
       }
     }
 
+    logger.debug(`[BUFFER] Found ${diskChunks.length} disk chunks within duration`);
+
     // Sort all chunks by timestamp
     const allChunks = [...memoryChunks, ...diskChunks].sort(
       (a, b) => a.timestamp - b.timestamp
@@ -192,6 +204,9 @@ export class HybridAudioBuffer {
       (sum, chunk) => sum + chunk.data.length,
       0
     );
+
+    logger.debug(`[BUFFER] Total chunks: ${allChunks.length}, totalSize: ${totalSize} bytes`);
+
     const result = Buffer.allocUnsafe(totalSize);
     let offset = 0;
 
