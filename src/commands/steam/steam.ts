@@ -2,9 +2,6 @@ import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
   AutocompleteInteraction,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   ComponentType,
   Guild,
   MessageFlags,
@@ -16,7 +13,7 @@ import {
   createErrorEmbed,
   createWarningEmbed,
 } from '../../utils/embed.js';
-import { COLORS } from '../../utils/constants.js';
+import { COLORS } from '../../utils/constants/index.js';
 import {
   steamClient,
   formatPlaytime,
@@ -42,120 +39,26 @@ import {
   createHorizontalBarChart,
   createLineChart,
 } from '../../utils/chart.js';
-import { t, Locale, mapDiscordLocale } from '../../locales/index.js';
+import { t, mapDiscordLocale } from '../../locales/index.js';
+import { logger } from '../../utils/logger.js';
 
-// Constants
-const GAMES_PER_PAGE = 10;
-const USERS_PER_PAGE = 10;
-const ONE_DAY = 24 * 60 * 60 * 1000;
-const ONE_WEEK = 7 * ONE_DAY;
-const ONE_MONTH = 30 * ONE_DAY;
-const THREE_MONTHS = 90 * ONE_DAY;
-const SIX_MONTHS = 180 * ONE_DAY;
-const ONE_YEAR = 365 * ONE_DAY;
-
-// Cache for autocomplete
-interface GameCacheEntry {
-  games: { name: string; playtime: number }[];
-  timestamp: number;
-}
-const gameCache = new Map<string, GameCacheEntry>();
-const userCache: {
-  users: { name: string; steamId: string }[];
-  timestamp: number;
-} = { users: [], timestamp: 0 };
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-/**
- * Format hours for autocomplete display
- */
-function formatHoursShort(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  if (hours >= 1000) {
-    return `${(hours / 1000).toFixed(1)}k h`;
-  }
-  return `${hours.toLocaleString()}h`;
-}
-
-/**
- * Get Steam ID from interaction options
- */
-async function resolveSteamId(
-  interaction: ChatInputCommandInteraction,
-  locale: Locale,
-  requireRegistration: boolean = false
-): Promise<{ steamId: string | null; error?: string }> {
-  const inputSteamId = interaction.options.getString('steamid');
-  const targetUser = interaction.options.getUser('user');
-
-  if (inputSteamId) {
-    const steamId = await steamClient.getSteamId64(inputSteamId);
-    if (!steamId) {
-      return { steamId: null, error: t('steam.errors.invalidSteamId', locale) };
-    }
-    return { steamId };
-  }
-
-  if (targetUser) {
-    const steamId = getSteamId(targetUser.id);
-    if (!steamId) {
-      return {
-        steamId: null,
-        error: t('steam.errors.userNotLinked', locale, {
-          name: targetUser.displayName,
-        }),
-      };
-    }
-    return { steamId };
-  }
-
-  const steamId = getSteamId(interaction.user.id);
-  if (!steamId && requireRegistration) {
-    return {
-      steamId: null,
-      error: t('steam.errors.notLinked', locale),
-    };
-  }
-
-  return { steamId };
-}
-
-/**
- * Build pagination buttons
- */
-function buildButtons(
-  page: number,
-  totalPages: number,
-  disabled: boolean = false
-) {
-  return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder()
-      .setCustomId('first')
-      .setLabel('<<')
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(disabled || page === 0),
-    new ButtonBuilder()
-      .setCustomId('prev')
-      .setLabel('<')
-      .setStyle(ButtonStyle.Primary)
-      .setDisabled(disabled || page === 0),
-    new ButtonBuilder()
-      .setCustomId('page')
-      .setLabel(`${page + 1}/${totalPages}`)
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(true),
-    new ButtonBuilder()
-      .setCustomId('next')
-      .setLabel('>')
-      .setStyle(ButtonStyle.Primary)
-      .setDisabled(disabled || page >= totalPages - 1),
-    new ButtonBuilder()
-      .setCustomId('last')
-      .setLabel('>>')
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(disabled || page >= totalPages - 1)
-  );
-}
+// Import shared utilities
+import {
+  GAMES_PER_PAGE,
+  USERS_PER_PAGE,
+  ONE_DAY,
+  ONE_WEEK,
+  ONE_MONTH,
+  THREE_MONTHS,
+  SIX_MONTHS,
+  ONE_YEAR,
+  CACHE_TTL,
+  gameCache,
+  userCache,
+  formatHoursShort,
+  resolveSteamId,
+  buildButtons,
+} from './shared.js';
 
 // ============ Subcommand Handlers ============
 
@@ -313,15 +216,15 @@ async function handlePlaytime(
     const fields = [
       {
         name: t('steam.playtime.total', locale),
-        value: `**${game.playtimeForeverFormatted}**`,
+        value: `**${formatPlaytime(game.playtimeForever, locale)}**`,
         inline: true,
       },
     ];
 
-    if (game.playtime2WeeksFormatted) {
+    if (game.playtime2Weeks) {
       fields.push({
         name: t('steam.playtime.last2Weeks', locale),
-        value: `**${game.playtime2WeeksFormatted}**`,
+        value: `**${formatPlaytime(game.playtime2Weeks, locale)}**`,
         inline: true,
       });
     }
@@ -362,7 +265,11 @@ async function handlePlaytime(
             : index === 2
               ? '3.'
               : `${index + 1}.`;
-      const bar = formatPlaytimeWithBar(game.playtimeForever, maxPlaytime);
+      const bar = formatPlaytimeWithBar(
+        game.playtimeForever,
+        maxPlaytime,
+        locale
+      );
       return `${medal} **${game.name}**\n${bar}`;
     })
     .join('\n\n');
@@ -371,7 +278,7 @@ async function handlePlaytime(
 
   const embed = createEmbed({
     title: `${playerInfo.name} - ${t('steam.playtime.title', locale)}`,
-    description: `**${t('steam.playtime.total', locale)}:** ${formatPlaytime(totalMinutes)}\n**${t('steam.games.totalGames', locale)}:** ${games.length}+`,
+    description: `**${t('steam.playtime.total', locale)}:** ${formatPlaytime(totalMinutes, locale)}\n**${t('steam.games.totalGames', locale)}:** ${games.length}+`,
     color: COLORS.STEAM,
     fields: [
       {
@@ -516,7 +423,11 @@ async function handleGames(
   collector.on('end', async () => {
     await interaction
       .editReply({ components: [buildButtons(currentPage, totalPages, true)] })
-      .catch(() => {});
+      .catch((e) => {
+        logger.debug(
+          `Failed to disable games pagination buttons: ${e.message}`
+        );
+      });
   });
 }
 
@@ -580,8 +491,12 @@ async function handleRecent(
   const gamesList = recentGames
     .map((game, index) => {
       const medal = index < 3 ? `${index + 1}.` : `${index + 1}.`;
-      const bar = formatPlaytimeWithBar(game.playtime_2weeks, maxRecent);
-      const totalTime = formatPlaytime(game.playtime_forever);
+      const bar = formatPlaytimeWithBar(
+        game.playtime_2weeks,
+        maxRecent,
+        locale
+      );
+      const totalTime = formatPlaytime(game.playtime_forever, locale);
       return `${medal} **[${game.name}](${getStoreUrl(game.appid)})**\n    ${bar}\n    ${t('steam.playtime.total', locale)}: ${totalTime}`;
     })
     .join('\n\n');
@@ -590,7 +505,7 @@ async function handleRecent(
 
   const embed = createEmbed({
     title: `${playerInfo.name} - ${t('steam.recent.title', locale)}`,
-    description: `**${t('steam.playtime.last2Weeks', locale)}:** ${formatPlaytime(totalRecentMinutes)}\n**${t('steam.recent.dailyAverage', locale)}:** ~${formatPlaytime(dailyAverage)}\n\n${gamesList}`,
+    description: `**${t('steam.playtime.last2Weeks', locale)}:** ${formatPlaytime(totalRecentMinutes, locale)}\n**${t('steam.recent.dailyAverage', locale)}:** ~${formatPlaytime(dailyAverage, locale)}\n\n${gamesList}`,
     color: COLORS.STEAM,
     thumbnail: playerInfo.avatarUrl,
     timestamp: true,
@@ -619,7 +534,11 @@ async function handleRanking(
   await interaction.deferReply();
 
   const guild = interaction.guild as Guild;
-  await guild.members.fetch();
+  // Use cache when available, fetch only if cache is significantly smaller
+  // Note: GuildMembers intent is required for full member list
+  if (guild.members.cache.size < guild.memberCount * 0.5) {
+    await guild.members.fetch({ limit: 1000 });
+  }
   const memberIds = guild.members.cache.map((m) => m.id);
   const registeredUsers = getSteamUsersByDiscordIds(memberIds);
 
@@ -785,7 +704,11 @@ async function handleRanking(
   collector.on('end', async () => {
     await interaction
       .editReply({ components: [buildButtons(currentPage, totalPages, true)] })
-      .catch(() => {});
+      .catch((e) => {
+        logger.debug(
+          `Failed to disable ranking pagination buttons: ${e.message}`
+        );
+      });
   });
 }
 
@@ -824,33 +747,29 @@ async function handleHistory(
   }
 
   const now = Date.now();
-  const periods =
-    locale === 'ja'
-      ? [
-          { name: '24時間', duration: ONE_DAY },
-          { name: '7日間', duration: ONE_WEEK },
-          { name: '30日間', duration: ONE_MONTH },
-          { name: '3ヶ月', duration: THREE_MONTHS },
-          { name: '6ヶ月', duration: SIX_MONTHS },
-          { name: '1年', duration: ONE_YEAR },
-        ]
-      : [
-          { name: '24 Hours', duration: ONE_DAY },
-          { name: '7 Days', duration: ONE_WEEK },
-          { name: '30 Days', duration: ONE_MONTH },
-          { name: '3 Months', duration: THREE_MONTHS },
-          { name: '6 Months', duration: SIX_MONTHS },
-          { name: '1 Year', duration: ONE_YEAR },
-        ];
+  const periods = [
+    { name: t('steam.history.periods.day', locale), duration: ONE_DAY },
+    { name: t('steam.history.periods.week', locale), duration: ONE_WEEK },
+    { name: t('steam.history.periods.month', locale), duration: ONE_MONTH },
+    {
+      name: t('steam.history.periods.threeMonths', locale),
+      duration: THREE_MONTHS,
+    },
+    {
+      name: t('steam.history.periods.sixMonths', locale),
+      duration: SIX_MONTHS,
+    },
+    { name: t('steam.history.periods.year', locale), duration: ONE_YEAR },
+  ];
 
   const periodDisplay = periods
     .map((period) => {
       const change = getPlaytimeChange(discordId, now - period.duration, now);
       if (change === 0)
         return `**${period.name}:** ${t('common.noData', locale)}`;
-      const formatted = formatPlaytime(change);
+      const formatted = formatPlaytime(change, locale);
       const dailyAvg = Math.round(change / (period.duration / ONE_DAY));
-      return `**${period.name}:** +${formatted} (~${formatPlaytime(dailyAvg)}/${t('units.perDay', locale)})`;
+      return `**${period.name}:** +${formatted} (~${formatPlaytime(dailyAvg, locale)}/${t('units.perDay', locale)})`;
     })
     .join('\n');
 
@@ -873,7 +792,7 @@ async function handleHistory(
 
   const embed = createEmbed({
     title: `${playerInfo.name} - ${t('steam.history.title', locale)}`,
-    description: `**${t('steam.history.currentTotal', locale)}:** ${formatPlaytime(totalPlaytime)}\n\n**${t('steam.history.playtimeAdded', locale)}:**\n${periodDisplay}`,
+    description: `**${t('steam.history.currentTotal', locale)}:** ${formatPlaytime(totalPlaytime, locale)}\n\n**${t('steam.history.playtimeAdded', locale)}:**\n${periodDisplay}`,
     color: COLORS.STEAM,
     fields: [
       {

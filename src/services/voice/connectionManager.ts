@@ -13,6 +13,7 @@ import {
   StageChannel,
   PermissionFlagsBits,
 } from 'discord.js';
+import prism from 'prism-media';
 import { env } from '../../config/index.js';
 import { logger } from '../../utils/logger.js';
 import {
@@ -81,10 +82,13 @@ export class VoiceConnectionManager {
 
     try {
       // Create voice connection
+      // selfDeaf: false is required to receive audio for recording
       const connection = joinVoiceChannel({
         channelId: channel.id,
         guildId: guild.id,
         adapterCreator: guild.voiceAdapterCreator,
+        selfDeaf: false,
+        selfMute: true, // Bot doesn't need to speak
       });
 
       // Create audio player
@@ -97,25 +101,56 @@ export class VoiceConnectionManager {
         // Get buffer for this channel
         const buffer = audioBufferManager.getBuffer(channelId);
 
-        const audioStream = connection.receiver.subscribe(userId, {
+        // Subscribe to user's audio (returns Opus-encoded stream)
+        const opusStream = connection.receiver.subscribe(userId, {
           end: {
             behavior: EndBehaviorType.AfterSilence,
             duration: 100,
           },
         });
 
-        // Discord sends PCM at 48kHz, 16-bit, mono
-        // Process audio stream
-        audioStream.on('data', (chunk: Buffer) => {
-          // Duration calculation: chunk size / (48000 samples/sec * 2 bytes/sample)
-          const duration = (chunk.length / (48000 * 2)) * 1000; // in milliseconds
-
-          buffer.addChunk(chunk, duration);
+        // Create Opus decoder to convert to PCM
+        // Discord sends: 48kHz, stereo, 16-bit signed little-endian
+        const decoder = new prism.opus.Decoder({
+          rate: 48000,
+          channels: 2,
+          frameSize: 960, // 20ms at 48kHz
         });
 
-        audioStream.on('error', (error) => {
+        // Pipe Opus stream through decoder
+        const pcmStream = opusStream.pipe(decoder);
+
+        // Process decoded PCM audio
+        pcmStream.on('data', (chunk: Buffer) => {
+          // Convert stereo (2 channels) to mono by averaging left and right channels
+          // Input: 16-bit signed LE stereo (L R L R L R...)
+          // Output: 16-bit signed LE mono
+          const monoSamples = chunk.length / 4; // 4 bytes per stereo sample (2 bytes * 2 channels)
+          const monoChunk = Buffer.allocUnsafe(monoSamples * 2);
+
+          for (let i = 0; i < monoSamples; i++) {
+            const left = chunk.readInt16LE(i * 4);
+            const right = chunk.readInt16LE(i * 4 + 2);
+            const mono = Math.round((left + right) / 2);
+            monoChunk.writeInt16LE(mono, i * 2);
+          }
+
+          // Duration calculation: chunk size / (48000 samples/sec * 2 bytes/sample) for mono
+          const duration = (monoChunk.length / (48000 * 2)) * 1000; // in milliseconds
+
+          buffer.addChunk(monoChunk, duration);
+        });
+
+        pcmStream.on('error', (error) => {
           logger.debug(
-            `Audio stream error for user ${userId} in channel ${channelId}:`,
+            `Audio decode error for user ${userId}:`,
+            error instanceof Error ? error.message : error
+          );
+        });
+
+        opusStream.on('error', (error) => {
+          logger.debug(
+            `Audio stream error for user ${userId}:`,
             error instanceof Error ? error.message : error
           );
         });

@@ -1,6 +1,11 @@
 import { PersonaState, CommunityVisibilityState } from './types.js';
-import { STEAM_STATUS, PROGRESS_BAR, COLORS } from '../../utils/constants.js';
+import {
+  STEAM_STATUS,
+  PROGRESS_BAR,
+  COLORS,
+} from '../../utils/constants/index.js';
 import { ColorResolvable } from 'discord.js';
+import { t, Locale, DEFAULT_LOCALE } from '../../locales/index.js';
 
 /**
  * Steam ID regex patterns
@@ -44,50 +49,65 @@ export function parseSteamInput(input: string): {
 /**
  * Format playtime in minutes to human readable string
  * @param minutes Playtime in minutes
- * @returns Formatted string like "1,234時間 30分"
+ * @param locale Locale for formatting (defaults to DEFAULT_LOCALE)
+ * @returns Formatted string like "1,234h 30m" or "1,234時間 30分"
  */
-export function formatPlaytime(minutes: number): string {
+export function formatPlaytime(
+  minutes: number,
+  locale: Locale = DEFAULT_LOCALE
+): string {
   if (minutes === 0) {
-    return '0分';
+    return `0${t('units.minutes', locale)}`;
   }
 
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
 
+  // Use locale-specific number formatting
+  const numberLocale = locale === 'ja' ? 'ja-JP' : 'en-US';
+
   if (hours === 0) {
-    return `${mins}分`;
+    return `${mins}${t('units.minutes', locale)}`;
   }
 
-  const formattedHours = hours.toLocaleString('ja-JP');
+  const formattedHours = hours.toLocaleString(numberLocale);
 
   if (mins === 0) {
-    return `${formattedHours}時間`;
+    return `${formattedHours}${t('units.hours', locale)}`;
   }
 
-  return `${formattedHours}時間 ${mins}分`;
+  return t('units.hoursAndMinutes', locale, {
+    hours: formattedHours,
+    minutes: String(mins),
+  });
 }
 
 /**
  * Get status text from PersonaState
+ * @param state Steam persona state
+ * @param locale Locale for translation (defaults to DEFAULT_LOCALE)
  */
-export function getStatusText(state: PersonaState): string {
+export function getStatusText(
+  state: PersonaState,
+  locale: Locale = DEFAULT_LOCALE
+): string {
   switch (state) {
     case PersonaState.Offline:
-      return 'オフライン';
+      return t('steam.status.offline', locale);
     case PersonaState.Online:
-      return 'オンライン';
+      return t('steam.status.online', locale);
     case PersonaState.Busy:
-      return '取り込み中';
+      return t('steam.status.busy', locale);
     case PersonaState.Away:
-      return '離席中';
+      return t('steam.status.away', locale);
     case PersonaState.Snooze:
-      return 'スヌーズ';
+      return t('steam.status.snooze', locale);
     case PersonaState.LookingToTrade:
-      return 'トレード希望';
+      return t('steam.status.lookingToTrade', locale);
     case PersonaState.LookingToPlay:
-      return 'プレイ希望';
+      return t('steam.status.lookingToPlay', locale);
     default:
-      return '不明';
+      return t('steam.status.unknown', locale);
   }
 }
 
@@ -183,9 +203,15 @@ export function getCountryFlag(countryCode: string): string {
 
 /**
  * Format Unix timestamp to locale date string
+ * @param timestamp Unix timestamp in seconds
+ * @param locale Locale for formatting (defaults to DEFAULT_LOCALE)
  */
-export function formatTimestamp(timestamp: number): string {
-  return new Date(timestamp * 1000).toLocaleDateString('ja-JP', {
+export function formatTimestamp(
+  timestamp: number,
+  locale: Locale = DEFAULT_LOCALE
+): string {
+  const dateLocale = locale === 'ja' ? 'ja-JP' : 'en-US';
+  return new Date(timestamp * 1000).toLocaleDateString(dateLocale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -210,13 +236,17 @@ export function createProgressBar(
 
 /**
  * Format playtime with visual bar for comparison
+ * @param minutes Playtime in minutes
+ * @param maxMinutes Maximum playtime for bar calculation
+ * @param locale Locale for formatting (defaults to DEFAULT_LOCALE)
  */
 export function formatPlaytimeWithBar(
   minutes: number,
-  maxMinutes: number
+  maxMinutes: number,
+  locale: Locale = DEFAULT_LOCALE
 ): string {
   const bar = createProgressBar(minutes, maxMinutes, 8);
-  const time = formatPlaytime(minutes);
+  const time = formatPlaytime(minutes, locale);
   return `${bar} ${time}`;
 }
 

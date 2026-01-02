@@ -10,4 +10,3 @@ export const BOT_INFO = {
   NAME: 'Discord Bot',
   VERSION: '1.0.0',
 } as const;
-

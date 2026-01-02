@@ -44,11 +44,7 @@ class CooldownStore {
   /**
    * Set cooldown for a user on a command
    */
-  setCooldown(
-    commandName: string,
-    userId: string,
-    cooldownMs: number
-  ): void {
+  setCooldown(commandName: string, userId: string, cooldownMs: number): void {
     const timestamps = this.getTimestamps(commandName);
 
     // Limit users per command to prevent memory issues
@@ -137,4 +133,3 @@ class CooldownStore {
 
 // Export singleton instance
 export const cooldownStore = new CooldownStore();
-

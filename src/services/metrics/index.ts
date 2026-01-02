@@ -175,4 +175,3 @@ export const metrics = {
     return lines.join('\n');
   },
 };
-

@@ -89,4 +89,3 @@ class PollStore {
  * Singleton poll store instance
  */
 export const pollStore = new PollStore();
-

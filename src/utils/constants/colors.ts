@@ -46,4 +46,3 @@ export const CHART_COLORS = {
     '#1abc9c', // Teal
   ],
 } as const;
-

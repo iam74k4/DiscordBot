@@ -81,7 +81,9 @@ class BackupService {
       // Get file size
       const stats = fs.statSync(backupPath);
 
-      logger.info(`Backup completed: ${filename} (${Math.round(stats.size / 1024)} KB)`);
+      logger.info(
+        `Backup completed: ${filename} (${Math.round(stats.size / 1024)} KB)`
+      );
 
       // Clean up old backups
       const deleted = this.deleteOldBackups();
@@ -96,7 +98,8 @@ class BackupService {
         timestamp: new Date(),
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       logger.error('Backup failed:', errorMessage);
 
       return {
@@ -134,7 +137,9 @@ class BackupService {
       }
 
       // Sort by creation date (newest first)
-      return backups.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      return backups.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      );
     } catch (error) {
       logger.error('Failed to list backups:', error);
       return [];
@@ -170,7 +175,9 @@ class BackupService {
    * Restore from a backup file
    * WARNING: This will overwrite the current database
    */
-  async restore(filename: string): Promise<{ success: boolean; error?: string }> {
+  async restore(
+    filename: string
+  ): Promise<{ success: boolean; error?: string }> {
     const backupPath = path.join(this.backupDir, filename);
 
     // Validate backup file exists
@@ -196,7 +203,8 @@ class BackupService {
 
       return { success: true };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       logger.error('Restore failed:', errorMessage);
       return { success: false, error: errorMessage };
     }
@@ -254,7 +262,10 @@ class BackupService {
 
     const lines = backups.slice(0, 10).map((backup, index) => {
       const sizeKB = Math.round(backup.size / 1024);
-      const date = backup.createdAt.toISOString().replace('T', ' ').slice(0, 19);
+      const date = backup.createdAt
+        .toISOString()
+        .replace('T', ' ')
+        .slice(0, 19);
       return `${index + 1}. \`${backup.filename}\` (${sizeKB} KB) - ${date}`;
     });
 
@@ -268,4 +279,3 @@ class BackupService {
 
 // Export singleton instance
 export const backupService = new BackupService();
-

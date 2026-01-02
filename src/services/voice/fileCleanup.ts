@@ -53,7 +53,7 @@ export class FileCleanupService {
    * Clean up old recording files
    */
   async cleanup(): Promise<void> {
-    const recordingsDir = join(process.cwd(), 'data', 'recordings');
+    const recordingsDir = join(process.cwd(), env.RECORDINGS_DIR);
     const retentionMs = this.retentionHours * 60 * 60 * 1000;
     const cutoffTime = Date.now() - retentionMs;
 
@@ -103,7 +103,7 @@ export class FileCleanupService {
     fileCount: number;
     totalSizeMB: number;
   }> {
-    const recordingsDir = join(process.cwd(), 'data', 'recordings');
+    const recordingsDir = join(process.cwd(), env.RECORDINGS_DIR);
 
     try {
       const files = await readdir(recordingsDir);
