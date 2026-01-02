@@ -1,244 +1,21 @@
 import {
   SlashCommandBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   ChatInputCommandInteraction,
-  ButtonInteraction,
   MessageFlags,
-  Client,
 } from 'discord.js';
 import { Command } from '../../types/index.js';
 import { createEmbed, createErrorEmbed } from '../../utils/embed.js';
-import { COLORS, PROGRESS_BAR } from '../../utils/constants.js';
+import { COLORS } from '../../utils/constants/index.js';
 import { logger } from '../../utils/logger.js';
-import { t, Locale, mapDiscordLocale } from '../../locales/index.js';
-
-/**
- * Poll data structure
- */
-interface PollData {
-  /** Poll question */
-  question: string;
-  /** Poll options */
-  options: string[];
-  /** Votes per option (userId -> optionIndex) */
-  votes: Map<string, number>;
-  /** Poll creator ID */
-  creatorId: string;
-  /** Whether the poll is anonymous */
-  anonymous: boolean;
-  /** Auto-end timeout */
-  timeout?: NodeJS.Timeout;
-  /** Channel ID */
-  channelId: string;
-  /** Guild ID */
-  guildId: string;
-  /** Discord client reference for auto-end */
-  client?: Client;
-  /** Creator's locale for consistent display */
-  locale: Locale;
-}
-
-/**
- * In-memory poll storage (messageId -> PollData)
- */
-export const pollStore = new Map<string, PollData>();
-
-/**
- * Generate progress bar for poll results
- */
-function generateProgressBar(percentage: number): string {
-  const filled = Math.round((percentage / 100) * PROGRESS_BAR.LENGTH);
-  const empty = PROGRESS_BAR.LENGTH - filled;
-  return PROGRESS_BAR.FILLED.repeat(filled) + PROGRESS_BAR.EMPTY.repeat(empty);
-}
-
-/**
- * Build poll result embed
- */
-function buildPollResultEmbed(
-  poll: PollData,
-  ended: boolean = false
-): ReturnType<typeof createEmbed> {
-  const locale = poll.locale;
-  const totalVotes = poll.votes.size;
-
-  // Count votes per option
-  const voteCounts = poll.options.map((_, index) => {
-    let count = 0;
-    poll.votes.forEach((vote) => {
-      if (vote === index) count++;
-    });
-    return count;
-  });
-
-  // Build result fields
-  const fields = poll.options.map((option, index) => {
-    const count = voteCounts[index];
-    const percentage = totalVotes > 0 ? (count / totalVotes) * 100 : 0;
-    const bar = generateProgressBar(percentage);
-
-    return {
-      name: `${index + 1}. ${option}`,
-      value: `${bar} ${t('poll.votes', locale, { count })} (${percentage.toFixed(1)}%)`,
-      inline: false,
-    };
-  });
-
-  const footerParts: string[] = [];
-  if (poll.anonymous) {
-    footerParts.push(t('poll.anonymous', locale));
-  }
-  footerParts.push(t('poll.total', locale, { count: totalVotes }));
-
-  return createEmbed({
-    title: ended ? t('poll.ended', locale) : t('poll.title', locale),
-    description: poll.question,
-    color: ended ? COLORS.WARNING : COLORS.PRIMARY,
-    fields,
-    footer: footerParts.join(' | '),
-    timestamp: true,
-  });
-}
-
-/**
- * Build vote buttons for poll
- */
-function buildPollButtons(
-  poll: PollData,
-  disabled: boolean = false
-): ActionRowBuilder<ButtonBuilder>[] {
-  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
-  let currentRow = new ActionRowBuilder<ButtonBuilder>();
-
-  poll.options.forEach((_option, index) => {
-    // Max 5 buttons per row
-    if (currentRow.components.length >= 5) {
-      rows.push(currentRow);
-      currentRow = new ActionRowBuilder<ButtonBuilder>();
-    }
-
-    const button = new ButtonBuilder()
-      .setCustomId(`poll_vote_${index}`)
-      .setLabel(`${index + 1}`)
-      .setStyle(ButtonStyle.Primary)
-      .setDisabled(disabled);
-
-    currentRow.addComponents(button);
-  });
-
-  if (currentRow.components.length > 0) {
-    rows.push(currentRow);
-  }
-
-  return rows;
-}
-
-/**
- * Handle vote button click
- * Note: Caller should verify poll exists in pollStore before calling
- */
-export async function handlePollVote(
-  interaction: ButtonInteraction
-): Promise<void> {
-  const messageId = interaction.message.id;
-  const poll = pollStore.get(messageId);
-
-  // Safety check (should not happen if caller verified)
-  if (!poll) {
-    return;
-  }
-
-  // Get voter's locale
-  const locale = mapDiscordLocale(interaction.locale);
-
-  // Extract option index from customId (poll_vote_0, poll_vote_1, etc.)
-  const optionIndex = parseInt(interaction.customId.split('_')[2], 10);
-
-  if (
-    isNaN(optionIndex) ||
-    optionIndex < 0 ||
-    optionIndex >= poll.options.length
-  ) {
-    await interaction.reply({
-      content: t('poll.errors.invalidOption', locale),
-      flags: MessageFlags.Ephemeral,
-    });
-    return;
-  }
-
-  const userId = interaction.user.id;
-  const previousVote = poll.votes.get(userId);
-
-  // Update vote
-  poll.votes.set(userId, optionIndex);
-
-  // Build response message
-  let responseMessage: string;
-  if (previousVote !== undefined && previousVote !== optionIndex) {
-    responseMessage = t('poll.voteChanged', locale, {
-      from: poll.options[previousVote],
-      to: poll.options[optionIndex],
-    });
-  } else if (previousVote === optionIndex) {
-    responseMessage = t('poll.alreadyVoted', locale, {
-      option: poll.options[optionIndex],
-    });
-  } else {
-    responseMessage = t('poll.votedFor', locale, {
-      option: poll.options[optionIndex],
-    });
-  }
-
-  // Acknowledge the vote
-  await interaction.reply({
-    content: responseMessage,
-    flags: MessageFlags.Ephemeral,
-  });
-
-  // Update the poll message with new results
-  const embed = buildPollResultEmbed(poll);
-  await interaction.message.edit({ embeds: [embed] }).catch(() => {});
-}
-
-/**
- * End a poll and show final results
- */
-async function endPoll(messageId: string, client?: Client): Promise<void> {
-  const poll = pollStore.get(messageId);
-  if (!poll) return;
-
-  // Clear timeout if exists
-  if (poll.timeout) {
-    clearTimeout(poll.timeout);
-  }
-
-  // Remove from store
-  pollStore.delete(messageId);
-
-  // Use provided client or stored client
-  const discordClient = client ?? poll.client;
-
-  // Try to update the original message
-  try {
-    const channel = discordClient?.channels.cache.get(poll.channelId);
-    if (channel && channel.isTextBased() && 'messages' in channel) {
-      const message = await channel.messages.fetch(messageId).catch(() => null);
-      if (message) {
-        const embed = buildPollResultEmbed(poll, true);
-        const disabledButtons = buildPollButtons(poll, true);
-        await message.edit({
-          embeds: [embed],
-          components: disabledButtons,
-        });
-        logger.info(`Poll ended: ${poll.question} (${poll.votes.size} votes)`);
-      }
-    }
-  } catch (error) {
-    logger.error('Error ending poll:', error);
-  }
-}
+import { t, mapDiscordLocale } from '../../locales/index.js';
+import {
+  pollStore,
+  PollData,
+  buildPollResultEmbed,
+  buildPollButtons,
+  endPoll,
+  findUserPollInChannel,
+} from '../../services/poll/index.js';
 
 /**
  * Poll command - create and manage polls
@@ -485,17 +262,10 @@ async function handleEndPoll(
   const locale = mapDiscordLocale(interaction.locale);
 
   // Find user's active poll in this channel
-  let foundMessageId: string | null = null;
-
-  for (const [messageId, poll] of pollStore.entries()) {
-    if (
-      poll.creatorId === interaction.user.id &&
-      poll.channelId === interaction.channelId
-    ) {
-      foundMessageId = messageId;
-      break;
-    }
-  }
+  const foundMessageId = findUserPollInChannel(
+    interaction.user.id,
+    interaction.channelId
+  );
 
   if (!foundMessageId) {
     await interaction.reply({

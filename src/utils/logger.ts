@@ -17,6 +17,87 @@ const colors = {
 } as const;
 
 /**
+ * Patterns for sensitive data masking
+ */
+const MASK_PATTERNS: {
+  pattern: RegExp;
+  name: string;
+  replacer?: (match: string) => string;
+}[] = [
+  // Discord tokens (Bot/Bearer tokens format: base64.base64.base64)
+  {
+    pattern: /([\w-]{24,}\.[\w-]{6}\.[\w-]{27,})/g,
+    name: 'token',
+  },
+  // Generic API keys (32 character hex strings)
+  {
+    pattern: /\b([A-F0-9]{32})\b/gi,
+    name: 'apikey',
+  },
+  // Steam ID 64 (17 digits) - partial mask
+  {
+    pattern: /\b(\d{17})\b/g,
+    name: 'steamid',
+    replacer: (match: string) => match.slice(0, 4) + '***' + match.slice(-4),
+  },
+  // Webhook URLs
+  {
+    pattern: /(https:\/\/discord\.com\/api\/webhooks\/\d+\/[\w-]+)/gi,
+    name: 'webhook',
+  },
+];
+
+/**
+ * Mask sensitive data in a string
+ */
+function maskString(str: string): string {
+  let masked = str;
+  for (const { pattern, name, replacer } of MASK_PATTERNS) {
+    if (replacer) {
+      masked = masked.replace(pattern, replacer);
+    } else {
+      masked = masked.replace(pattern, `[MASKED_${name.toUpperCase()}]`);
+    }
+  }
+  return masked;
+}
+
+/**
+ * Recursively mask sensitive data in any value
+ */
+function maskSensitiveData(input: unknown): unknown {
+  if (typeof input === 'string') {
+    return maskString(input);
+  }
+
+  if (Array.isArray(input)) {
+    return input.map(maskSensitiveData);
+  }
+
+  if (input !== null && typeof input === 'object') {
+    const masked: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(input)) {
+      // Mask values for sensitive key names
+      const lowerKey = key.toLowerCase();
+      if (
+        lowerKey.includes('token') ||
+        lowerKey.includes('secret') ||
+        lowerKey.includes('password') ||
+        lowerKey.includes('apikey') ||
+        lowerKey.includes('api_key')
+      ) {
+        masked[key] = '[REDACTED]';
+      } else {
+        masked[key] = maskSensitiveData(value);
+      }
+    }
+    return masked;
+  }
+
+  return input;
+}
+
+/**
  * Get timestamp string
  */
 function getTimestamp(): string {
@@ -55,17 +136,23 @@ function formatMessage(
   }
 
   const formattedLevel = `${levelColor}[${levelTag}]${colors.reset}`;
+
+  // Mask sensitive data in message and args
+  const maskedMessage = maskString(message);
   const formattedArgs =
     args.length > 0
       ? ' ' +
         args
-          .map((arg) =>
-            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-          )
+          .map((arg) => {
+            const masked = maskSensitiveData(arg);
+            return typeof masked === 'object'
+              ? JSON.stringify(masked, null, 2)
+              : String(masked);
+          })
           .join(' ')
       : '';
 
-  return `${timestamp} ${formattedLevel} ${message}${formattedArgs}`;
+  return `${timestamp} ${formattedLevel} ${maskedMessage}${formattedArgs}`;
 }
 
 /**
@@ -76,7 +163,7 @@ function isDebugEnabled(): boolean {
 }
 
 /**
- * Logger utility
+ * Logger utility with automatic sensitive data masking
  */
 export const logger = {
   /**

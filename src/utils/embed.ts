@@ -1,5 +1,5 @@
 import { EmbedBuilder, ColorResolvable } from 'discord.js';
-import { COLORS } from './constants.js';
+import { COLORS } from './constants/index.js';
 
 /**
  * Embed options

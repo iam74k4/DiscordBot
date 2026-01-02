@@ -1,11 +1,7 @@
-import { ChatInputCommandInteraction, Collection } from 'discord.js';
+import { ChatInputCommandInteraction } from 'discord.js';
 import { Command, MiddlewareResult } from '../types/index.js';
-import { DEFAULT_COOLDOWN } from '../utils/constants.js';
-
-/**
- * Cooldown storage: Map<commandName, Map<userId, timestamp>>
- */
-const cooldowns = new Collection<string, Collection<string, number>>();
+import { DEFAULT_COOLDOWN } from '../utils/constants/index.js';
+import { cooldownStore } from '../services/cooldown/index.js';
 
 /**
  * Check and apply cooldown for command execution
@@ -24,34 +20,18 @@ export async function cooldownMiddleware(
   const commandName = command.data.name;
   const userId = interaction.user.id;
 
-  // Initialize cooldown collection for this command if not exists
-  if (!cooldowns.has(commandName)) {
-    cooldowns.set(commandName, new Collection<string, number>());
-  }
-
-  const timestamps = cooldowns.get(commandName)!;
-  const now = Date.now();
-
   // Check if user is on cooldown
-  if (timestamps.has(userId)) {
-    const expirationTime = timestamps.get(userId)! + cooldownAmount;
-
-    if (now < expirationTime) {
-      const timeLeft = (expirationTime - now) / 1000;
-      return {
-        success: false,
-        message: `Please wait ${timeLeft.toFixed(1)} seconds before using \`/${commandName}\` again.`,
-      };
-    }
+  const remainingMs = cooldownStore.getRemainingCooldown(commandName, userId);
+  if (remainingMs > 0) {
+    const timeLeft = remainingMs / 1000;
+    return {
+      success: false,
+      message: `Please wait ${timeLeft.toFixed(1)} seconds before using \`/${commandName}\` again.`,
+    };
   }
 
-  // Set cooldown timestamp
-  timestamps.set(userId, now);
-
-  // Auto-remove cooldown after expiration
-  setTimeout(() => {
-    timestamps.delete(userId);
-  }, cooldownAmount);
+  // Set cooldown
+  cooldownStore.setCooldown(commandName, userId, cooldownAmount);
 
   return { success: true };
 }
@@ -60,15 +40,12 @@ export async function cooldownMiddleware(
  * Clear cooldown for a specific user and command
  */
 export function clearCooldown(commandName: string, userId: string): void {
-  const timestamps = cooldowns.get(commandName);
-  if (timestamps) {
-    timestamps.delete(userId);
-  }
+  cooldownStore.clearCooldown(commandName, userId);
 }
 
 /**
  * Clear all cooldowns for a command
  */
 export function clearCommandCooldowns(commandName: string): void {
-  cooldowns.delete(commandName);
+  cooldownStore.clearCommandCooldowns(commandName);
 }

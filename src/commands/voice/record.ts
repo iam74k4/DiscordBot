@@ -8,7 +8,7 @@ import {
 } from 'discord.js';
 import { Command } from '../../types/index.js';
 import { createEmbed, createErrorEmbed } from '../../utils/embed.js';
-import { COLORS } from '../../utils/constants.js';
+import { COLORS } from '../../utils/constants/index.js';
 import { logger } from '../../utils/logger.js';
 import { t, mapDiscordLocale } from '../../locales/index.js';
 import { env } from '../../config/index.js';

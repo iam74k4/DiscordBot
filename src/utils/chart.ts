@@ -1,6 +1,6 @@
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
 import { ChartConfiguration, Chart, registerables } from 'chart.js';
-import { CHART_COLORS } from './constants.js';
+import { CHART_COLORS } from './constants/index.js';
 
 // Chart dimensions
 const CHART_WIDTH = 600;

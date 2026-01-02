@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { Command } from '../../types/index.js';
 import { createEmbed } from '../../utils/embed.js';
-import { COLORS } from '../../utils/constants.js';
+import { COLORS } from '../../utils/constants/index.js';
 import { t, mapDiscordLocale } from '../../locales/index.js';
 
 /**
