@@ -6,13 +6,16 @@ import {
 } from 'discord.js';
 import { Command } from '../../types/index.js';
 import { createEmbed, createErrorEmbed } from '../../utils/embed.js';
-import { COLORS } from '../../utils/constants.js';
+import { COLORS } from '../../utils/constants/index.js';
 import { isBotOwner } from '../../config/env.js';
 import {
   getRegisteredUsersCount,
-  database,
+  getTableRowCount,
 } from '../../services/database/index.js';
 import { t, mapDiscordLocale } from '../../locales/index.js';
+import { getHealthStatus, formatHealthStatus } from '../../services/health/index.js';
+import { backupService } from '../../services/backup/index.js';
+import { metrics } from '../../services/metrics/index.js';
 
 /**
  * Check if user is bot owner
@@ -66,9 +69,9 @@ async function handleStats(
 }
 
 /**
- * Allowed table names for database statistics (whitelist for SQL safety)
+ * Table names to display in database stats
  */
-const ALLOWED_TABLES = new Set([
+const DB_STATS_TABLES = [
   'steam_users',
   'playtime_history',
   'notification_settings',
@@ -76,27 +79,7 @@ const ALLOWED_TABLES = new Set([
   'game_activity_cache',
   'guild_settings',
   'audit_logs',
-]);
-
-/**
- * Safely get row count for a whitelisted table
- */
-function getTableCount(tableName: string): number | null {
-  // Validate table name against whitelist to prevent SQL injection
-  if (!ALLOWED_TABLES.has(tableName)) {
-    return null;
-  }
-
-  try {
-    // Table name is validated against whitelist, safe to use in query
-    const stmt = database.prepare(`SELECT COUNT(*) as count FROM ${tableName}`);
-    const result = stmt.get() as { count: number } | undefined;
-    return result?.count ?? null;
-  } catch {
-    // Table doesn't exist yet
-    return null;
-  }
-}
+];
 
 /**
  * Handle db subcommand
@@ -108,8 +91,8 @@ async function handleDb(
 
   const tableCounts: { name: string; count: number }[] = [];
 
-  for (const table of ALLOWED_TABLES) {
-    const count = getTableCount(table);
+  for (const table of DB_STATS_TABLES) {
+    const count = getTableRowCount(table);
     if (count !== null) {
       tableCounts.push({ name: table, count });
     }
@@ -205,6 +188,95 @@ async function handleBroadcast(
   await interaction.editReply({ embeds: [resultEmbed] });
 }
 
+/**
+ * Handle health subcommand
+ */
+async function handleHealth(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  const health = getHealthStatus(interaction.client);
+  const formatted = formatHealthStatus(health);
+
+  const statusColor =
+    health.status === 'healthy'
+      ? COLORS.SUCCESS
+      : health.status === 'degraded'
+        ? COLORS.WARNING
+        : COLORS.ERROR;
+
+  const embed = createEmbed({
+    title: 'System Health Check',
+    description: formatted,
+    color: statusColor,
+    timestamp: true,
+  });
+
+  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+}
+
+/**
+ * Handle backup list subcommand
+ */
+async function handleBackupList(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  const backupList = backupService.formatBackupList();
+
+  const embed = createEmbed({
+    title: 'Database Backups',
+    description: backupList,
+    color: COLORS.INFO,
+    timestamp: true,
+  });
+
+  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+}
+
+/**
+ * Handle backup run subcommand
+ */
+async function handleBackupRun(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+  const result = await backupService.runBackup();
+
+  if (result.success) {
+    const embed = createEmbed({
+      title: 'Backup Complete',
+      description: `Backup created successfully.\n\n**Filename:** \`${result.filename}\`\n**Size:** ${Math.round(result.size / 1024)} KB`,
+      color: COLORS.SUCCESS,
+      timestamp: true,
+    });
+    await interaction.editReply({ embeds: [embed] });
+  } else {
+    const embed = createErrorEmbed(
+      'Backup Failed',
+      result.error || 'Unknown error occurred'
+    );
+    await interaction.editReply({ embeds: [embed] });
+  }
+}
+
+/**
+ * Handle metrics subcommand
+ */
+async function handleMetrics(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  const formatted = metrics.formatForDisplay();
+
+  const embed = createEmbed({
+    title: 'Bot Metrics',
+    description: formatted,
+    color: COLORS.INFO,
+    timestamp: true,
+  });
+
+  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+}
+
 // ============ Command Definition ============
 
 export const command: Command = {
@@ -254,6 +326,38 @@ export const command: Command = {
             })
             .setRequired(true)
         )
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('health')
+        .setDescription('View system health status')
+        .setDescriptionLocalizations({
+          ja: 'システムヘルスステータスを表示',
+        })
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('backup-list')
+        .setDescription('List database backups')
+        .setDescriptionLocalizations({
+          ja: 'データベースバックアップ一覧',
+        })
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('backup-run')
+        .setDescription('Run a manual database backup')
+        .setDescriptionLocalizations({
+          ja: '手動でデータベースバックアップを実行',
+        })
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('metrics')
+        .setDescription('View bot usage metrics')
+        .setDescriptionLocalizations({
+          ja: 'Bot使用メトリクスを表示',
+        })
     ),
 
   async execute(interaction) {
@@ -286,6 +390,18 @@ export const command: Command = {
         break;
       case 'broadcast':
         await handleBroadcast(interaction);
+        break;
+      case 'health':
+        await handleHealth(interaction);
+        break;
+      case 'backup-list':
+        await handleBackupList(interaction);
+        break;
+      case 'backup-run':
+        await handleBackupRun(interaction);
+        break;
+      case 'metrics':
+        await handleMetrics(interaction);
         break;
     }
   },
