@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 import { Command } from '../../types/index.js';
 import { createEmbed, createErrorEmbed } from '../../utils/embed.js';
-import { COLORS } from '../../utils/constants.js';
+import { COLORS } from '../../utils/constants/index.js';
 import { createPieChart } from '../../utils/chart.js';
 import { getSteamUsersByDiscordIds } from '../../services/database/index.js';
 import { steamClient } from '../../services/steam/index.js';
@@ -35,7 +35,12 @@ async function handleStats(
   await interaction.deferReply();
 
   const guild = interaction.guild;
-  await guild.members.fetch();
+  // Use cache when available, fetch only if cache is empty
+  // Note: GuildMembers intent is required for full member list
+  if (guild.members.cache.size < guild.memberCount) {
+    // Fetch with a limit to avoid rate limits on large servers
+    await guild.members.fetch({ limit: 1000 });
+  }
 
   // Member statistics
   const totalMembers = guild.memberCount;

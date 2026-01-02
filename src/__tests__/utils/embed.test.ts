@@ -6,7 +6,7 @@ import {
   createWarningEmbed,
   createInfoEmbed,
 } from '../../utils/embed.js';
-import { COLORS } from '../../utils/constants.js';
+import { COLORS } from '../../utils/constants/index.js';
 
 describe('createEmbed', () => {
   it('should create embed with default color', () => {

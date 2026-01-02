@@ -1,5 +1,5 @@
 import { Client, TextChannel, EmbedBuilder } from 'discord.js';
-import { COLORS } from '../../utils/constants.js';
+import { COLORS } from '../../utils/constants/index.js';
 import { logger } from '../../utils/logger.js';
 import {
   getAuditChannel,
