@@ -31,8 +31,12 @@ async function recordAllUsersPlaytime(): Promise<void> {
       // We record 0 to track users who haven't played yet
       recordPlaytime(user.discord_id, user.steam_id, totalPlaytime);
       successCount++;
-    } catch {
+    } catch (error) {
       errorCount++;
+      logger.warn(
+        `Playtime recording failed for ${user.discord_id}:`,
+        error instanceof Error ? error.message : error
+      );
     }
 
     // Small delay to avoid rate limiting

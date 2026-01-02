@@ -4,7 +4,8 @@ import { getCommand } from '../../handlers/commandHandler.js';
 import { runMiddleware } from '../../middleware/index.js';
 import { logger } from '../../utils/logger.js';
 import { createErrorEmbed } from '../../utils/embed.js';
-import { handlePollVote, pollStore } from '../../commands/community/index.js';
+import { handlePollVote, pollStore } from '../../services/poll/index.js';
+import { metrics } from '../../services/metrics/index.js';
 
 /**
  * InteractionCreate event - handles slash command and autocomplete interactions
@@ -18,7 +19,9 @@ export const event: Event<typeof Events.InteractionCreate> = {
       const command = getCommand(interaction.commandName);
 
       if (!command || !command.autocomplete) {
-        await interaction.respond([]).catch(() => {});
+        await interaction.respond([]).catch((e) => {
+          logger.debug(`Failed to respond to autocomplete: ${e.message}`);
+        });
         return;
       }
 
@@ -29,7 +32,9 @@ export const event: Event<typeof Events.InteractionCreate> = {
           `Autocomplete error for ${interaction.commandName}:`,
           error
         );
-        await interaction.respond([]).catch(() => {});
+        await interaction.respond([]).catch((e) => {
+          logger.debug(`Failed to respond to autocomplete error: ${e.message}`);
+        });
       }
       return;
     }
@@ -48,7 +53,9 @@ export const event: Event<typeof Events.InteractionCreate> = {
                 content: 'An error occurred while processing your vote.',
                 flags: MessageFlags.Ephemeral,
               })
-              .catch(() => {});
+              .catch((e) => {
+                logger.debug(`Failed to reply to poll vote error: ${e.message}`);
+              });
           }
         } else {
           await interaction
@@ -56,7 +63,9 @@ export const event: Event<typeof Events.InteractionCreate> = {
               content: 'This poll has ended or no longer exists.',
               flags: MessageFlags.Ephemeral,
             })
-            .catch(() => {});
+            .catch((e) => {
+              logger.debug(`Failed to reply to ended poll: ${e.message}`);
+            });
         }
       }
       return;
@@ -80,10 +89,16 @@ export const event: Event<typeof Events.InteractionCreate> = {
       // Execute the command
       await command.execute(interaction);
 
+      // Track successful command execution
+      metrics.incrementCommand(interaction.commandName);
+
       logger.debug(
         `Command executed: ${interaction.commandName} by ${interaction.user.tag}`
       );
     } catch (error) {
+      // Track command error
+      metrics.incrementError(interaction.commandName);
+
       logger.error(
         `Error executing command ${interaction.commandName}:`,
         error
@@ -96,11 +111,15 @@ export const event: Event<typeof Events.InteractionCreate> = {
       );
 
       if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ embeds: [errorEmbed] }).catch(() => {});
+        await interaction.editReply({ embeds: [errorEmbed] }).catch((e) => {
+          logger.debug(`Failed to edit reply with error embed: ${e.message}`);
+        });
       } else {
         await interaction
           .reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral })
-          .catch(() => {});
+          .catch((e) => {
+            logger.debug(`Failed to reply with error embed: ${e.message}`);
+          });
       }
     }
   },
