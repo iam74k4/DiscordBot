@@ -17,9 +17,7 @@ const scheduledTasks: cron.ScheduledTask[] = [];
  */
 async function recordAllUsersPlaytime(): Promise<void> {
   if (!steamClient.isConfigured()) {
-    logger.debug(
-      'Steam API key not configured, skipping playtime recording'
-    );
+    logger.debug('Steam API key not configured, skipping playtime recording');
     return;
   }
 
