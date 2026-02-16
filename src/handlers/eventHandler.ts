@@ -39,9 +39,7 @@ export async function loadEvents(client: ExtendedClient): Promise<void> {
               event.execute(client, ...args)
             );
           } else {
-            client.on(event.name, (...args) =>
-              event.execute(client, ...args)
-            );
+            client.on(event.name, (...args) => event.execute(client, ...args));
           }
 
           logger.debug(`Loaded event: ${event.name} (${category})`);
