@@ -21,6 +21,16 @@ db.pragma('journal_mode = WAL');
 let isInitialized = false;
 
 /**
+ * Run a synchronous function inside a database transaction.
+ * Automatically commits on success and rolls back on error.
+ * Note: Transaction functions do NOT work with async functions (better-sqlite3 limitation).
+ */
+export function runTransaction<T>(fn: () => T): T {
+  const transaction = db.transaction(fn);
+  return transaction();
+}
+
+/**
  * Initialize database tables (called explicitly from main)
  * This should only be called once at startup
  */
@@ -30,67 +40,66 @@ export function initializeDatabase(): void {
     return;
   }
 
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS steam_users (
-      discord_id TEXT PRIMARY KEY,
-      steam_id TEXT NOT NULL,
-      steam_name TEXT,
-      registered_at INTEGER NOT NULL
-    )
-  `);
+  runTransaction(() => {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS steam_users (
+        discord_id TEXT PRIMARY KEY,
+        steam_id TEXT NOT NULL,
+        steam_name TEXT,
+        registered_at INTEGER NOT NULL
+      )
+    `);
 
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS playtime_history (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      discord_id TEXT NOT NULL,
-      steam_id TEXT NOT NULL,
-      total_playtime INTEGER NOT NULL,
-      recorded_at INTEGER NOT NULL,
-      FOREIGN KEY (discord_id) REFERENCES steam_users(discord_id)
-    )
-  `);
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS playtime_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        discord_id TEXT NOT NULL,
+        steam_id TEXT NOT NULL,
+        total_playtime INTEGER NOT NULL,
+        recorded_at INTEGER NOT NULL,
+        FOREIGN KEY (discord_id) REFERENCES steam_users(discord_id)
+      )
+    `);
 
-  db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_playtime_history_discord_id
-    ON playtime_history(discord_id)
-  `);
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_playtime_history_discord_id
+      ON playtime_history(discord_id)
+    `);
 
-  db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_playtime_history_recorded_at
-    ON playtime_history(recorded_at)
-  `);
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_playtime_history_recorded_at
+      ON playtime_history(recorded_at)
+    `);
 
-  // Notification settings table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS notification_settings (
-      guild_id TEXT PRIMARY KEY,
-      channel_id TEXT NOT NULL,
-      enabled INTEGER NOT NULL DEFAULT 1,
-      created_at INTEGER NOT NULL
-    )
-  `);
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS notification_settings (
+        guild_id TEXT PRIMARY KEY,
+        channel_id TEXT NOT NULL,
+        enabled INTEGER NOT NULL DEFAULT 1,
+        created_at INTEGER NOT NULL
+      )
+    `);
 
-  // User notification preferences
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS user_notification_prefs (
-      discord_id TEXT PRIMARY KEY,
-      notify_enabled INTEGER NOT NULL DEFAULT 1,
-      FOREIGN KEY (discord_id) REFERENCES steam_users(discord_id)
-    )
-  `);
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS user_notification_prefs (
+        discord_id TEXT PRIMARY KEY,
+        notify_enabled INTEGER NOT NULL DEFAULT 1,
+        FOREIGN KEY (discord_id) REFERENCES steam_users(discord_id)
+      )
+    `);
 
-  // Game activity cache (to detect changes)
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS game_activity_cache (
-      discord_id TEXT PRIMARY KEY,
-      current_game TEXT,
-      game_started_at INTEGER,
-      last_checked INTEGER NOT NULL
-    )
-  `);
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS game_activity_cache (
+        discord_id TEXT PRIMARY KEY,
+        current_game TEXT,
+        game_started_at INTEGER,
+        last_checked INTEGER NOT NULL
+      )
+    `);
 
-  // Initialize settings tables (guild_settings, audit_logs)
-  initializeSettingsTables();
+    // Initialize settings tables (guild_settings, audit_logs)
+    initializeSettingsTables();
+  });
 
   isInitialized = true;
   logger.info('Database initialized');

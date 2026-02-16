@@ -8,6 +8,7 @@ import { Command } from '../../types/index.js';
 import { createEmbed, createErrorEmbed } from '../../utils/embed.js';
 import { COLORS } from '../../utils/constants/index.js';
 import { isBotOwner } from '../../config/env.js';
+import { logger } from '../../utils/logger.js';
 import {
   getRegisteredUsersCount,
   getTableRowCount,
@@ -176,8 +177,12 @@ async function handleBroadcast(
       const owner = await guild.fetchOwner();
       await owner.send({ embeds: [embed] });
       sent++;
-    } catch {
+    } catch (error) {
       failed++;
+      logger.debug(
+        `Failed to send broadcast to guild ${guild.id}:`,
+        error instanceof Error ? error.message : error
+      );
     }
   }
 
