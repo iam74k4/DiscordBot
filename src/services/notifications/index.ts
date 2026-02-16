@@ -13,6 +13,8 @@ import {
 
 // Check interval: 5 minutes
 const CHECK_INTERVAL = 5 * 60 * 1000;
+// Timeout for notification processing (5 minutes)
+const PROCESSING_TIMEOUT = 5 * 60 * 1000;
 
 let notificationClient: Client | null = null;
 let checkInterval: NodeJS.Timeout | null = null;
@@ -116,6 +118,12 @@ async function processNotifications(): Promise<void> {
 
   isProcessing = true;
 
+  // Timeout protection: reset isProcessing if stuck
+  const timeout = setTimeout(() => {
+    logger.error('Notification processing timed out, resetting lock');
+    isProcessing = false;
+  }, PROCESSING_TIMEOUT);
+
   try {
     const events = await checkGameActivity();
 
@@ -171,6 +179,7 @@ async function processNotifications(): Promise<void> {
   } catch (error) {
     logger.error('Failed to process notifications:', error);
   } finally {
+    clearTimeout(timeout);
     isProcessing = false;
   }
 }

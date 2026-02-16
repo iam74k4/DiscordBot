@@ -1,0 +1,53 @@
+---
+description: Architecture and coding standards for the Discord Bot project
+alwaysApply: true
+---
+
+# Architecture Rules
+
+## Project Structure
+
+- `src/commands/` — Slash command definitions grouped by category
+- `src/events/` — Discord event handlers grouped by category
+- `src/services/` — Business logic (database, voice, notifications, etc.)
+- `src/handlers/` — Command/event loading and registration
+- `src/middleware/` — Pre-execution checks (cooldown, permissions, etc.)
+- `src/utils/` — Pure utilities (logger, embed builder, chart, retry, etc.)
+- `src/config/` — Environment config and validation
+- `src/types/` — TypeScript type definitions
+- `src/locales/` — i18n translations (en, ja)
+
+## Coding Standards
+
+### Error Handling
+
+- Always wrap command/event execution in try-catch
+- Log errors with `logger.error()` — never use empty catch blocks
+- Use `error instanceof Error ? error.message : error` pattern for safe logging
+- Commands should reply with user-friendly error embeds, not raw error messages
+- Use `process.on('unhandledRejection')` and `process.on('uncaughtException')` at the top level
+
+### Database
+
+- Use prepared statements for all queries (already enforced by better-sqlite3)
+- Use `runTransaction()` for operations that modify multiple tables
+- Table names in dynamic queries must be validated against `ALLOWED_TABLES`
+- All table creation should be inside `initializeDatabase()` within a transaction
+
+### Voice
+
+- Use the `entersState` + `Promise.race` pattern from `@discordjs/voice` for disconnect handling
+- Always clean up audio buffers when disconnecting (`audioBufferManager.removeBuffer`)
+- Respect `MAX_CONCURRENT_VC_CONNECTIONS` limit
+
+### Services
+
+- Follow singleton pattern for service instances (export `const instance = new Service()`)
+- Register services in `index.ts` and handle cleanup in `gracefulShutdown()`
+- Start services that depend on Discord after `client.login()`
+
+### Localization
+
+- Use `t(locale, key, ...args)` for user-facing text
+- Map Discord locales with `mapDiscordLocale(interaction.locale)`
+- Add translations to both `en.ts` and `ja.ts`

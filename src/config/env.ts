@@ -34,8 +34,44 @@ function validateEnv(): void {
   }
 }
 
+/**
+ * Validate numerical configuration values
+ */
+function validateNumericalConfig(): void {
+  const warnings: string[] = [];
+
+  const maxRec = parseNumber(process.env.MAX_RECORDING_DURATION, 300);
+  const bufferDur = parseNumber(process.env.AUDIO_BUFFER_DURATION, 600);
+  const memBuf = parseNumber(process.env.AUDIO_MEMORY_BUFFER_DURATION, 120);
+
+  if (maxRec <= 0) {
+    warnings.push('MAX_RECORDING_DURATION must be > 0');
+  }
+  if (bufferDur < maxRec) {
+    warnings.push(
+      `AUDIO_BUFFER_DURATION (${bufferDur}) should be >= MAX_RECORDING_DURATION (${maxRec})`
+    );
+  }
+  if (memBuf <= 0) {
+    warnings.push('AUDIO_MEMORY_BUFFER_DURATION must be > 0');
+  }
+
+  const memWarn = parseNumber(process.env.MEMORY_WARNING_THRESHOLD_MB, 100);
+  const memCrit = parseNumber(process.env.MEMORY_CRITICAL_THRESHOLD_MB, 150);
+  if (memWarn >= memCrit) {
+    warnings.push(
+      `MEMORY_WARNING_THRESHOLD_MB (${memWarn}) should be < MEMORY_CRITICAL_THRESHOLD_MB (${memCrit})`
+    );
+  }
+
+  for (const w of warnings) {
+    logger.warn(`Config validation: ${w}`);
+  }
+}
+
 // Validate on import
 validateEnv();
+validateNumericalConfig();
 
 /**
  * Parse comma-separated IDs

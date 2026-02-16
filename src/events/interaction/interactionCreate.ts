@@ -1,6 +1,5 @@
 import { Events, MessageFlags } from 'discord.js';
 import { Event } from '../../types/index.js';
-import { getCommand } from '../../handlers/commandHandler.js';
 import { runMiddleware } from '../../middleware/index.js';
 import { logger } from '../../utils/logger.js';
 import { createErrorEmbed } from '../../utils/embed.js';
@@ -13,10 +12,10 @@ import { metrics } from '../../services/metrics/index.js';
 export const event: Event<typeof Events.InteractionCreate> = {
   name: Events.InteractionCreate,
   once: false,
-  async execute(_client, interaction) {
+  async execute(client, interaction) {
     // Handle autocomplete interactions
     if (interaction.isAutocomplete()) {
-      const command = getCommand(interaction.commandName);
+      const command = client.commands.get(interaction.commandName);
 
       if (!command || !command.autocomplete) {
         await interaction.respond([]).catch((e) => {
@@ -76,7 +75,7 @@ export const event: Event<typeof Events.InteractionCreate> = {
     // Only handle chat input commands (slash commands)
     if (!interaction.isChatInputCommand()) return;
 
-    const command = getCommand(interaction.commandName);
+    const command = client.commands.get(interaction.commandName);
 
     if (!command) {
       logger.warn(`Unknown command: ${interaction.commandName}`);
