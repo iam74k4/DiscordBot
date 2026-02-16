@@ -190,11 +190,7 @@ export async function recordAudio(
       const audioData = await buffer.getAudioData(duration);
 
       // Resample from 48kHz (Discord default) to 32kHz
-      const resampledData = resampleAudio(
-        audioData,
-        48000,
-        AUDIO.SAMPLE_RATE
-      );
+      const resampledData = resampleAudio(audioData, 48000, AUDIO.SAMPLE_RATE);
 
       // Ensure recordings directory exists
       const recordingsDir = join(process.cwd(), env.RECORDINGS_DIR);
