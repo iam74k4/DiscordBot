@@ -27,22 +27,35 @@ export async function loadEvents(client: ExtendedClient): Promise<void> {
 
     for (const file of eventFiles) {
       const filePath = join(categoryPath, file);
-      const eventModule = await import(
-        `file://${filePath.replace(/\\/g, '/')}`
-      );
-      const event: Event = eventModule.default ?? eventModule.event;
+      try {
+        const eventModule = await import(
+          `file://${filePath.replace(/\\/g, '/')}`
+        );
+        const event: Event = eventModule.default ?? eventModule.event;
 
-      if (event?.name) {
-        if (event.once) {
-          client.once(event.name, (...args) => event.execute(client, ...args));
+        if (event?.name && typeof event.execute === 'function') {
+          if (event.once) {
+            client.once(event.name, (...args) =>
+              event.execute(client, ...args)
+            );
+          } else {
+            client.on(event.name, (...args) =>
+              event.execute(client, ...args)
+            );
+          }
+
+          logger.debug(`Loaded event: ${event.name} (${category})`);
+          eventCount++;
         } else {
-          client.on(event.name, (...args) => event.execute(client, ...args));
+          logger.warn(
+            `Invalid event file: ${filePath} - missing name or execute`
+          );
         }
-
-        logger.debug(`Loaded event: ${event.name} (${category})`);
-        eventCount++;
-      } else {
-        logger.warn(`Invalid event file: ${filePath}`);
+      } catch (error) {
+        logger.error(
+          `Failed to load event from ${filePath}:`,
+          error instanceof Error ? error.message : error
+        );
       }
     }
   }

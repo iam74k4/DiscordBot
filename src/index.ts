@@ -17,6 +17,7 @@ import {
 } from './services/database/index.js';
 import { backupService } from './services/backup/index.js';
 import { setServiceStatus } from './services/health/index.js';
+import { connectionManager } from './services/voice/connectionManager.js';
 import type { ExtendedClient } from './client.js';
 
 // Flag to prevent multiple shutdown attempts
@@ -45,6 +46,11 @@ async function gracefulShutdown(
     logger.debug('Stopping memory monitor...');
     memoryMonitor.stop();
     setServiceStatus('memoryMonitor', false);
+
+    logger.debug('Disconnecting all voice connections...');
+    for (const [channelId] of connectionManager.getAllConnections()) {
+      await connectionManager.disconnect(channelId);
+    }
 
     logger.debug('Stopping audio buffer cleanup...');
     audioBufferManager.stopCleanup();
@@ -93,16 +99,31 @@ async function main(): Promise<void> {
   process.on('SIGINT', () => gracefulShutdown(client, 'SIGINT'));
   process.on('SIGTERM', () => gracefulShutdown(client, 'SIGTERM'));
 
+  // Process-level error handlers
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Promise Rejection at:', promise, 'reason:', reason);
+  });
+
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception:', error);
+    gracefulShutdown(client, 'uncaughtException');
+  });
+
+  // Discord client error handler (non-async per discord.js docs)
+  client.on('error', (error) => {
+    logger.error('Discord client error:', error);
+  });
+
   // Load commands and events
   await loadCommands(client);
   await loadEvents(client);
 
-  // Start scheduler for periodic tasks
+  // Login to Discord first (before starting services that depend on it)
+  await client.login(env.DISCORD_TOKEN);
+
+  // Start scheduler after login
   startScheduler();
   setServiceStatus('scheduler', true);
-
-  // Login to Discord
-  await client.login(env.DISCORD_TOKEN);
 
   // Start notification system after login
   startNotificationSystem(client);

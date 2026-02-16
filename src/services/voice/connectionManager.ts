@@ -2,9 +2,8 @@ import {
   VoiceConnection,
   VoiceConnectionStatus,
   createAudioPlayer,
-  getVoiceConnection,
   joinVoiceChannel,
-  VoiceConnectionDisconnectReason,
+  entersState,
   EndBehaviorType,
 } from '@discordjs/voice';
 import {
@@ -156,9 +155,30 @@ export class VoiceConnectionManager {
         });
       });
 
-      // Set up connection state handlers
-      connection.on('stateChange', (oldState, newState) => {
-        this.handleStateChange(channelId, oldState.status, newState.status);
+      // Handle disconnect using official discord.js pattern
+      connection.on(VoiceConnectionStatus.Disconnected, async () => {
+        try {
+          await Promise.race([
+            entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
+            entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+          ]);
+          // Reconnecting to a new channel - ignore disconnect
+        } catch {
+          // Real disconnect - clean up
+          connection.destroy();
+          this.connections.delete(channelId);
+          audioBufferManager.removeBuffer(channelId);
+          logger.info(`Disconnected from voice channel ${channelId}`);
+        }
+      });
+
+      connection.on(VoiceConnectionStatus.Ready, () => {
+        const connInfo = this.connections.get(channelId);
+        if (connInfo) {
+          connInfo.state = VoiceConnectionState.Connected;
+          connInfo.connectedAt = Date.now();
+        }
+        logger.info(`Connected to voice channel ${channelId}`);
       });
 
       // Store connection info
@@ -185,118 +205,6 @@ export class VoiceConnectionManager {
       );
       return null;
     }
-  }
-
-  /**
-   * Handle connection state changes
-   */
-  private handleStateChange(
-    channelId: string,
-    oldStatus: VoiceConnectionStatus,
-    newStatus: VoiceConnectionStatus
-  ): void {
-    const info = this.connections.get(channelId);
-    if (!info) return;
-
-    logger.debug(
-      `Voice connection state changed for ${channelId}: ${oldStatus} -> ${newStatus}`
-    );
-
-    switch (newStatus) {
-      case VoiceConnectionStatus.Ready:
-        info.state = VoiceConnectionState.Connected;
-        info.connectedAt = Date.now();
-        logger.info(`Connected to voice channel ${channelId}`);
-        break;
-
-      case VoiceConnectionStatus.Disconnected: {
-        // Check if this is a recoverable disconnect
-        const connectionState = info.connection.state;
-        if ('reason' in connectionState) {
-          const disconnectReason = connectionState.reason;
-          if (
-            disconnectReason === VoiceConnectionDisconnectReason.Manual ||
-            disconnectReason === VoiceConnectionDisconnectReason.EndpointRemoved
-          ) {
-            info.state = VoiceConnectionState.Disconnected;
-            this.connections.delete(channelId);
-            logger.info(`Disconnected from voice channel ${channelId}`);
-          } else {
-            // Attempt reconnection
-            info.state = VoiceConnectionState.Error;
-            this.attemptReconnect(channelId);
-          }
-        } else {
-          info.state = VoiceConnectionState.Disconnected;
-          this.connections.delete(channelId);
-          logger.info(`Disconnected from voice channel ${channelId}`);
-        }
-        break;
-      }
-
-      case VoiceConnectionStatus.Connecting:
-        info.state = VoiceConnectionState.Connecting;
-        break;
-
-      case VoiceConnectionStatus.Signalling:
-        info.state = VoiceConnectionState.Connecting;
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  /**
-   * Attempt to reconnect to a voice channel
-   */
-  private async attemptReconnect(channelId: string): Promise<void> {
-    const info = this.connections.get(channelId);
-    if (!info) return;
-
-    const maxRetries = env.RECORDING_RETRY_MAX;
-    let retryCount = 0;
-
-    const reconnect = async (): Promise<void> => {
-      if (retryCount >= maxRetries) {
-        logger.error(
-          `Failed to reconnect to channel ${channelId} after ${maxRetries} attempts`
-        );
-        this.connections.delete(channelId);
-        return;
-      }
-
-      retryCount++;
-      const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 10000); // Exponential backoff, max 10s
-
-      logger.info(
-        `Attempting to reconnect to channel ${channelId} (attempt ${retryCount}/${maxRetries}) in ${delay}ms`
-      );
-
-      await new Promise((resolve) => setTimeout(resolve, delay));
-
-      try {
-        const connection = getVoiceConnection(info.guildId);
-        if (
-          connection &&
-          connection.state.status === VoiceConnectionStatus.Ready
-        ) {
-          info.state = VoiceConnectionState.Connected;
-          info.connection = connection;
-          logger.info(`Reconnected to voice channel ${channelId}`);
-        } else {
-          await reconnect();
-        }
-      } catch (error) {
-        logger.error(
-          `Reconnection attempt ${retryCount} failed for channel ${channelId}:`,
-          error instanceof Error ? error.message : error
-        );
-        await reconnect();
-      }
-    };
-
-    await reconnect();
   }
 
   /**
