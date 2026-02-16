@@ -37,12 +37,23 @@ export class SteamClient {
   }
 
   /**
+   * Check if the Steam API key is configured
+   */
+  isConfigured(): boolean {
+    return this.apiKey.length > 0;
+  }
+
+  /**
    * Make API request to Steam with automatic retry
    */
   private async request<T>(
     endpoint: string,
     params: Record<string, string> = {}
   ): Promise<T> {
+    if (!this.isConfigured()) {
+      throw new Error('STEAM_API_KEY is not configured');
+    }
+
     const url = new URL(endpoint, STEAM_API_BASE);
     url.searchParams.set('key', this.apiKey);
 

@@ -1,6 +1,6 @@
 import { createWriteStream, readFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { env } from '../../config/index.js';
+import { env, AUDIO, MONITORING } from '../../config/index.js';
 import { logger } from '../../utils/logger.js';
 import { AudioBufferConfig, AudioChunk } from '../../types/voice.js';
 import { BoundedMap } from '../../utils/lruCache.js';
@@ -299,9 +299,9 @@ export class AudioBufferManager {
       diskBufferDuration:
         env.AUDIO_BUFFER_DURATION - env.AUDIO_MEMORY_BUFFER_DURATION,
       totalBufferDuration: env.AUDIO_BUFFER_DURATION,
-      sampleRate: env.AUDIO_SAMPLE_RATE,
-      bitDepth: env.AUDIO_BIT_DEPTH,
-      channels: env.AUDIO_CHANNELS,
+      sampleRate: AUDIO.SAMPLE_RATE,
+      bitDepth: AUDIO.BIT_DEPTH,
+      channels: AUDIO.CHANNELS,
       diskBufferDir: env.AUDIO_DISK_BUFFER_DIR,
     };
 
@@ -341,7 +341,7 @@ export class AudioBufferManager {
       for (const buffer of this.buffers.values()) {
         buffer.cleanupOldFiles();
       }
-    }, env.DISK_BUFFER_CLEANUP_INTERVAL_MS);
+    }, MONITORING.DISK_BUFFER_CLEANUP_INTERVAL_MS);
 
     logger.info('Started audio buffer cleanup interval');
   }

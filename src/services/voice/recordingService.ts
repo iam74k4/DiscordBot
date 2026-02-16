@@ -1,6 +1,6 @@
 import { createWriteStream, existsSync, mkdirSync, statSync } from 'fs';
 import { join } from 'path';
-import { env } from '../../config/index.js';
+import { env, AUDIO, DISCORD_LIMITS } from '../../config/index.js';
 import { audioBufferManager } from './audioBuffer.js';
 import { RecordingOptions, RecordingResult } from '../../types/voice.js';
 import { BoundedMap } from '../../utils/lruCache.js';
@@ -44,9 +44,9 @@ function parseDuration(durationStr: string): number {
  * Create WAV file header
  */
 function createWAVHeader(dataSize: number): Buffer {
-  const sampleRate = env.AUDIO_SAMPLE_RATE;
-  const bitDepth = env.AUDIO_BIT_DEPTH;
-  const channels = env.AUDIO_CHANNELS;
+  const sampleRate = AUDIO.SAMPLE_RATE;
+  const bitDepth = AUDIO.BIT_DEPTH;
+  const channels = AUDIO.CHANNELS;
   const byteRate = (sampleRate * bitDepth * channels) / 8;
   const blockAlign = (bitDepth * channels) / 8;
 
@@ -121,7 +121,7 @@ function resampleAudio(
  * Split audio file if it exceeds size limit
  */
 function shouldSplitFile(fileSize: number): boolean {
-  const maxSize = env.DISCORD_MAX_FILE_SIZE * 1024 * 1024; // Convert MB to bytes
+  const maxSize = DISCORD_LIMITS.MAX_FILE_SIZE_MB * 1024 * 1024; // Convert MB to bytes
   return fileSize > maxSize;
 }
 
@@ -193,7 +193,7 @@ export async function recordAudio(
       const resampledData = resampleAudio(
         audioData,
         48000,
-        env.AUDIO_SAMPLE_RATE
+        AUDIO.SAMPLE_RATE
       );
 
       // Ensure recordings directory exists
@@ -204,7 +204,7 @@ export async function recordAudio(
 
       // Check if file needs to be split
       const estimatedSize = resampledData.length + 44; // WAV header is 44 bytes
-      const maxSize = env.DISCORD_MAX_FILE_SIZE * 1024 * 1024;
+      const maxSize = DISCORD_LIMITS.MAX_FILE_SIZE_MB * 1024 * 1024;
 
       if (shouldSplitFile(estimatedSize)) {
         // Split into multiple files

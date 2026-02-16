@@ -11,7 +11,7 @@ import { createEmbed, createErrorEmbed } from '../../utils/embed.js';
 import { COLORS } from '../../utils/constants/index.js';
 import { logger } from '../../utils/logger.js';
 import { t, mapDiscordLocale } from '../../locales/index.js';
-import { env } from '../../config/index.js';
+import { env, RETRY } from '../../config/index.js';
 import { connectionManager } from '../../services/voice/connectionManager.js';
 import {
   recordAudio,
@@ -217,7 +217,7 @@ export const command: Command = {
       }
 
       const totalFiles = 1 + additionalFiles.length;
-      const maxRetries = env.RECORDING_RETRY_MAX;
+      const maxRetries = RETRY.RECORDING_RETRY_MAX;
 
       // Send main file with retry logic
       let retryCount = 0;

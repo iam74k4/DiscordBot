@@ -303,6 +303,8 @@ export const ja: TranslationKeys = {
       onlyCommandUser: 'コマンドを実行したユーザーのみ操作できます。',
       cancelled: 'キャンセルしました。',
       timeout: 'タイムアウトしました。',
+      apiKeyNotConfigured:
+        'Steam API Keyが設定されていません。Bot管理者に `STEAM_API_KEY` の設定を依頼してください。',
     },
     status: {
       online: 'オンライン',

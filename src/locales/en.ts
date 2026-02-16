@@ -301,6 +301,8 @@ export const en: TranslationKeys = {
       onlyCommandUser: 'Only the command user can navigate.',
       cancelled: 'Action cancelled.',
       timeout: 'Action timed out.',
+      apiKeyNotConfigured:
+        'Steam API key is not configured. Please ask the bot administrator to set `STEAM_API_KEY`.',
     },
     status: {
       online: 'Online',
