@@ -36,6 +36,11 @@ interface GameStartEvent {
  * Check for game activity changes
  */
 async function checkGameActivity(): Promise<GameStartEvent[]> {
+  if (!steamClient.isConfigured()) {
+    logger.debug('Steam API key not configured, skipping game activity check');
+    return [];
+  }
+
   const events: GameStartEvent[] = [];
   const users = getAllSteamUsers();
 

@@ -1455,6 +1455,23 @@ export const command: Command = {
   async execute(interaction) {
     const subcommand = interaction.options.getSubcommand();
 
+    // Subcommands that do NOT require Steam API key
+    const noApiKeyRequired = new Set(['unregister', 'whoami', 'help']);
+
+    if (!noApiKeyRequired.has(subcommand) && !steamClient.isConfigured()) {
+      const locale = mapDiscordLocale(interaction.locale);
+      await interaction.reply({
+        embeds: [
+          createErrorEmbed(
+            t('common.error', locale),
+            t('steam.errors.apiKeyNotConfigured', locale)
+          ),
+        ],
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
     switch (subcommand) {
       case 'profile':
         await handleProfile(interaction);

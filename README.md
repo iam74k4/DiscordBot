@@ -63,7 +63,7 @@ A modular Discord bot built with TypeScript and discord.js v14.
 - Node.js 18.0.0 or higher
 - Discord Bot Token
 - Discord Application Client ID
-- Steam Web API Key
+- Steam Web API Key (optional — required for `/steam` commands)
 
 ## Setup
 
@@ -86,6 +86,11 @@ Required variables:
 ```env
 DISCORD_TOKEN=your_discord_bot_token
 DISCORD_CLIENT_ID=your_discord_client_id
+```
+
+Optional (for Steam features):
+
+```env
 STEAM_API_KEY=your_steam_api_key
 ```
 
@@ -440,7 +445,7 @@ In Railway dashboard, add the following variables:
 | ------------------- | ------------------------------- | -------- |
 | `DISCORD_TOKEN`     | Discord bot token               | Yes      |
 | `DISCORD_CLIENT_ID` | Discord application client ID   | Yes      |
-| `STEAM_API_KEY`     | Steam Web API key               | Yes      |
+| `STEAM_API_KEY`     | Steam Web API key               | No (Steam commands need this) |
 | `BOT_OWNER_IDS`     | Bot owner Discord IDs (comma-separated) | No |
 | `NODE_ENV`          | Set to `production`             | No       |
 | `MAX_RECORDING_DURATION` | Max recording time in seconds (default: 300) | No |

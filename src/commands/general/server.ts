@@ -63,15 +63,18 @@ async function handleStats(
   const steamRegistered = steamUsers.length;
 
   // Fetch playtime for all registered users in parallel (in minutes)
-  const playtimeResults = await Promise.allSettled(
-    steamUsers.map(async (user) => {
-      const playtime = await steamClient.getTotalPlaytime(user.steam_id);
-      return {
-        name: user.steam_name || 'Unknown',
-        playtimeMinutes: playtime,
-      };
-    })
-  );
+  // Skip Steam API calls if API key is not configured
+  const playtimeResults = steamClient.isConfigured()
+    ? await Promise.allSettled(
+        steamUsers.map(async (user) => {
+          const playtime = await steamClient.getTotalPlaytime(user.steam_id);
+          return {
+            name: user.steam_name || 'Unknown',
+            playtimeMinutes: playtime,
+          };
+        })
+      )
+    : [];
 
   // Extract successful results and sort by playtime
   const topPlayers = playtimeResults

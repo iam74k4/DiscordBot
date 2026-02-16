@@ -1,6 +1,6 @@
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { env } from '../../config/index.js';
+import { env, MONITORING } from '../../config/index.js';
 import { logger } from '../../utils/logger.js';
 import { connectionManager } from './connectionManager.js';
 import { audioBufferManager } from './audioBuffer.js';
@@ -16,9 +16,9 @@ export class MemoryMonitor {
   private readonly monitorInterval: number;
 
   constructor() {
-    this.warningThreshold = env.MEMORY_WARNING_THRESHOLD_MB;
-    this.criticalThreshold = env.MEMORY_CRITICAL_THRESHOLD_MB;
-    this.monitorInterval = env.MEMORY_MONITOR_INTERVAL_MS;
+    this.warningThreshold = MONITORING.MEMORY_WARNING_THRESHOLD_MB;
+    this.criticalThreshold = MONITORING.MEMORY_CRITICAL_THRESHOLD_MB;
+    this.monitorInterval = MONITORING.MEMORY_MONITOR_INTERVAL_MS;
   }
 
   /**
@@ -67,9 +67,9 @@ export class MemoryMonitor {
     }
 
     // Check disk usage
-    if (stats.diskBufferSizeMB >= env.DISK_WARNING_THRESHOLD_MB) {
+    if (stats.diskBufferSizeMB >= MONITORING.DISK_WARNING_THRESHOLD_MB) {
       logger.warn(
-        `Disk buffer warning threshold exceeded: ${stats.diskBufferSizeMB.toFixed(2)}MB >= ${env.DISK_WARNING_THRESHOLD_MB}MB`
+        `Disk buffer warning threshold exceeded: ${stats.diskBufferSizeMB.toFixed(2)}MB >= ${MONITORING.DISK_WARNING_THRESHOLD_MB}MB`
       );
     }
 

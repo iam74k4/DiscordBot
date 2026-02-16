@@ -16,6 +16,13 @@ const scheduledTasks: cron.ScheduledTask[] = [];
  * Record playtime for all registered users
  */
 async function recordAllUsersPlaytime(): Promise<void> {
+  if (!steamClient.isConfigured()) {
+    logger.debug(
+      'Steam API key not configured, skipping playtime recording'
+    );
+    return;
+  }
+
   logger.info('Starting daily playtime recording...');
 
   const users = getAllSteamUsers();

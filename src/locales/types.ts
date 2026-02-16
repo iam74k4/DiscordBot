@@ -347,6 +347,7 @@ export interface TranslationKeys {
       onlyCommandUser: string;
       cancelled: string;
       timeout: string;
+      apiKeyNotConfigured: string;
     };
     status: {
       online: string;
