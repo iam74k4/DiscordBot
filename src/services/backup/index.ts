@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import * as fsp from 'fs/promises';
 import * as path from 'path';
 import * as cron from 'node-cron';
 import { env } from '../../config/index.js';
@@ -33,18 +33,21 @@ class BackupService {
   private task: cron.ScheduledTask | null = null;
   private backupDir: string;
 
+  private initialized: Promise<void>;
+
   constructor() {
     this.backupDir = env.BACKUP_DIR;
-    this.ensureBackupDir();
+    this.initialized = this.ensureBackupDir();
   }
 
   /**
    * Ensure backup directory exists
    */
-  private ensureBackupDir(): void {
-    if (!fs.existsSync(this.backupDir)) {
-      fs.mkdirSync(this.backupDir, { recursive: true });
-      logger.debug(`Created backup directory: ${this.backupDir}`);
+  private async ensureBackupDir(): Promise<void> {
+    try {
+      await fsp.mkdir(this.backupDir, { recursive: true });
+    } catch {
+      // Directory may already exist
     }
   }
 
@@ -61,13 +64,13 @@ class BackupService {
    * Run a database backup
    */
   async runBackup(): Promise<BackupResult> {
+    await this.initialized;
     const filename = this.generateFilename();
     const backupPath = path.join(this.backupDir, filename);
 
     try {
       logger.info('Starting database backup...');
 
-      // Checkpoint WAL to ensure all changes are written to main database
       try {
         database.pragma('wal_checkpoint(TRUNCATE)');
         logger.debug('WAL checkpoint completed');
@@ -75,18 +78,15 @@ class BackupService {
         logger.warn('WAL checkpoint failed (non-fatal):', walError);
       }
 
-      // Use SQLite backup API
       await database.backup(backupPath);
 
-      // Get file size
-      const stats = fs.statSync(backupPath);
+      const stats = await fsp.stat(backupPath);
 
       logger.info(
         `Backup completed: ${filename} (${Math.round(stats.size / 1024)} KB)`
       );
 
-      // Clean up old backups
-      const deleted = this.deleteOldBackups();
+      const deleted = await this.deleteOldBackups();
       if (deleted > 0) {
         logger.info(`Deleted ${deleted} old backup(s)`);
       }
@@ -115,17 +115,17 @@ class BackupService {
   /**
    * List all backups
    */
-  listBackups(): BackupInfo[] {
-    this.ensureBackupDir();
+  async listBackups(): Promise<BackupInfo[]> {
+    await this.ensureBackupDir();
 
     try {
-      const files = fs.readdirSync(this.backupDir);
+      const files = await fsp.readdir(this.backupDir);
       const backups: BackupInfo[] = [];
 
       for (const file of files) {
         if (file.startsWith('backup-') && file.endsWith('.db')) {
           const filePath = path.join(this.backupDir, file);
-          const stats = fs.statSync(filePath);
+          const stats = await fsp.stat(filePath);
 
           backups.push({
             filename: file,
@@ -136,7 +136,6 @@ class BackupService {
         }
       }
 
-      // Sort by creation date (newest first)
       return backups.sort(
         (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
       );
@@ -149,17 +148,17 @@ class BackupService {
   /**
    * Delete backups older than retention period
    */
-  deleteOldBackups(): number {
+  async deleteOldBackups(): Promise<number> {
     const retentionMs = env.BACKUP_RETENTION_DAYS * 24 * 60 * 60 * 1000;
     const cutoffDate = new Date(Date.now() - retentionMs);
     let deleted = 0;
 
-    const backups = this.listBackups();
+    const backups = await this.listBackups();
 
     for (const backup of backups) {
       if (backup.createdAt < cutoffDate) {
         try {
-          fs.unlinkSync(backup.path);
+          await fsp.unlink(backup.path);
           deleted++;
           logger.debug(`Deleted old backup: ${backup.filename}`);
         } catch (error) {
@@ -178,26 +177,32 @@ class BackupService {
   async restore(
     filename: string
   ): Promise<{ success: boolean; error?: string }> {
-    const backupPath = path.join(this.backupDir, filename);
-
-    // Validate backup file exists
-    if (!fs.existsSync(backupPath)) {
-      return { success: false, error: 'Backup file not found' };
-    }
-
-    // Validate filename format for security
+    // Validate filename format BEFORE any filesystem access to prevent path traversal
     if (!filename.match(/^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.db$/)) {
       return { success: false, error: 'Invalid backup filename format' };
+    }
+
+    const backupPath = path.join(this.backupDir, filename);
+
+    // Ensure resolved path is within the backup directory
+    const resolvedPath = path.resolve(backupPath);
+    const resolvedDir = path.resolve(this.backupDir);
+    if (!resolvedPath.startsWith(resolvedDir + path.sep)) {
+      return { success: false, error: 'Invalid backup path' };
+    }
+
+    try {
+      await fsp.access(backupPath);
+    } catch {
+      return { success: false, error: 'Backup file not found' };
     }
 
     try {
       logger.warn(`Restoring database from backup: ${filename}`);
 
-      // Close current database connection
       database.close();
 
-      // Copy backup to database path
-      fs.copyFileSync(backupPath, env.DATABASE_PATH);
+      await fsp.copyFile(backupPath, env.DATABASE_PATH);
 
       logger.info('Database restored successfully. Restart required.');
 
@@ -253,8 +258,8 @@ class BackupService {
   /**
    * Format backup list for display
    */
-  formatBackupList(): string {
-    const backups = this.listBackups();
+  async formatBackupList(): Promise<string> {
+    const backups = await this.listBackups();
 
     if (backups.length === 0) {
       return 'No backups found.';

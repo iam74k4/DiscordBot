@@ -3,6 +3,7 @@ import { join, dirname } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { logger } from '../../utils/logger.js';
 import { env } from '../../config/index.js';
+import { initializeSettingsTables } from './settings.js';
 
 // Database file path from config
 const DB_PATH = join(process.cwd(), env.DATABASE_PATH);
@@ -104,9 +105,6 @@ export function initializeDatabase(): void {
   isInitialized = true;
   logger.info('Database initialized');
 }
-
-// Import settings initialization function
-import { initializeSettingsTables } from './settings.js';
 
 /**
  * Steam user record

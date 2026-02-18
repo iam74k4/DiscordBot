@@ -12,6 +12,9 @@ import {
   RecentlyPlayedGame,
   FormattedPlayerInfo,
   FormattedGameInfo,
+  SteamResult,
+  steamOk,
+  steamErr,
 } from './types.js';
 import {
   parseSteamInput,
@@ -61,7 +64,7 @@ export class SteamClient {
       url.searchParams.set(key, value);
     }
 
-    logger.debug(`Steam API request: ${endpoint}`);
+    logger.debug(`Steam API request: ${endpoint} (params: ${Object.keys(params).join(', ') || 'none'})`);
 
     return withRetry(
       async () => {
@@ -105,9 +108,11 @@ export class SteamClient {
   }
 
   /**
-   * Resolve vanity URL to Steam ID 64
+   * Resolve vanity URL to Steam ID 64 (Result variant)
    */
-  async resolveVanityURL(vanityName: string): Promise<string | null> {
+  async resolveVanityURLResult(
+    vanityName: string
+  ): Promise<SteamResult<string>> {
     try {
       const data = await this.request<ResolveVanityURLResponse>(
         '/ISteamUser/ResolveVanityURL/v1/',
@@ -115,14 +120,23 @@ export class SteamClient {
       );
 
       if (data.response.success === 1 && data.response.steamid) {
-        return data.response.steamid;
+        return steamOk(data.response.steamid);
       }
 
-      return null;
+      return steamErr('Vanity URL not found');
     } catch (error) {
-      logger.error('Failed to resolve vanity URL:', error);
-      return null;
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to resolve vanity URL:', msg);
+      return steamErr(msg);
     }
+  }
+
+  /**
+   * Resolve vanity URL to Steam ID 64
+   */
+  async resolveVanityURL(vanityName: string): Promise<string | null> {
+    const result = await this.resolveVanityURLResult(vanityName);
+    return result.ok ? result.data : null;
   }
 
   /**
@@ -139,9 +153,11 @@ export class SteamClient {
   }
 
   /**
-   * Get player summary
+   * Get player summary (Result variant)
    */
-  async getPlayerSummary(steamId: string): Promise<PlayerSummary | null> {
+  async getPlayerSummaryResult(
+    steamId: string
+  ): Promise<SteamResult<PlayerSummary>> {
     try {
       const data = await this.request<GetPlayerSummariesResponse>(
         '/ISteamUser/GetPlayerSummaries/v2/',
@@ -149,23 +165,32 @@ export class SteamClient {
       );
 
       if (data.response.players.length > 0) {
-        return data.response.players[0];
+        return steamOk(data.response.players[0]);
       }
 
-      return null;
+      return steamErr('Player not found');
     } catch (error) {
-      logger.error('Failed to get player summary:', error);
-      return null;
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to get player summary:', msg);
+      return steamErr(msg);
     }
   }
 
   /**
-   * Get owned games
+   * Get player summary
    */
-  async getOwnedGames(
+  async getPlayerSummary(steamId: string): Promise<PlayerSummary | null> {
+    const result = await this.getPlayerSummaryResult(steamId);
+    return result.ok ? result.data : null;
+  }
+
+  /**
+   * Get owned games (Result variant)
+   */
+  async getOwnedGamesResult(
     steamId: string,
     includeAppInfo: boolean = true
-  ): Promise<OwnedGame[]> {
+  ): Promise<SteamResult<OwnedGame[]>> {
     try {
       const data = await this.request<GetOwnedGamesResponse>(
         '/IPlayerService/GetOwnedGames/v1/',
@@ -176,10 +201,46 @@ export class SteamClient {
         }
       );
 
-      return data.response.games ?? [];
+      return steamOk(data.response.games ?? []);
     } catch (error) {
-      logger.error('Failed to get owned games:', error);
-      return [];
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to get owned games:', msg);
+      return steamErr(msg);
+    }
+  }
+
+  /**
+   * Get owned games
+   */
+  async getOwnedGames(
+    steamId: string,
+    includeAppInfo: boolean = true
+  ): Promise<OwnedGame[]> {
+    const result = await this.getOwnedGamesResult(steamId, includeAppInfo);
+    return result.ok ? result.data : [];
+  }
+
+  /**
+   * Get recently played games (Result variant)
+   */
+  async getRecentlyPlayedGamesResult(
+    steamId: string,
+    count: number = 10
+  ): Promise<SteamResult<RecentlyPlayedGame[]>> {
+    try {
+      const data = await this.request<GetRecentlyPlayedGamesResponse>(
+        '/IPlayerService/GetRecentlyPlayedGames/v1/',
+        {
+          steamid: steamId,
+          count: count.toString(),
+        }
+      );
+
+      return steamOk(data.response.games ?? []);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to get recently played games:', msg);
+      return steamErr(msg);
     }
   }
 
@@ -190,20 +251,8 @@ export class SteamClient {
     steamId: string,
     count: number = 10
   ): Promise<RecentlyPlayedGame[]> {
-    try {
-      const data = await this.request<GetRecentlyPlayedGamesResponse>(
-        '/IPlayerService/GetRecentlyPlayedGames/v1/',
-        {
-          steamid: steamId,
-          count: count.toString(),
-        }
-      );
-
-      return data.response.games ?? [];
-    } catch (error) {
-      logger.error('Failed to get recently played games:', error);
-      return [];
-    }
+    const result = await this.getRecentlyPlayedGamesResult(steamId, count);
+    return result.ok ? result.data : [];
   }
 
   /**

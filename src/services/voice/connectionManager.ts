@@ -12,6 +12,7 @@ import {
   StageChannel,
   PermissionFlagsBits,
 } from 'discord.js';
+import { Readable } from 'stream';
 import prism from 'prism-media';
 import { env } from '../../config/index.js';
 import { logger } from '../../utils/logger.js';
@@ -26,6 +27,7 @@ import { audioBufferManager } from './audioBuffer.js';
  */
 export class VoiceConnectionManager {
   private connections: Map<string, VoiceConnectionInfo> = new Map();
+  private activeStreams: Map<string, Set<Readable>> = new Map();
   private readonly maxConnections: number;
 
   constructor() {
@@ -95,12 +97,13 @@ export class VoiceConnectionManager {
 
       connection.subscribe(player);
 
+      // Track active streams for cleanup on disconnect
+      this.activeStreams.set(channelId, new Set());
+
       // Set up audio reception for all users
       connection.receiver.speaking.on('start', (userId) => {
-        // Get buffer for this channel
         const buffer = audioBufferManager.getBuffer(channelId);
 
-        // Subscribe to user's audio (returns Opus-encoded stream)
         const opusStream = connection.receiver.subscribe(userId, {
           end: {
             behavior: EndBehaviorType.AfterSilence,
@@ -108,7 +111,6 @@ export class VoiceConnectionManager {
           },
         });
 
-        // Create Opus decoder to convert to PCM
         // Discord sends: 48kHz, stereo, 16-bit signed little-endian
         const decoder = new prism.opus.Decoder({
           rate: 48000,
@@ -116,15 +118,27 @@ export class VoiceConnectionManager {
           frameSize: 960, // 20ms at 48kHz
         });
 
-        // Pipe Opus stream through decoder
         const pcmStream = opusStream.pipe(decoder);
 
-        // Process decoded PCM audio
+        // Track streams for cleanup
+        const streams = this.activeStreams.get(channelId);
+        if (streams) {
+          streams.add(opusStream as unknown as Readable);
+          streams.add(pcmStream as unknown as Readable);
+        }
+
+        const destroyStreams = () => {
+          if (!opusStream.destroyed) opusStream.destroy();
+          if (!pcmStream.destroyed) pcmStream.destroy();
+          if (streams) {
+            streams.delete(opusStream as unknown as Readable);
+            streams.delete(pcmStream as unknown as Readable);
+          }
+        };
+
         pcmStream.on('data', (chunk: Buffer) => {
-          // Convert stereo (2 channels) to mono by averaging left and right channels
-          // Input: 16-bit signed LE stereo (L R L R L R...)
-          // Output: 16-bit signed LE mono
-          const monoSamples = chunk.length / 4; // 4 bytes per stereo sample (2 bytes * 2 channels)
+          // Convert stereo to mono by averaging left and right channels
+          const monoSamples = chunk.length / 4;
           const monoChunk = Buffer.allocUnsafe(monoSamples * 2);
 
           for (let i = 0; i < monoSamples; i++) {
@@ -134,9 +148,7 @@ export class VoiceConnectionManager {
             monoChunk.writeInt16LE(mono, i * 2);
           }
 
-          // Duration calculation: chunk size / (48000 samples/sec * 2 bytes/sample) for mono
-          const duration = (monoChunk.length / (48000 * 2)) * 1000; // in milliseconds
-
+          const duration = (monoChunk.length / (48000 * 2)) * 1000;
           buffer.addChunk(monoChunk, duration);
         });
 
@@ -145,6 +157,7 @@ export class VoiceConnectionManager {
             `Audio decode error for user ${userId}:`,
             error instanceof Error ? error.message : error
           );
+          destroyStreams();
         });
 
         opusStream.on('error', (error) => {
@@ -152,6 +165,14 @@ export class VoiceConnectionManager {
             `Audio stream error for user ${userId}:`,
             error instanceof Error ? error.message : error
           );
+          destroyStreams();
+        });
+
+        pcmStream.on('close', () => {
+          if (streams) {
+            streams.delete(opusStream as unknown as Readable);
+            streams.delete(pcmStream as unknown as Readable);
+          }
         });
       });
 
@@ -165,6 +186,7 @@ export class VoiceConnectionManager {
           // Reconnecting to a new channel - ignore disconnect
         } catch {
           // Real disconnect - clean up
+          this.destroyStreamsForChannel(channelId);
           connection.destroy();
           this.connections.delete(channelId);
           audioBufferManager.removeBuffer(channelId);
@@ -215,10 +237,12 @@ export class VoiceConnectionManager {
     if (!info) return;
 
     try {
+      // Destroy all active audio streams for this channel
+      this.destroyStreamsForChannel(channelId);
+
       info.connection.destroy();
       this.connections.delete(channelId);
 
-      // Clean up audio buffer
       audioBufferManager.removeBuffer(channelId);
 
       logger.info(`Disconnected from voice channel ${channelId}`);
@@ -227,8 +251,25 @@ export class VoiceConnectionManager {
         `Error disconnecting from channel ${channelId}:`,
         error instanceof Error ? error.message : error
       );
+      this.destroyStreamsForChannel(channelId);
       this.connections.delete(channelId);
       audioBufferManager.removeBuffer(channelId);
+    }
+  }
+
+  private destroyStreamsForChannel(channelId: string): void {
+    const streams = this.activeStreams.get(channelId);
+    if (streams) {
+      for (const stream of streams) {
+        try {
+          if (!stream.destroyed) {
+            stream.destroy();
+          }
+        } catch {
+          // Stream may already be destroyed
+        }
+      }
+      this.activeStreams.delete(channelId);
     }
   }
 
