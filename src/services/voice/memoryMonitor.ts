@@ -51,8 +51,8 @@ export class MemoryMonitor {
   /**
    * Check memory usage and take action if needed
    */
-  private checkMemoryUsage(): void {
-    const stats = this.getStats();
+  private async checkMemoryUsage(): Promise<void> {
+    const stats = await this.getStats();
 
     // Check memory threshold
     if (stats.memoryUsageMB >= this.criticalThreshold) {
@@ -99,9 +99,9 @@ export class MemoryMonitor {
   /**
    * Get current memory statistics
    */
-  getStats(): MemoryMonitorStats {
+  async getStats(): Promise<MemoryMonitorStats> {
     const connections = connectionManager.getAllConnections();
-    const bufferStats = audioBufferManager.getAllStats();
+    const bufferStats = await audioBufferManager.getAllStats();
 
     // Calculate memory usage
     let totalBufferSizeMB = 0;
@@ -126,12 +126,12 @@ export class MemoryMonitor {
   /**
    * Get disk usage for buffer directory
    */
-  getDiskUsage(): number {
+  async getDiskUsage(): Promise<number> {
     const bufferDir = join(process.cwd(), env.AUDIO_DISK_BUFFER_DIR);
     if (!existsSync(bufferDir)) return 0;
 
     let totalSize = 0;
-    const bufferStats = audioBufferManager.getAllStats();
+    const bufferStats = await audioBufferManager.getAllStats();
 
     for (const stats of bufferStats.values()) {
       totalSize += stats.diskSizeMB;

@@ -1,4 +1,6 @@
-import { createWriteStream, readFileSync, existsSync, mkdirSync } from 'fs';
+import { createWriteStream } from 'fs';
+import { readFile, stat, mkdir, unlink } from 'fs/promises';
+import { existsSync } from 'fs';
 import { join } from 'path';
 import { env, AUDIO, MONITORING } from '../../config/index.js';
 import { logger } from '../../utils/logger.js';
@@ -40,7 +42,12 @@ export class HybridAudioBuffer {
     // Ensure disk buffer directory exists
     const fullPath = join(process.cwd(), this.diskBufferDir, this.channelId);
     if (!existsSync(fullPath)) {
-      mkdirSync(fullPath, { recursive: true });
+      mkdir(fullPath, { recursive: true }).catch((error) => {
+        logger.error(
+          `Failed to create disk buffer directory for channel ${this.channelId}:`,
+          error instanceof Error ? error.message : error
+        );
+      });
     }
   }
 
@@ -124,12 +131,10 @@ export class HybridAudioBuffer {
       const stream = createWriteStream(filePath);
       let totalSize = 0;
 
-      for (const chunk of chunks) {
-        stream.write(chunk.data);
-        totalSize += chunk.data.length;
-      }
-
-      stream.end();
+      stream.on('error', (error) => {
+        stream.destroy();
+        reject(error);
+      });
 
       stream.on('finish', () => {
         this.diskBufferFiles.set(timestamp, filePath);
@@ -139,9 +144,12 @@ export class HybridAudioBuffer {
         resolve();
       });
 
-      stream.on('error', (error) => {
-        reject(error);
-      });
+      for (const chunk of chunks) {
+        stream.write(chunk.data);
+        totalSize += chunk.data.length;
+      }
+
+      stream.end();
     });
   }
 
@@ -162,25 +170,29 @@ export class HybridAudioBuffer {
       }
     }
 
-    // Collect chunks from disk
+    // Collect chunks from disk (async)
+    const diskReadPromises: Promise<void>[] = [];
     for (const [timestamp, filePath] of this.diskBufferFiles.entries()) {
       if (timestamp >= cutoffTime) {
-        try {
-          const data = readFileSync(filePath);
-          const chunk: AudioChunk = {
-            data,
-            timestamp,
-            duration: (data.length / this.bytesPerSecond) * 1000,
-          };
-          diskChunks.push(chunk);
-        } catch (error) {
-          logger.warn(
-            `Failed to read disk buffer file ${filePath}:`,
-            error instanceof Error ? error.message : error
-          );
-        }
+        diskReadPromises.push(
+          readFile(filePath)
+            .then((data) => {
+              diskChunks.push({
+                data,
+                timestamp,
+                duration: (data.length / this.bytesPerSecond) * 1000,
+              });
+            })
+            .catch((error) => {
+              logger.warn(
+                `Failed to read disk buffer file ${filePath}:`,
+                error instanceof Error ? error.message : error
+              );
+            })
+        );
       }
     }
+    await Promise.all(diskReadPromises);
 
     // Sort all chunks by timestamp
     const allChunks = [...memoryChunks, ...diskChunks].sort(
@@ -220,16 +232,13 @@ export class HybridAudioBuffer {
       }
     }
 
-    // Delete files asynchronously
     for (const filePath of filesToDelete) {
-      import('fs/promises')
-        .then((fs) => fs.unlink(filePath))
-        .catch((error) => {
-          logger.warn(
-            `Failed to delete old buffer file ${filePath}:`,
-            error instanceof Error ? error.message : error
-          );
-        });
+      unlink(filePath).catch((error) => {
+        logger.warn(
+          `Failed to delete old buffer file ${filePath}:`,
+          error instanceof Error ? error.message : error
+        );
+      });
     }
 
     if (filesToDelete.length > 0) {
@@ -242,28 +251,31 @@ export class HybridAudioBuffer {
   /**
    * Get buffer statistics
    */
-  getStats(): {
+  async getStats(): Promise<{
     memoryChunks: number;
     diskFiles: number;
     memorySizeMB: number;
     diskSizeMB: number;
-  } {
+  }> {
     const memorySize = this.memoryBuffer.reduce(
       (sum, chunk) => sum + chunk.data.length,
       0
     );
 
     let diskSize = 0;
+    const statPromises: Promise<void>[] = [];
     for (const filePath of this.diskBufferFiles.values()) {
-      try {
-        if (existsSync(filePath)) {
-          const stats = readFileSync(filePath);
-          diskSize += stats.length;
-        }
-      } catch {
-        // Ignore errors
-      }
+      statPromises.push(
+        stat(filePath)
+          .then((s) => {
+            diskSize += s.size;
+          })
+          .catch(() => {
+            // File may have been deleted
+          })
+      );
     }
+    await Promise.all(statPromises);
 
     return {
       memoryChunks: this.memoryBuffer.length,
@@ -359,10 +371,19 @@ export class AudioBufferManager {
   /**
    * Get all buffer statistics
    */
-  getAllStats(): Map<string, ReturnType<HybridAudioBuffer['getStats']>> {
+  async getAllStats(): Promise<
+    Map<string, Awaited<ReturnType<HybridAudioBuffer['getStats']>>>
+  > {
     const stats = new Map();
-    for (const [channelId, buffer] of this.buffers.entries()) {
-      stats.set(channelId, buffer.getStats());
+    const entries = Array.from(this.buffers.entries());
+    const results = await Promise.all(
+      entries.map(async ([channelId, buffer]) => ({
+        channelId,
+        stats: await buffer.getStats(),
+      }))
+    );
+    for (const { channelId, stats: s } of results) {
+      stats.set(channelId, s);
     }
     return stats;
   }

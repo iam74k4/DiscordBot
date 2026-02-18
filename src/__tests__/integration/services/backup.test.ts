@@ -81,27 +81,25 @@ describe('BackupService', () => {
   });
 
   describe('listBackups', () => {
-    it('should return empty array when no backups exist', () => {
-      const backups = backupService.listBackups();
+    it('should return empty array when no backups exist', async () => {
+      const backups = await backupService.listBackups();
       expect(backups).toEqual([]);
     });
 
     it('should list existing backup files', async () => {
-      // Create a mock backup file
       const backupFile = path.join(
         testBackupDir,
         'backup-2024-01-01T00-00-00.db'
       );
       fs.writeFileSync(backupFile, 'test content');
 
-      const backups = backupService.listBackups();
+      const backups = await backupService.listBackups();
 
       expect(backups.length).toBe(1);
       expect(backups[0].filename).toBe('backup-2024-01-01T00-00-00.db');
     });
 
     it('should sort backups by date (newest first)', async () => {
-      // Create multiple backup files
       const files = [
         'backup-2024-01-01T00-00-00.db',
         'backup-2024-01-03T00-00-00.db',
@@ -112,29 +110,25 @@ describe('BackupService', () => {
         fs.writeFileSync(path.join(testBackupDir, file), 'test');
       }
 
-      const backups = backupService.listBackups();
+      const backups = await backupService.listBackups();
 
-      // Note: order depends on file system birthtime, not filename
       expect(backups.length).toBe(3);
     });
   });
 
   describe('deleteOldBackups', () => {
-    it('should delete backups older than retention period', () => {
-      // Create an old backup file (modify the file time)
+    it('should delete backups older than retention period', async () => {
       const oldBackupFile = path.join(
         testBackupDir,
         'backup-2020-01-01T00-00-00.db'
       );
       fs.writeFileSync(oldBackupFile, 'old content');
 
-      // Modify the file time to be old (more than 7 days ago)
       const oldTime = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       fs.utimesSync(oldBackupFile, oldTime, oldTime);
 
-      const deleted = backupService.deleteOldBackups();
+      const deleted = await backupService.deleteOldBackups();
 
-      // The file might or might not be deleted depending on birthtime support
       expect(deleted).toBeGreaterThanOrEqual(0);
     });
   });
@@ -159,20 +153,19 @@ describe('BackupService', () => {
   });
 
   describe('formatBackupList', () => {
-    it('should return "No backups found" when empty', () => {
-      const formatted = backupService.formatBackupList();
+    it('should return "No backups found" when empty', async () => {
+      const formatted = await backupService.formatBackupList();
       expect(formatted).toBe('No backups found.');
     });
 
-    it('should format backup list correctly', () => {
-      // Create a backup file
+    it('should format backup list correctly', async () => {
       const backupFile = path.join(
         testBackupDir,
         'backup-2024-01-01T00-00-00.db'
       );
       fs.writeFileSync(backupFile, 'test content');
 
-      const formatted = backupService.formatBackupList();
+      const formatted = await backupService.formatBackupList();
 
       expect(formatted).toContain('backup-2024-01-01T00-00-00.db');
       expect(formatted).toContain('KB');

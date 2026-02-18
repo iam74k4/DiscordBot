@@ -3,6 +3,22 @@
  */
 
 /**
+ * Result type for Steam API operations that can fail.
+ * Use `ok` to check success, access `data` on success, `error` on failure.
+ */
+export type SteamResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: string };
+
+export function steamOk<T>(data: T): SteamResult<T> {
+  return { ok: true, data };
+}
+
+export function steamErr<T>(error: string): SteamResult<T> {
+  return { ok: false, error };
+}
+
+/**
  * Player online status
  */
 export enum PersonaState {
