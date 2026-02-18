@@ -35,20 +35,45 @@ function validateEnv(): void {
       'STEAM_API_KEY is not set. Steam-related commands will not work.'
     );
   }
+
+  // Validate webhook URL format if provided
+  if (process.env.ALERT_WEBHOOK_URL) {
+    try {
+      const url = new URL(process.env.ALERT_WEBHOOK_URL);
+      if (!url.protocol.startsWith('https')) {
+        logger.warn('ALERT_WEBHOOK_URL should use HTTPS');
+      }
+    } catch {
+      logger.error('ALERT_WEBHOOK_URL is not a valid URL');
+      process.exit(1);
+    }
+  }
+
+  // Validate NODE_ENV value
+  const validEnvs = ['development', 'production'];
+  if (process.env.NODE_ENV && !validEnvs.includes(process.env.NODE_ENV)) {
+    logger.warn(
+      `NODE_ENV "${process.env.NODE_ENV}" is not recognized, defaulting to "development"`
+    );
+  }
 }
 
 /**
  * Validate numerical configuration values
  */
 function validateNumericalConfig(): void {
+  const errors: string[] = [];
   const warnings: string[] = [];
 
   const maxRec = parseNumber(process.env.MAX_RECORDING_DURATION, 300);
   const bufferDur = parseNumber(process.env.AUDIO_BUFFER_DURATION, 600);
   const memBuf = parseNumber(process.env.AUDIO_MEMORY_BUFFER_DURATION, 120);
+  const maxVc = parseNumber(process.env.MAX_CONCURRENT_VC_CONNECTIONS, 5);
+  const retentionHrs = parseNumber(process.env.RECORDING_RETENTION_HOURS, 24);
+  const backupDays = parseNumber(process.env.BACKUP_RETENTION_DAYS, 7);
 
   if (maxRec <= 0) {
-    warnings.push('MAX_RECORDING_DURATION must be > 0');
+    errors.push('MAX_RECORDING_DURATION must be > 0');
   }
   if (bufferDur < maxRec) {
     warnings.push(
@@ -56,11 +81,32 @@ function validateNumericalConfig(): void {
     );
   }
   if (memBuf <= 0) {
-    warnings.push('AUDIO_MEMORY_BUFFER_DURATION must be > 0');
+    errors.push('AUDIO_MEMORY_BUFFER_DURATION must be > 0');
+  }
+  if (memBuf > bufferDur) {
+    errors.push(
+      `AUDIO_MEMORY_BUFFER_DURATION (${memBuf}) must be <= AUDIO_BUFFER_DURATION (${bufferDur})`
+    );
+  }
+  if (maxVc <= 0 || maxVc > 100) {
+    errors.push('MAX_CONCURRENT_VC_CONNECTIONS must be between 1 and 100');
+  }
+  if (retentionHrs <= 0) {
+    errors.push('RECORDING_RETENTION_HOURS must be > 0');
+  }
+  if (backupDays <= 0) {
+    errors.push('BACKUP_RETENTION_DAYS must be > 0');
   }
 
   for (const w of warnings) {
     logger.warn(`Config validation: ${w}`);
+  }
+
+  if (errors.length > 0) {
+    for (const e of errors) {
+      logger.error(`Config validation: ${e}`);
+    }
+    process.exit(1);
   }
 }
 

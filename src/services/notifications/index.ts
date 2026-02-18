@@ -18,8 +18,38 @@ const PROCESSING_TIMEOUT = 5 * 60 * 1000;
 
 let notificationClient: Client | null = null;
 let checkInterval: NodeJS.Timeout | null = null;
-// Flag to prevent concurrent notification processing
-let isProcessing = false;
+
+/**
+ * Promise-based mutex that prevents concurrent notification processing.
+ * Uses an atomic acquire/release pattern to avoid TOCTOU race conditions.
+ * If the lock is already held, `tryRunExclusive` returns undefined immediately.
+ */
+class AsyncMutex {
+  private _lock: Promise<void> = Promise.resolve();
+  private _held = false;
+
+  async tryRunExclusive<T>(fn: () => Promise<T>): Promise<T | undefined> {
+    if (this._held) return undefined;
+
+    let releaseFn!: () => void;
+    const prev = this._lock;
+    this._lock = new Promise<void>((resolve) => {
+      releaseFn = resolve;
+    });
+    this._held = true;
+
+    await prev;
+
+    try {
+      return await fn();
+    } finally {
+      this._held = false;
+      releaseFn();
+    }
+  }
+}
+
+const processingMutex = new AsyncMutex();
 
 /**
  * Game start event data
@@ -118,75 +148,69 @@ async function sendNotification(
  * Process game activity and send notifications
  */
 async function processNotifications(): Promise<void> {
-  // Prevent concurrent processing
-  if (!notificationClient || isProcessing) return;
+  if (!notificationClient) return;
 
-  isProcessing = true;
+  const client = notificationClient;
 
-  // Timeout protection: reset isProcessing if stuck
-  const timeout = setTimeout(() => {
-    logger.error('Notification processing timed out, resetting lock');
-    isProcessing = false;
-  }, PROCESSING_TIMEOUT);
+  await processingMutex.tryRunExclusive(async () => {
+    const ac = new AbortController();
+    const timeout = setTimeout(() => {
+      logger.error('Notification processing timed out');
+      ac.abort();
+    }, PROCESSING_TIMEOUT);
 
-  try {
-    const events = await checkGameActivity();
+    try {
+      const events = await checkGameActivity();
 
-    if (events.length === 0) return;
+      if (events.length === 0) return;
 
-    logger.debug(`Found ${events.length} game start events`);
+      logger.debug(`Found ${events.length} game start events`);
 
-    // Get all guilds with notifications enabled
-    const enabledGuilds = getEnabledNotificationGuilds();
+      const enabledGuilds = getEnabledNotificationGuilds();
 
-    for (const guildSettings of enabledGuilds) {
-      try {
-        const guild = notificationClient.guilds.cache.get(
-          guildSettings.guild_id
-        );
-        if (!guild) continue;
+      for (const guildSettings of enabledGuilds) {
+        if (ac.signal.aborted) break;
 
-        const channel = guild.channels.cache.get(
-          guildSettings.channel_id
-        ) as TextChannel;
-        if (!channel) continue;
+        try {
+          const guild = client.guilds.cache.get(guildSettings.guild_id);
+          if (!guild) continue;
 
-        // Check if bot has permission to send messages in the channel
-        const botMember = guild.members.me;
-        if (!botMember) continue;
+          const channel = guild.channels.cache.get(
+            guildSettings.channel_id
+          ) as TextChannel;
+          if (!channel) continue;
 
-        const permissions = channel.permissionsFor(botMember);
-        if (!permissions?.has(PermissionFlagsBits.SendMessages)) {
-          logger.warn(
-            `Missing SendMessages permission in channel ${channel.id} (guild: ${guild.id})`
-          );
-          continue;
-        }
+          const botMember = guild.members.me;
+          if (!botMember) continue;
 
-        // Get guild member IDs from cache to avoid rate limits
-        // Note: Uses cache to prevent excessive API calls during periodic checks
-        // New members joining will be picked up on next check cycle
-        const memberIds = new Set(guild.members.cache.map((m) => m.id));
-
-        // Send notifications for guild members
-        for (const event of events) {
-          if (memberIds.has(event.discordId)) {
-            await sendNotification(channel, event);
+          const permissions = channel.permissionsFor(botMember);
+          if (!permissions?.has(PermissionFlagsBits.SendMessages)) {
+            logger.warn(
+              `Missing SendMessages permission in channel ${channel.id} (guild: ${guild.id})`
+            );
+            continue;
           }
+
+          const memberIds = new Set(guild.members.cache.map((m) => m.id));
+
+          for (const event of events) {
+            if (memberIds.has(event.discordId)) {
+              await sendNotification(channel, event);
+            }
+          }
+        } catch (error) {
+          logger.error(
+            `Failed to send notification to guild ${guildSettings.guild_id}:`,
+            error
+          );
         }
-      } catch (error) {
-        logger.error(
-          `Failed to send notification to guild ${guildSettings.guild_id}:`,
-          error
-        );
       }
+    } catch (error) {
+      logger.error('Failed to process notifications:', error);
+    } finally {
+      clearTimeout(timeout);
     }
-  } catch (error) {
-    logger.error('Failed to process notifications:', error);
-  } finally {
-    clearTimeout(timeout);
-    isProcessing = false;
-  }
+  });
 }
 
 /**
