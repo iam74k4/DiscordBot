@@ -39,6 +39,96 @@
 | SS-06 | DM usage | `/server stats` (in DM) | Error: "can only be used in a server" |
 | SS-07 | No registered users | `/server stats` (no Steam users) | Shows 0 registered, 0 playtime |
 
+### Admin Commands (`/admin`)
+
+| ID | Description | Input | Expected Result |
+|----|-------------|-------|-----------------|
+| AD-01 | Non-owner access | `/admin stats` (non-owner) | Error: "Bot owner only" |
+| AD-02 | View bot stats | `/admin stats` (owner) | Bot stats embed displayed |
+| AD-03 | View DB stats | `/admin db` (owner) | Database statistics displayed |
+| AD-04 | List guilds | `/admin guilds` (owner) | Server list displayed |
+| AD-05 | Broadcast message | `/admin broadcast message:test` (owner) | Confirmation message sent |
+| AD-06 | View health | `/admin health` (owner) | System health status displayed |
+| AD-07 | List backups | `/admin backup-list` (owner) | Backup list displayed |
+| AD-08 | Run backup | `/admin backup-run` (owner) | Backup created successfully |
+| AD-09 | View metrics | `/admin metrics` (owner) | Bot metrics displayed |
+
+### Settings Commands (`/settings`)
+
+| ID | Description | Input | Expected Result |
+|----|-------------|-------|-----------------|
+| ST-01 | View settings | `/settings view` | Current settings displayed |
+| ST-02 | Change language to Japanese | `/settings language lang:ja` | Language changed to Japanese |
+| ST-03 | Change language to English | `/settings language lang:en` | Language changed to English |
+| ST-04 | Set audit channel | `/settings audit channel:#logs` | Audit channel configured |
+| ST-05 | View audit logs | `/settings logs` | Recent audit logs displayed |
+| ST-06 | Non-admin access | `/settings view` (non-admin) | Error: "missing permissions" |
+
+### Poll Commands (`/poll`)
+
+| ID | Description | Input | Expected Result |
+|----|-------------|-------|-----------------|
+| PL-01 | Create basic poll | `/poll create question:Test option1:A option2:B` | Poll created with 2 options |
+| PL-02 | Create poll with duration | `/poll create ... duration:5` | Poll ends after 5 minutes |
+| PL-03 | Create anonymous poll | `/poll create ... anonymous:true` | Anonymous poll created |
+| PL-04 | End active poll | `/poll end` | Poll ended, results displayed |
+| PL-05 | End with no active poll | `/poll end` (no poll) | Error: "No active poll" |
+| PL-06 | Max options (10) | `/poll create ... option1-10` | Poll with 10 options |
+
+### Roulette Commands (`/roulette`)
+
+| ID | Description | Input | Expected Result |
+|----|-------------|-------|-----------------|
+| RL-01 | Random member selection | `/roulette member` (in VC) | One member randomly selected |
+| RL-02 | Team division | `/roulette team count:2` | Members split into 2 teams |
+| RL-03 | Not in voice channel | `/roulette member` (not in VC) | Error: "must be in a voice channel" |
+| RL-04 | Only bots in VC | `/roulette member` (only bots) | Error: "no eligible members" |
+
+### Voice Recording (`/record`)
+
+| ID | Description | Input | Expected Result |
+|----|-------------|-------|-----------------|
+| VR-01 | Record 30 seconds | `/record duration:30s` | WAV file sent to channel |
+| VR-02 | Record 1 minute | `/record duration:1m` | WAV file sent to channel |
+| VR-03 | Invalid duration | `/record duration:abc` | Error: "Invalid duration" |
+| VR-04 | Exceed max duration | `/record duration:10m` | Error: "Exceeds maximum" |
+| VR-05 | Not in voice channel | `/record duration:30s` (not in VC) | Error: "must be in voice channel" |
+| VR-06 | Large file splitting | `/record duration:5m` (>25MB) | Multiple files sent |
+
+### Notification Commands (`/notify`)
+
+| ID | Description | Input | Expected Result |
+|----|-------------|-------|-----------------|
+| NT-01 | Setup notifications | `/notify setup channel:#games` | Notification channel set |
+| NT-02 | Check status | `/notify status` | Current settings displayed |
+| NT-03 | Enable notifications | `/notify enable` | Notifications enabled |
+| NT-04 | Disable notifications | `/notify disable` | Notifications disabled |
+| NT-05 | Toggle personal | `/notify me action:enable` | Personal notifications toggled |
+
+---
+
+## Middleware Tests
+
+### Cooldown Middleware
+
+| ID | Description | Expected Result |
+|----|-------------|-----------------|
+| MW-01 | First command execution | Pass (cooldown set) |
+| MW-02 | Immediate re-execution | Blocked with remaining time |
+| MW-03 | After cooldown expires | Pass |
+| MW-04 | Zero cooldown command | Always pass |
+| MW-05 | Different users same command | Independent cooldowns |
+
+### Permissions Middleware
+
+| ID | Description | Expected Result |
+|----|-------------|-----------------|
+| MW-06 | No permissions required | Pass |
+| MW-07 | Has required permission | Pass |
+| MW-08 | Missing permission | Blocked with permission list |
+| MW-09 | DM context with permissions | Blocked: "server only" |
+| MW-10 | Multiple permissions check | All must be satisfied |
+
 ---
 
 ## Unit Tests

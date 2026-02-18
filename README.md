@@ -184,6 +184,10 @@ npm start
 | `db`                  | View database statistics          |
 | `guilds`              | List servers the bot is in        |
 | `broadcast <message>` | Send message to all server owners |
+| `health`              | View system health status         |
+| `backup-list`         | List database backups             |
+| `backup-run`          | Run a manual database backup      |
+| `metrics`             | View bot metrics                  |
 
 ### Settings (`/settings`) - Server Admin
 
@@ -262,16 +266,27 @@ src/
 ├── client.ts             # Discord client configuration
 ├── config/               # Configuration management
 │   ├── index.ts
-│   └── env.ts            # Environment variables (with validation)
+│   ├── env.ts            # Environment variables (with validation)
+│   └── constants.ts      # Internal constants (audio, limits, monitoring)
 ├── commands/             # Slash commands (by category)
 │   ├── general/
 │   │   ├── ping.ts
 │   │   ├── help.ts
 │   │   └── server.ts
 │   ├── steam/
-│   │   ├── steam.ts          # /steam command with subcommands
+│   │   ├── steam.ts          # /steam command definition & routing
 │   │   ├── notification.ts   # /notify command with subcommands
-│   │   └── shared.ts         # Shared utilities for steam commands
+│   │   ├── shared.ts         # Shared utilities for steam commands
+│   │   └── handlers/         # Subcommand handlers (split by feature)
+│   │       ├── profile.ts
+│   │       ├── playtime.ts
+│   │       ├── games.ts
+│   │       ├── recent.ts
+│   │       ├── ranking.ts
+│   │       ├── history.ts
+│   │       ├── chart.ts
+│   │       ├── account.ts
+│   │       └── autocomplete.ts
 │   ├── admin/
 │   │   ├── admin.ts          # /admin command (bot owner)
 │   │   └── settings.ts       # /settings command (server admin)
@@ -324,11 +339,26 @@ src/
 │   │   └── index.ts
 │   ├── audit/            # Audit log service
 │   │   └── index.ts
+│   ├── alert/            # Alert webhook service
+│   │   └── index.ts
+│   ├── backup/           # Database backup service
+│   │   └── index.ts
+│   ├── health/           # System health check service
+│   │   └── index.ts
+│   ├── metrics/          # Bot metrics service
+│   │   └── index.ts
 │   └── scheduler/        # Scheduled tasks (playtime recording)
 │       └── index.ts
+├── scripts/              # Utility scripts
+│   └── cleanup-commands.ts
+├── __tests__/            # Test files
+│   ├── utils/
+│   ├── services/
+│   └── integration/
 ├── utils/                # Utilities
 │   ├── logger.ts
 │   ├── embed.ts
+│   ├── retry.ts          # Retry logic with exponential backoff
 │   ├── lruCache.ts       # LRU cache implementation
 │   ├── fuzzy.ts          # Fuzzy search for autocomplete
 │   ├── chart.ts          # Chart generation
@@ -450,7 +480,11 @@ In Railway dashboard, add the following variables:
 | `NODE_ENV`          | Set to `production`             | No       |
 | `MAX_RECORDING_DURATION` | Max recording time in seconds (default: 300) | No |
 | `AUDIO_BUFFER_DURATION` | Audio buffer time in seconds (default: 600) | No |
+| `AUDIO_MEMORY_BUFFER_DURATION` | Memory buffer time in seconds (default: 120) | No |
 | `MAX_CONCURRENT_VC_CONNECTIONS` | Max concurrent VC connections (default: 5) | No |
+| `BACKUP_RETENTION_DAYS` | Days to keep backups (default: 7) | No |
+| `BACKUP_CRON` | Backup schedule cron expression (default: `0 4 * * *`) | No |
+| `ALERT_WEBHOOK_URL` | Discord webhook URL for alerts | No |
 
 #### 4. Deploy
 
