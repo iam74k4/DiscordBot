@@ -288,17 +288,23 @@ export const command: Command = {
         `Recording completed: ${duration}s from channel ${voiceChannel.name} (${voiceChannel.id}) by ${interaction.user.tag}`
       );
     } catch (error) {
+      const rawMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(
         `Recording failed for channel ${voiceChannel.id}:`,
-        error instanceof Error ? error.message : error
+        rawMessage
       );
+
+      const safeMessage = rawMessage
+        .replace(/\/[\w/.=-]+/g, '[path]')
+        .replace(/\\[\w\\.=-]+/g, '[path]');
 
       await interaction.editReply({
         embeds: [
           createErrorEmbed(
             t('record.errors.failed', locale),
             t('record.errors.failedDesc', locale, {
-              error: error instanceof Error ? error.message : String(error),
+              error: safeMessage,
             })
           ),
         ],

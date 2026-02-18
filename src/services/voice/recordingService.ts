@@ -1,4 +1,5 @@
-import { createWriteStream, existsSync, mkdirSync, statSync } from 'fs';
+import { createWriteStream } from 'fs';
+import { stat, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { env, AUDIO, DISCORD_LIMITS } from '../../config/index.js';
 import { audioBufferManager } from './audioBuffer.js';
@@ -194,9 +195,7 @@ export async function recordAudio(
 
       // Ensure recordings directory exists
       const recordingsDir = join(process.cwd(), env.RECORDINGS_DIR);
-      if (!existsSync(recordingsDir)) {
-        mkdirSync(recordingsDir, { recursive: true });
-      }
+      await mkdir(recordingsDir, { recursive: true });
 
       // Check if file needs to be split
       const estimatedSize = resampledData.length + 44; // WAV header is 44 bytes
@@ -219,13 +218,19 @@ export async function recordAudio(
           const fileStream = createWriteStream(filePath);
 
           await new Promise<void>((resolve, reject) => {
+            fileStream.on('error', (error) => {
+              fileStream.destroy();
+              reject(error);
+            });
             fileStream.write(header, (error) => {
               if (error) {
+                fileStream.destroy();
                 reject(error);
                 return;
               }
               fileStream.write(parts[i], (error) => {
                 if (error) {
+                  fileStream.destroy();
                   reject(error);
                   return;
                 }
@@ -237,9 +242,10 @@ export async function recordAudio(
           filePaths.push(filePath);
         }
 
+        const firstFileStats = await stat(filePaths[0]);
         return {
           filePath: filePaths[0],
-          fileSize: statSync(filePaths[0]).size,
+          fileSize: firstFileStats.size,
           duration,
           isSplit: true,
           additionalFiles: filePaths.slice(1),
@@ -253,13 +259,19 @@ export async function recordAudio(
         const fileStream = createWriteStream(filePath);
 
         await new Promise<void>((resolve, reject) => {
+          fileStream.on('error', (error) => {
+            fileStream.destroy();
+            reject(error);
+          });
           fileStream.write(header, (error) => {
             if (error) {
+              fileStream.destroy();
               reject(error);
               return;
             }
             fileStream.write(resampledData, (error) => {
               if (error) {
+                fileStream.destroy();
                 reject(error);
                 return;
               }
@@ -268,11 +280,11 @@ export async function recordAudio(
           });
         });
 
-        const fileSize = statSync(filePath).size;
+        const fileStats = await stat(filePath);
 
         return {
           filePath,
-          fileSize,
+          fileSize: fileStats.size,
           duration,
           isSplit: false,
         };

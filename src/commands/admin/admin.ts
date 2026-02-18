@@ -228,7 +228,7 @@ async function handleHealth(
 async function handleBackupList(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const backupList = backupService.formatBackupList();
+  const backupList = await backupService.formatBackupList();
 
   const embed = createEmbed({
     title: 'Database Backups',
@@ -333,6 +333,7 @@ export const command: Command = {
               ja: '送信するメッセージ',
             })
             .setRequired(true)
+            .setMaxLength(2000)
         )
     )
     .addSubcommand((sub) =>
