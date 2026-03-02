@@ -23,36 +23,47 @@ vi.mock('../../../config/index.js', () => ({
   },
 }));
 
+vi.mock('../../../utils/logger.js', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 // Import after mocks
 import { backupService } from '../../../services/backup/index.js';
 
 describe('BackupService', () => {
   const testBackupDir = 'test-backups';
+  const testDataDir = 'test-data';
 
   beforeEach(() => {
-    // Clean up test directory
     if (fs.existsSync(testBackupDir)) {
       fs.rmSync(testBackupDir, { recursive: true });
     }
     fs.mkdirSync(testBackupDir, { recursive: true });
+    if (!fs.existsSync(testDataDir)) {
+      fs.mkdirSync(testDataDir, { recursive: true });
+    }
   });
 
   afterEach(() => {
-    // Stop service if running
     backupService.stop();
 
-    // Clean up
     if (fs.existsSync(testBackupDir)) {
       fs.rmSync(testBackupDir, { recursive: true });
+    }
+    if (fs.existsSync(testDataDir)) {
+      fs.rmSync(testDataDir, { recursive: true });
     }
   });
 
   describe('runBackup', () => {
     it('should create a backup file', async () => {
-      // For this test, we need to also mock fs.statSync since backup() doesn't actually create the file
       const { database } = await import('../../../services/database/index.js');
 
-      // Mock backup to actually create a file
       vi.mocked(database.backup).mockImplementation(
         async (filePath: string) => {
           fs.writeFileSync(filePath, 'mock backup content');
@@ -68,7 +79,6 @@ describe('BackupService', () => {
     });
 
     it('should return error on failure', async () => {
-      // Mock backup to fail
       const { database } = await import('../../../services/database/index.js');
       vi.mocked(database.backup).mockRejectedValueOnce(
         new Error('Backup failed')
@@ -119,18 +129,71 @@ describe('BackupService', () => {
 
   describe('deleteOldBackups', () => {
     it('should delete backups older than retention period', async () => {
-      const oldBackupFile = path.join(
+      const oldFile = path.join(
         testBackupDir,
         'backup-2020-01-01T00-00-00.db'
       );
-      fs.writeFileSync(oldBackupFile, 'old content');
+      const recentFile = path.join(
+        testBackupDir,
+        'backup-2099-01-01T00-00-00.db'
+      );
+      fs.writeFileSync(oldFile, 'old content');
+      fs.writeFileSync(recentFile, 'recent content');
 
       const oldTime = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      fs.utimesSync(oldBackupFile, oldTime, oldTime);
+      fs.utimesSync(oldFile, oldTime, oldTime);
 
       const deleted = await backupService.deleteOldBackups();
 
-      expect(deleted).toBeGreaterThanOrEqual(0);
+      expect(deleted).toBe(1);
+      expect(fs.existsSync(oldFile)).toBe(false);
+      expect(fs.existsSync(recentFile)).toBe(true);
+    });
+
+    it('should return 0 when no old backups exist', async () => {
+      fs.writeFileSync(
+        path.join(testBackupDir, 'backup-2099-01-01T00-00-00.db'),
+        'recent'
+      );
+
+      const deleted = await backupService.deleteOldBackups();
+
+      expect(deleted).toBe(0);
+    });
+  });
+
+  describe('restore', () => {
+    it('should reject invalid filename', async () => {
+      const result = await backupService.restore('../etc/passwd');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Invalid backup filename format');
+    });
+
+    it('should restore from existing backup', async () => {
+      const { database } = await import('../../../services/database/index.js');
+      const backupFile = path.join(
+        testBackupDir,
+        'backup-2024-01-01T00-00-00.db'
+      );
+      fs.writeFileSync(backupFile, 'backup data');
+
+      const result = await backupService.restore(
+        'backup-2024-01-01T00-00-00.db'
+      );
+
+      expect(result.success).toBe(true);
+      expect(database.close).toHaveBeenCalled();
+      expect(fs.readFileSync('test-data/bot.db', 'utf-8')).toBe('backup data');
+    });
+
+    it('should return error when backup file not found', async () => {
+      const result = await backupService.restore(
+        'backup-2024-01-01T00-00-00.db'
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
     });
   });
 
@@ -147,7 +210,7 @@ describe('BackupService', () => {
 
     it('should not start twice', () => {
       backupService.start();
-      backupService.start(); // Should not throw
+      backupService.start();
 
       expect(backupService.isRunning()).toBe(true);
     });
@@ -170,6 +233,20 @@ describe('BackupService', () => {
 
       expect(formatted).toContain('backup-2024-01-01T00-00-00.db');
       expect(formatted).toContain('KB');
+    });
+
+    it('should show "... and N more" for more than 10 backups', async () => {
+      for (let i = 0; i < 12; i++) {
+        const day = String(i + 1).padStart(2, '0');
+        fs.writeFileSync(
+          path.join(testBackupDir, `backup-2024-01-${day}T00-00-00.db`),
+          'x'
+        );
+      }
+
+      const formatted = await backupService.formatBackupList();
+
+      expect(formatted).toContain('... and 2 more');
     });
   });
 });

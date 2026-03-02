@@ -18,6 +18,7 @@ Feature-based architecture: each feature (steam, voice, poll, admin, general, co
   - `src/features/community/` — Community commands (roulette)
 - `src/events/` — Core event handlers (ready, interactionCreate)
 - `src/services/` — Shared services (database, backup, health, metrics, cooldown, audit)
+  - `src/services/backup/storage/` — Backup storage abstraction (local, Google Drive)
 - `src/handlers/` — Command/event loading from both features/*/commands/ and features/*/events/
 - `src/middleware/` — Pre-execution checks (cooldown, permissions, etc.)
 - `src/utils/` — Pure utilities (logger, embed builder, chart, retry, etc.)

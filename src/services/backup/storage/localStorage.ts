@@ -21,20 +21,33 @@ export class LocalStorage implements IBackupStorage {
   private async ensureDir(): Promise<void> {
     try {
       await fsp.mkdir(this.backupDir, { recursive: true });
-    } catch {
-      // Directory may already exist
+    } catch (error) {
+      logger.warn(
+        'Failed to create backup directory:',
+        error instanceof Error ? error.message : error
+      );
     }
   }
 
   /**
-   * Put file - no-op for local storage (file is already written by database.backup)
+   * Put file - no-op for local storage (file is already written by database.backup).
+   *
+   * @param filename - Backup filename to validate
+   * @param _localPath - Unused; file already exists at the target location
+   * @throws Error if filename format is invalid
    */
-  async put(_filename: string, _localPath: string): Promise<void> {
-    // File is already at localPath; no action needed
+  async put(filename: string, _localPath: string): Promise<void> {
+    if (!validateBackupFilename(filename)) {
+      throw new Error('Invalid backup filename format');
+    }
   }
 
   /**
-   * Get file contents
+   * Get file contents from the local backup directory.
+   *
+   * @param filename - Backup filename to read
+   * @returns File contents as a Buffer
+   * @throws Error if filename is invalid, path traversal is detected, or file not found
    */
   async get(filename: string): Promise<Buffer> {
     if (!validateBackupFilename(filename)) {
@@ -50,7 +63,9 @@ export class LocalStorage implements IBackupStorage {
   }
 
   /**
-   * List all backup files
+   * List all backup files in the local directory.
+   *
+   * @returns Array of backup file info sorted by createdAt descending
    */
   async list(): Promise<BackupFileInfo[]> {
     await this.ensureDir();
@@ -60,7 +75,7 @@ export class LocalStorage implements IBackupStorage {
       const backups: BackupFileInfo[] = [];
 
       for (const file of files) {
-        if (file.startsWith('backup-') && file.endsWith('.db')) {
+        if (validateBackupFilename(file)) {
           const filePath = path.join(this.backupDir, file);
           const stats = await fsp.stat(filePath);
 
@@ -77,13 +92,19 @@ export class LocalStorage implements IBackupStorage {
         (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
       );
     } catch (error) {
-      logger.error('Failed to list backups:', error);
+      logger.error(
+        'Failed to list backups:',
+        error instanceof Error ? error.message : error
+      );
       return [];
     }
   }
 
   /**
-   * Delete a backup file
+   * Delete a backup file from the local directory.
+   *
+   * @param filename - Backup filename to delete
+   * @throws Error if filename is invalid, path traversal is detected, or file not found
    */
   async delete(filename: string): Promise<void> {
     if (!validateBackupFilename(filename)) {
@@ -99,7 +120,10 @@ export class LocalStorage implements IBackupStorage {
   }
 
   /**
-   * Get share link - not supported for local storage
+   * Get share link - not supported for local storage.
+   *
+   * @param _filename - Unused
+   * @returns Always `null`
    */
   async getShareLink(_filename: string): Promise<string | null> {
     return null;
