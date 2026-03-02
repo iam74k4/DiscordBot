@@ -1,6 +1,6 @@
 /**
  * Steam status indicators (text-based, minimal)
- * Note: For localized status text, use services/steam/utils.ts getStatusText()
+ * Note: For localized status text, use features/steam/services/steam/utils.ts getStatusText()
  */
 export const STEAM_STATUS = {
   ONLINE: 'Online',

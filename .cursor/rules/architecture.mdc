@@ -7,14 +7,18 @@ alwaysApply: true
 
 ## Project Structure
 
-- `src/commands/` — Slash command definitions grouped by category
-- `src/events/` — Discord event handlers grouped by category
-- `src/services/` — Business logic (database, voice, notifications, etc.)
-  - `src/services/alert/` — Alert webhook service
-  - `src/services/backup/` — Database backup service
-  - `src/services/health/` — System health check service
-  - `src/services/metrics/` — Bot metrics service
-- `src/handlers/` — Command/event loading and registration
+Feature-based architecture: each feature (steam, voice, poll, admin, general, community) is self-contained under `src/features/`.
+
+- `src/features/` — Feature modules, each with commands/, services/, events/, and index.ts
+  - `src/features/steam/` — Steam integration (commands, steam client, notifications, scheduler)
+  - `src/features/voice/` — Voice recording (commands, connection manager, audio buffer, events)
+  - `src/features/poll/` — Poll system (commands, poll store/service)
+  - `src/features/admin/` — Admin commands (admin, settings)
+  - `src/features/general/` — General commands (ping, help, server)
+  - `src/features/community/` — Community commands (roulette)
+- `src/events/` — Core event handlers (ready, interactionCreate)
+- `src/services/` — Shared services (database, backup, health, metrics, cooldown, audit, alert)
+- `src/handlers/` — Command/event loading from both features/*/commands/ and features/*/events/
 - `src/middleware/` — Pre-execution checks (cooldown, permissions, etc.)
 - `src/utils/` — Pure utilities (logger, embed builder, chart, retry, etc.)
 - `src/config/` — Environment config, validation, and constants
@@ -46,11 +50,13 @@ alwaysApply: true
 - Always clean up audio buffers when disconnecting (`audioBufferManager.removeBuffer`)
 - Respect `MAX_CONCURRENT_VC_CONNECTIONS` limit
 
-### Services
+### Services & Features
 
 - Follow singleton pattern for service instances (export `const instance = new Service()`)
-- Register services in `index.ts` and handle cleanup in `gracefulShutdown()`
-- Start services that depend on Discord after `client.login()`
+- Each feature module exports `start(client)` / `stop()` in its `index.ts`
+- Register feature lifecycle in `src/index.ts` and handle cleanup in `gracefulShutdown()`
+- Start features that depend on Discord after `client.login()`
+- New features go in `src/features/<name>/` with `commands/`, `services/`, and optionally `events/`
 
 ### Localization
 

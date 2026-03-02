@@ -1,5 +1,5 @@
 import { REST, Routes } from 'discord.js';
-import { readdirSync } from 'fs';
+import { readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Command } from '../types/index.js';
@@ -54,6 +54,51 @@ export async function loadCommands(client: ExtendedClient): Promise<void> {
           `Failed to load command from ${filePath}:`,
           error instanceof Error ? error.message : error
         );
+      }
+    }
+  }
+
+  // Also load from features/*/commands/ (feature-based architecture)
+  const featuresPath = join(__dirname, '..', 'features');
+  if (existsSync(featuresPath)) {
+    const featureFolders = readdirSync(featuresPath, { withFileTypes: true })
+      .filter((dirent) => dirent.isDirectory())
+      .map((dirent) => dirent.name);
+
+    for (const feature of featureFolders) {
+      const featureCommandsPath = join(featuresPath, feature, 'commands');
+      if (!existsSync(featureCommandsPath)) continue;
+
+      const commandFiles = readdirSync(featureCommandsPath).filter(
+        (file) =>
+          (file.endsWith('.ts') || file.endsWith('.js')) &&
+          !file.startsWith('index.')
+      );
+
+      for (const file of commandFiles) {
+        const filePath = join(featureCommandsPath, file);
+        try {
+          const commandModule = await import(
+            `file://${filePath.replace(/\\/g, '/')}`
+          );
+          const command: Command = commandModule.default ?? commandModule.command;
+
+          if (command?.data?.name && typeof command.execute === 'function') {
+            client.commands.set(command.data.name, command);
+            logger.debug(
+              `Loaded command: ${command.data.name} (features/${feature})`
+            );
+          } else {
+            logger.warn(
+              `Invalid command file: ${filePath} - missing data.name or execute`
+            );
+          }
+        } catch (error) {
+          logger.error(
+            `Failed to load command from ${filePath}:`,
+            error instanceof Error ? error.message : error
+          );
+        }
       }
     }
   }

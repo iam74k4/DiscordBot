@@ -260,6 +260,8 @@ npm start
 
 ## Project Structure
 
+Feature-based architecture: each feature is self-contained under `src/features/`.
+
 ```
 src/
 ├── index.ts              # Entry point with graceful shutdown
@@ -268,87 +270,74 @@ src/
 │   ├── index.ts
 │   ├── env.ts            # Environment variables (with validation)
 │   └── constants.ts      # Internal constants (audio, limits, monitoring)
-├── commands/             # Slash commands (by category)
-│   ├── general/
-│   │   ├── ping.ts
-│   │   ├── help.ts
-│   │   └── server.ts
-│   ├── steam/
-│   │   ├── steam.ts          # /steam command definition & routing
-│   │   ├── notification.ts   # /notify command with subcommands
-│   │   ├── shared.ts         # Shared utilities for steam commands
-│   │   └── handlers/         # Subcommand handlers (split by feature)
-│   │       ├── profile.ts
-│   │       ├── playtime.ts
-│   │       ├── games.ts
-│   │       ├── recent.ts
-│   │       ├── ranking.ts
-│   │       ├── history.ts
-│   │       ├── chart.ts
-│   │       ├── account.ts
-│   │       └── autocomplete.ts
-│   ├── admin/
-│   │   ├── admin.ts          # /admin command (bot owner)
-│   │   └── settings.ts       # /settings command (server admin)
-│   ├── community/
-│   │   ├── poll.ts           # /poll command (voting)
-│   │   └── roulette.ts       # /roulette command (random selection)
-│   ├── voice/
-│   │   └── record.ts         # /record command (VC recording)
-│   └── index.ts
-├── events/               # Event handlers
+├── features/             # Feature modules (commands, services, events)
+│   ├── steam/            # Steam integration
+│   │   ├── commands/
+│   │   │   ├── steam.ts          # /steam command definition & routing
+│   │   │   ├── notification.ts   # /notify command with subcommands
+│   │   │   └── handlers/         # Subcommand handlers
+│   │   ├── services/
+│   │   │   ├── steam/            # Steam API client
+│   │   │   ├── notifications/    # Game start notification system
+│   │   │   └── scheduler/        # Scheduled tasks (playtime recording)
+│   │   ├── lib/
+│   │   │   └── shared.ts         # Shared utilities for steam commands
+│   │   └── index.ts              # Feature start/stop lifecycle
+│   ├── voice/            # Voice recording
+│   │   ├── commands/
+│   │   │   └── record.ts         # /record command
+│   │   ├── services/
+│   │   │   ├── connectionManager.ts
+│   │   │   ├── audioBuffer.ts
+│   │   │   ├── recordingService.ts
+│   │   │   ├── memoryMonitor.ts
+│   │   │   └── fileCleanup.ts
+│   │   ├── events/
+│   │   │   └── voiceStateUpdate.ts
+│   │   └── index.ts
+│   ├── poll/             # Poll system
+│   │   ├── commands/
+│   │   │   └── poll.ts
+│   │   ├── services/
+│   │   │   ├── pollStore.ts
+│   │   │   └── pollService.ts
+│   │   └── index.ts
+│   ├── admin/            # Admin commands
+│   │   └── commands/
+│   │       ├── admin.ts          # /admin command (bot owner)
+│   │       └── settings.ts       # /settings command (server admin)
+│   ├── general/          # General commands
+│   │   └── commands/
+│   │       ├── ping.ts
+│   │       ├── help.ts
+│   │       └── server.ts
+│   └── community/        # Community commands
+│       └── commands/
+│           └── roulette.ts
+├── events/               # Core event handlers
 │   ├── client/
 │   │   └── ready.ts
-│   ├── guild/
-│   │   └── voiceStateUpdate.ts  # VC auto-join event
 │   ├── interaction/
 │   │   └── interactionCreate.ts
 │   └── index.ts
-├── handlers/             # Loaders
+├── handlers/             # Loaders (scans features/*/commands/ and features/*/events/)
 │   ├── commandHandler.ts
 │   └── eventHandler.ts
 ├── middleware/           # Middleware (pre-processing)
 │   ├── index.ts
 │   ├── permissions.ts
 │   └── cooldown.ts
-├── services/             # Business logic
+├── services/             # Shared services
 │   ├── database/         # SQLite database operations
 │   │   ├── index.ts
 │   │   ├── notifications.ts
-│   │   └── settings.ts   # Guild settings & audit logs
-│   ├── steam/            # Steam API client
-│   │   ├── client.ts
-│   │   ├── types.ts
-│   │   ├── utils.ts
-│   │   └── index.ts
-│   ├── voice/            # Voice recording service
-│   │   ├── connectionManager.ts  # VC connection management
-│   │   ├── audioBuffer.ts        # Hybrid audio buffering
-│   │   ├── recordingService.ts   # Recording & WAV conversion
-│   │   ├── memoryMonitor.ts      # Memory usage monitoring
-│   │   ├── fileCleanup.ts        # Auto file cleanup
-│   │   └── index.ts
-│   ├── notifications/    # Game start notification system
-│   │   └── index.ts
-│   ├── poll/             # Poll management service
-│   │   ├── pollStore.ts
-│   │   ├── pollService.ts
-│   │   └── index.ts
-│   ├── cooldown/         # Cooldown management service
-│   │   ├── cooldownStore.ts
-│   │   └── index.ts
+│   │   └── settings.ts
+│   ├── cooldown/         # Cooldown management
 │   ├── audit/            # Audit log service
-│   │   └── index.ts
 │   ├── alert/            # Alert webhook service
-│   │   └── index.ts
 │   ├── backup/           # Database backup service
-│   │   └── index.ts
-│   ├── health/           # System health check service
-│   │   └── index.ts
-│   ├── metrics/          # Bot metrics service
-│   │   └── index.ts
-│   └── scheduler/        # Scheduled tasks (playtime recording)
-│       └── index.ts
+│   ├── health/           # System health check
+│   └── metrics/          # Bot metrics service
 ├── scripts/              # Utility scripts
 │   └── cleanup-commands.ts
 ├── __tests__/            # Test files
@@ -358,17 +347,12 @@ src/
 ├── utils/                # Utilities
 │   ├── logger.ts
 │   ├── embed.ts
-│   ├── retry.ts          # Retry logic with exponential backoff
-│   ├── lruCache.ts       # LRU cache implementation
-│   ├── fuzzy.ts          # Fuzzy search for autocomplete
-│   ├── chart.ts          # Chart generation
-│   └── constants/        # Constants (domain-separated)
-│       ├── colors.ts
-│       ├── steam.ts
-│       ├── ui.ts
-│       ├── bot.ts
-│       └── index.ts
-├── locales/              # Internationalization (i18n)
+│   ├── retry.ts
+│   ├── lruCache.ts
+│   ├── fuzzy.ts
+│   ├── chart.ts
+│   └── constants/
+├── locales/              # Internationalization (en, ja)
 │   ├── en.ts
 │   ├── ja.ts
 │   ├── types.ts
@@ -378,7 +362,7 @@ src/
     ├── command.ts
     ├── event.ts
     ├── middleware.ts
-    └── voice.ts          # Voice recording types
+    └── voice.ts
 ```
 
 ## Database
@@ -397,11 +381,11 @@ The bot uses SQLite (via `better-sqlite3`) for data persistence. The database fi
 
 ## Adding New Commands
 
-1. Create a new file in `src/commands/<category>/`:
+1. Create a new feature directory `src/features/<name>/commands/` or add to an existing one:
 
 ```typescript
 import { SlashCommandBuilder } from 'discord.js';
-import { Command } from '../../types/index.js';
+import { Command } from '../../../types/index.js';
 
 export const command: Command = {
   data: new SlashCommandBuilder()
@@ -422,7 +406,7 @@ export const command: Command = {
 export default command;
 ```
 
-2. The command will be automatically loaded on next restart.
+2. The command will be automatically loaded from `features/*/commands/` on next restart.
 
 ## Adding New Middleware
 

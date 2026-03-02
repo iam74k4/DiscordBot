@@ -70,7 +70,7 @@ describe('Admin Command', () => {
       });
 
       // Import command after mocks
-      const { command } = await import('../../../commands/admin/admin.js');
+      const { command } = await import('../../../features/admin/commands/admin.js');
       await command.execute(interaction);
 
       expect(interaction.reply).toHaveBeenCalledWith(
@@ -87,7 +87,7 @@ describe('Admin Command', () => {
         user: { id: '987654321098765432' },
       });
 
-      const { command } = await import('../../../commands/admin/admin.js');
+      const { command } = await import('../../../features/admin/commands/admin.js');
       await command.execute(interaction);
 
       // Should have called reply with stats embed
@@ -103,7 +103,7 @@ describe('Admin Command', () => {
         user: { id: '987654321098765432' },
       });
 
-      const { command } = await import('../../../commands/admin/admin.js');
+      const { command } = await import('../../../features/admin/commands/admin.js');
       await command.execute(interaction);
 
       expect(interaction.reply).toHaveBeenCalledWith(
@@ -128,7 +128,7 @@ describe('Admin Command', () => {
         user: { id: '987654321098765432' },
       });
 
-      const { command } = await import('../../../commands/admin/admin.js');
+      const { command } = await import('../../../features/admin/commands/admin.js');
       await command.execute(interaction);
 
       expect(interaction.reply).toHaveBeenCalledWith(
@@ -151,7 +151,7 @@ describe('Admin Command', () => {
         user: { id: '987654321098765432' },
       });
 
-      const { command } = await import('../../../commands/admin/admin.js');
+      const { command } = await import('../../../features/admin/commands/admin.js');
       await command.execute(interaction);
 
       expect(interaction.deferReply).toHaveBeenCalled();
@@ -177,7 +177,7 @@ describe('Admin Command', () => {
         user: { id: '987654321098765432' },
       });
 
-      const { command } = await import('../../../commands/admin/admin.js');
+      const { command } = await import('../../../features/admin/commands/admin.js');
       await command.execute(interaction);
 
       expect(interaction.reply).toHaveBeenCalledWith(
