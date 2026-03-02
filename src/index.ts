@@ -30,32 +30,28 @@ async function gracefulShutdown(
   isShuttingDown = true;
   logger.info(`Received ${signal}, initiating graceful shutdown...`);
 
-  try {
-    // Stop services in reverse order of startup
-    logger.debug('Stopping Voice feature...');
-    await stopVoice();
+  const steps: [string, () => void | Promise<void>][] = [
+    ['Voice feature', () => stopVoice()],
+    ['Backup service', () => backupService.stop()],
+    ['Steam feature', () => stopSteam()],
+    ['Database', () => closeDatabase()],
+    ['Discord client', () => client.destroy()],
+  ];
 
-    logger.debug('Stopping backup service...');
-    backupService.stop();
-
-    logger.debug('Stopping Steam feature...');
-    stopSteam();
-
-    logger.debug('Closing database connection...');
-    closeDatabase();
-
-    logger.debug('Destroying Discord client...');
-    client.destroy();
-
-    logger.info('Graceful shutdown complete');
-    process.exit(0);
-  } catch (error) {
-    logger.error(
-      'Error during graceful shutdown:',
-      error instanceof Error ? error.message : error
-    );
-    process.exit(1);
+  for (const [name, fn] of steps) {
+    try {
+      logger.debug(`Stopping ${name}...`);
+      await fn();
+    } catch (error) {
+      logger.error(
+        `Failed to stop ${name}:`,
+        error instanceof Error ? error.message : error
+      );
+    }
   }
+
+  logger.info('Graceful shutdown complete');
+  process.exit(0);
 }
 
 /**

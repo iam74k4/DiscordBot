@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
+  ChatInputCommandInteraction,
   PermissionFlagsBits,
   PermissionsBitField,
   SlashCommandBuilder,
@@ -15,7 +16,7 @@ function createMockInteraction(permissions?: bigint[], inGuild = true) {
   return {
     guild: inGuild ? { id: 'guild-1' } : null,
     member: inGuild ? { permissions: bitField } : null,
-  } as any;
+  } as unknown as ChatInputCommandInteraction;
 }
 
 function createMockCommand(permissions?: bigint[]): Command {

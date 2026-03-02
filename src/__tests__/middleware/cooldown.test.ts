@@ -35,12 +35,12 @@ import {
 } from '../../middleware/cooldown.js';
 import { cooldownStore } from '../../services/cooldown/index.js';
 import { Command } from '../../types/index.js';
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 
 function createMockInteraction(userId = 'user-123') {
   return {
     user: { id: userId },
-  } as any;
+  } as unknown as ChatInputCommandInteraction;
 }
 
 function createMockCommand(name: string, cooldown?: number): Command {
