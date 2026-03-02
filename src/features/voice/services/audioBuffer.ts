@@ -290,7 +290,9 @@ export class HybridAudioBuffer {
    */
   clear(): void {
     this.memoryBuffer = [];
-    this.cleanupOldFiles();
+    for (const [, filePath] of this.diskBufferFiles.entries()) {
+      unlink(filePath).catch(() => {});
+    }
     this.diskBufferFiles.clear();
   }
 }

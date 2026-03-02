@@ -304,14 +304,14 @@ export class VoiceConnectionManager {
   /**
    * Disconnect oldest connections if memory threshold is exceeded
    */
-  disconnectOldest(count: number): void {
+  async disconnectOldest(count: number): Promise<void> {
     const sorted = Array.from(this.connections.entries()).sort(
       (a, b) => a[1].connectedAt - b[1].connectedAt
     );
 
     for (let i = 0; i < Math.min(count, sorted.length); i++) {
       const [channelId] = sorted[i];
-      this.disconnect(channelId);
+      await this.disconnect(channelId);
     }
   }
 

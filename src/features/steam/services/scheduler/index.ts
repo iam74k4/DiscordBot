@@ -12,54 +12,70 @@ import {
  */
 const scheduledTasks: cron.ScheduledTask[] = [];
 
+let isRecording = false;
+
 /**
  * Record playtime for all registered users
  */
 async function recordAllUsersPlaytime(): Promise<void> {
+  if (isRecording) {
+    logger.warn('Playtime recording already in progress, skipping');
+    return;
+  }
+
   if (!steamClient.isConfigured()) {
     logger.debug('Steam API key not configured, skipping playtime recording');
     return;
   }
 
-  logger.info('Starting daily playtime recording...');
+  isRecording = true;
 
-  const users = getAllSteamUsers();
-  let successCount = 0;
-  let errorCount = 0;
+  try {
+    logger.info('Starting daily playtime recording...');
 
-  for (const user of users) {
-    try {
-      const totalPlaytime = await steamClient.getTotalPlaytime(user.steam_id);
+    const users = getAllSteamUsers();
+    let successCount = 0;
+    let errorCount = 0;
 
-      // Record playtime including 0 (valid data from public profiles)
-      // Note: getTotalPlaytime returns 0 for both "no games" and "private profile"
-      // We record 0 to track users who haven't played yet
-      recordPlaytime(user.discord_id, user.steam_id, totalPlaytime);
-      successCount++;
-    } catch (error) {
-      errorCount++;
-      logger.warn(
-        `Playtime recording failed for ${user.discord_id}:`,
-        error instanceof Error ? error.message : error
-      );
+    for (const user of users) {
+      try {
+        const totalPlaytime = await steamClient.getTotalPlaytime(user.steam_id);
+
+        recordPlaytime(user.discord_id, user.steam_id, totalPlaytime);
+        successCount++;
+      } catch (error) {
+        errorCount++;
+        logger.warn(
+          `Playtime recording failed for ${user.discord_id}:`,
+          error instanceof Error ? error.message : error
+        );
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
-    // Small delay to avoid rate limiting
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    logger.info(
+      `Playtime recording complete: ${successCount} success, ${errorCount} errors`
+    );
+  } finally {
+    isRecording = false;
   }
-
-  logger.info(
-    `Playtime recording complete: ${successCount} success, ${errorCount} errors`
-  );
 }
 
 /**
  * Cleanup old records
  */
 function runCleanup(): void {
-  const deleted = cleanupOldPlaytimeRecords(365); // Keep 1 year of data
-  if (deleted > 0) {
-    logger.info(`Cleaned up ${deleted} old playtime records`);
+  try {
+    const deleted = cleanupOldPlaytimeRecords(365);
+    if (deleted > 0) {
+      logger.info(`Cleaned up ${deleted} old playtime records`);
+    }
+  } catch (error) {
+    logger.error(
+      'Cleanup failed:',
+      error instanceof Error ? error.message : error
+    );
   }
 }
 
