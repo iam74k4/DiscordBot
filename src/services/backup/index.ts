@@ -4,7 +4,11 @@ import * as cron from 'node-cron';
 import { env } from '../../config/index.js';
 import { database } from '../database/index.js';
 import { logger } from '../../utils/logger.js';
-import { createBackupStorage, type IBackupStorage } from './storage/index.js';
+import {
+  createBackupStorage,
+  validateBackupFilename,
+  type IBackupStorage,
+} from './storage/index.js';
 
 /**
  * Backup result information
@@ -49,8 +53,11 @@ class BackupService {
   private async ensureBackupDir(): Promise<void> {
     try {
       await fsp.mkdir(this.backupDir, { recursive: true });
-    } catch {
-      // Directory may already exist
+    } catch (error) {
+      logger.warn(
+        'Failed to create backup directory:',
+        error instanceof Error ? error.message : error
+      );
     }
   }
 
@@ -161,7 +168,10 @@ class BackupService {
         shareLink: f.shareLink,
       }));
     } catch (error) {
-      logger.error('Failed to list backups:', error);
+      logger.error(
+        'Failed to list backups:',
+        error instanceof Error ? error.message : error
+      );
       return [];
     }
   }
@@ -198,7 +208,7 @@ class BackupService {
   async restore(
     filename: string
   ): Promise<{ success: boolean; error?: string }> {
-    if (!filename.match(/^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.db$/)) {
+    if (!validateBackupFilename(filename)) {
       return { success: false, error: 'Invalid backup filename format' };
     }
 

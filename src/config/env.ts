@@ -53,8 +53,21 @@ function validateEnv(): void {
   const validEnvs = ['development', 'production'];
   if (process.env.NODE_ENV && !validEnvs.includes(process.env.NODE_ENV)) {
     logger.warn(
-      `NODE_ENV "${process.env.NODE_ENV}" is not recognized, defaulting to "development"`
+      `NODE_ENV "${process.env.NODE_ENV}" is not recognized. Valid values: ${validEnvs.join(', ')}`
     );
+    process.env.NODE_ENV = 'development';
+  }
+
+  // Validate BACKUP_STORAGE_TYPE
+  const validStorageTypes = ['local', 'google_drive'];
+  if (
+    process.env.BACKUP_STORAGE_TYPE &&
+    !validStorageTypes.includes(process.env.BACKUP_STORAGE_TYPE)
+  ) {
+    logger.error(
+      `BACKUP_STORAGE_TYPE "${process.env.BACKUP_STORAGE_TYPE}" is not supported. Valid values: ${validStorageTypes.join(', ')}`
+    );
+    process.exit(1);
   }
 
   // Validate Google Drive credentials when BACKUP_STORAGE_TYPE=google_drive

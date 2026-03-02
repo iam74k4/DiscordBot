@@ -20,17 +20,30 @@ vi.mock('googleapis', () => ({
     },
     drive: vi.fn(function () {
       return {
-      files: {
-        create: mockFilesCreate,
-        list: mockFilesList,
-        get: mockFilesGet,
-        delete: mockFilesDelete,
-      },
-      permissions: {
-        create: mockPermissionsCreate,
-      },
-    };
+        files: {
+          create: mockFilesCreate,
+          list: mockFilesList,
+          get: mockFilesGet,
+          delete: mockFilesDelete,
+        },
+        permissions: {
+          create: mockPermissionsCreate,
+        },
+      };
     }),
+  },
+}));
+
+vi.mock('../../../utils/retry.js', () => ({
+  withRetry: vi.fn((fn: () => Promise<unknown>) => fn()),
+}));
+
+vi.mock('../../../utils/logger.js', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
   },
 }));
 
@@ -89,74 +102,171 @@ describe('GoogleDriveStorage', () => {
     mockFilesDelete.mockResolvedValue({});
   });
 
-  it('should upload file and create share permission', async () => {
-    const { GoogleDriveStorage } = await import(
-      '../../../services/backup/storage/googleDriveStorage.js'
-    );
-    const storage = new GoogleDriveStorage();
+  describe('put', () => {
+    it('should upload file and create share permission', async () => {
+      const { GoogleDriveStorage } = await import(
+        '../../../services/backup/storage/googleDriveStorage.js'
+      );
+      const storage = new GoogleDriveStorage();
 
-    await storage.put('backup-2024-01-01T00-00-00.db', '/tmp/test.db');
+      await storage.put('backup-2024-01-01T00-00-00.db', '/tmp/test.db');
 
-    expect(mockFilesCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        requestBody: expect.objectContaining({
-          name: 'backup-2024-01-01T00-00-00.db',
-          parents: ['test-folder-id'],
-        }),
-      })
-    );
-    expect(mockPermissionsCreate).toHaveBeenCalledWith({
-      fileId: 'file-123',
-      requestBody: { role: 'reader', type: 'anyone' },
+      expect(mockFilesCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          requestBody: expect.objectContaining({
+            name: 'backup-2024-01-01T00-00-00.db',
+            parents: ['test-folder-id'],
+          }),
+        })
+      );
+      expect(mockPermissionsCreate).toHaveBeenCalledWith({
+        fileId: 'file-123',
+        requestBody: { role: 'reader', type: 'anyone' },
+      });
+    });
+
+    it('should reject invalid filename', async () => {
+      const { GoogleDriveStorage } = await import(
+        '../../../services/backup/storage/googleDriveStorage.js'
+      );
+      const storage = new GoogleDriveStorage();
+
+      await expect(
+        storage.put('../etc/passwd', '/tmp/test.db')
+      ).rejects.toThrow('Invalid backup filename format');
+    });
+
+    it('should throw on upload failure', async () => {
+      mockFilesCreate.mockRejectedValueOnce(new Error('Upload failed'));
+
+      const { GoogleDriveStorage } = await import(
+        '../../../services/backup/storage/googleDriveStorage.js'
+      );
+      const storage = new GoogleDriveStorage();
+
+      await expect(
+        storage.put('backup-2024-01-01T00-00-00.db', '/tmp/test.db')
+      ).rejects.toThrow('Upload failed');
     });
   });
 
-  it('should list backup files', async () => {
-    const { GoogleDriveStorage } = await import(
-      '../../../services/backup/storage/googleDriveStorage.js'
-    );
-    const storage = new GoogleDriveStorage();
+  describe('list', () => {
+    it('should list backup files', async () => {
+      const { GoogleDriveStorage } = await import(
+        '../../../services/backup/storage/googleDriveStorage.js'
+      );
+      const storage = new GoogleDriveStorage();
 
-    const list = await storage.list();
+      const list = await storage.list();
 
-    expect(list).toHaveLength(1);
-    expect(list[0].filename).toBe('backup-2024-01-01T00-00-00.db');
-    expect(list[0].size).toBe(1234);
-    expect(list[0].shareLink).toBe('https://drive.google.com/view/123');
-  });
-
-  it('should get file contents', async () => {
-    mockFilesList.mockResolvedValueOnce({
-      data: {
-        files: [{ id: 'file-123', name: 'backup-2024-01-01T00-00-00.db' }],
-      },
+      expect(list).toHaveLength(1);
+      expect(list[0].filename).toBe('backup-2024-01-01T00-00-00.db');
+      expect(list[0].size).toBe(1234);
+      expect(list[0].shareLink).toBe('https://drive.google.com/view/123');
     });
 
-    const { GoogleDriveStorage } = await import(
-      '../../../services/backup/storage/googleDriveStorage.js'
-    );
-    const storage = new GoogleDriveStorage();
+    it('should return empty array when no files exist', async () => {
+      mockFilesList.mockResolvedValueOnce({ data: { files: [] } });
 
-    const data = await storage.get('backup-2024-01-01T00-00-00.db');
+      const { GoogleDriveStorage } = await import(
+        '../../../services/backup/storage/googleDriveStorage.js'
+      );
+      const storage = new GoogleDriveStorage();
 
-    expect(Buffer.isBuffer(data)).toBe(true);
-    expect(data.toString()).toBe('test content');
+      const list = await storage.list();
+
+      expect(list).toHaveLength(0);
+    });
   });
 
-  it('should delete file', async () => {
-    mockFilesList.mockResolvedValueOnce({
-      data: {
-        files: [{ id: 'file-123', name: 'backup-2024-01-01T00-00-00.db' }],
-      },
+  describe('get', () => {
+    it('should get file contents', async () => {
+      mockFilesList.mockResolvedValueOnce({
+        data: {
+          files: [{ id: 'file-123', name: 'backup-2024-01-01T00-00-00.db' }],
+        },
+      });
+
+      const { GoogleDriveStorage } = await import(
+        '../../../services/backup/storage/googleDriveStorage.js'
+      );
+      const storage = new GoogleDriveStorage();
+
+      const data = await storage.get('backup-2024-01-01T00-00-00.db');
+
+      expect(Buffer.isBuffer(data)).toBe(true);
+      expect(data.toString()).toBe('test content');
     });
 
-    const { GoogleDriveStorage } = await import(
-      '../../../services/backup/storage/googleDriveStorage.js'
-    );
-    const storage = new GoogleDriveStorage();
+    it('should reject invalid filename', async () => {
+      const { GoogleDriveStorage } = await import(
+        '../../../services/backup/storage/googleDriveStorage.js'
+      );
+      const storage = new GoogleDriveStorage();
 
-    await storage.delete('backup-2024-01-01T00-00-00.db');
+      await expect(storage.get('../etc/passwd')).rejects.toThrow(
+        'Invalid backup filename format'
+      );
+    });
 
-    expect(mockFilesDelete).toHaveBeenCalledWith({ fileId: 'file-123' });
+    it('should throw when file not found', async () => {
+      mockFilesList.mockResolvedValueOnce({ data: { files: [] } });
+
+      const { GoogleDriveStorage } = await import(
+        '../../../services/backup/storage/googleDriveStorage.js'
+      );
+      const storage = new GoogleDriveStorage();
+
+      await expect(
+        storage.get('backup-2024-01-01T00-00-00.db')
+      ).rejects.toThrow('File not found');
+    });
+  });
+
+  describe('delete', () => {
+    it('should delete file', async () => {
+      mockFilesList.mockResolvedValueOnce({
+        data: {
+          files: [{ id: 'file-123', name: 'backup-2024-01-01T00-00-00.db' }],
+        },
+      });
+
+      const { GoogleDriveStorage } = await import(
+        '../../../services/backup/storage/googleDriveStorage.js'
+      );
+      const storage = new GoogleDriveStorage();
+
+      await storage.delete('backup-2024-01-01T00-00-00.db');
+
+      expect(mockFilesDelete).toHaveBeenCalledWith({ fileId: 'file-123' });
+    });
+
+    it('should reject invalid filename', async () => {
+      const { GoogleDriveStorage } = await import(
+        '../../../services/backup/storage/googleDriveStorage.js'
+      );
+      const storage = new GoogleDriveStorage();
+
+      await expect(storage.delete('../etc/passwd')).rejects.toThrow(
+        'Invalid backup filename format'
+      );
+    });
+
+    it('should warn and not throw when file not found', async () => {
+      const { logger } = await import('../../../utils/logger.js');
+      mockFilesList.mockResolvedValueOnce({ data: { files: [] } });
+
+      const { GoogleDriveStorage } = await import(
+        '../../../services/backup/storage/googleDriveStorage.js'
+      );
+      const storage = new GoogleDriveStorage();
+
+      await storage.delete('backup-2024-01-01T00-00-00.db');
+
+      expect(mockFilesDelete).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('file not found')
+      );
+    });
   });
 });

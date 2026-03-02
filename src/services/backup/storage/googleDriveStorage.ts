@@ -6,7 +6,12 @@ import { withRetry } from '../../../utils/retry.js';
 import type { BackupFileInfo, IBackupStorage } from './types.js';
 import { validateBackupFilename } from './types.js';
 
-/** Retry Google Drive API calls on transient failures (network, 5xx, 429) */
+/**
+ * Determine if a Google Drive API error is transient and should be retried.
+ *
+ * @param error - The error to evaluate
+ * @returns `true` for network errors, 5xx, and 429 (rate limit)
+ */
 function shouldRetryDriveError(error: unknown): boolean {
   if (error instanceof Error) {
     const msg = error.message.toLowerCase();
@@ -42,7 +47,8 @@ export class GoogleDriveStorage implements IBackupStorage {
   }
 
   /**
-   * Initialize Drive API client
+   * Initialize the Drive API client (lazy, idempotent).
+   * Resets `initPromise` on failure so subsequent calls can retry.
    */
   private async init(): Promise<void> {
     if (this.drive) return;
@@ -88,9 +94,16 @@ export class GoogleDriveStorage implements IBackupStorage {
   }
 
   /**
-   * Upload file to Google Drive
+   * Upload a backup file to Google Drive and create a public share permission.
+   *
+   * @param filename - Validated backup filename
+   * @param localPath - Absolute path to the local file to upload
+   * @throws Error if filename is invalid or upload fails
    */
   async put(filename: string, localPath: string): Promise<void> {
+    if (!validateBackupFilename(filename)) {
+      throw new Error('Invalid backup filename format');
+    }
     await this.init();
     if (!this.drive) throw new Error('Drive not initialized');
 
@@ -140,7 +153,11 @@ export class GoogleDriveStorage implements IBackupStorage {
   }
 
   /**
-   * Get file contents from Google Drive
+   * Download a backup file from Google Drive.
+   *
+   * @param filename - Validated backup filename
+   * @returns File contents as a Buffer
+   * @throws Error if filename is invalid or file not found
    */
   async get(filename: string): Promise<Buffer> {
     if (!validateBackupFilename(filename)) {
@@ -170,7 +187,9 @@ export class GoogleDriveStorage implements IBackupStorage {
   }
 
   /**
-   * List backup files in Google Drive
+   * List all backup files in the configured Google Drive folder.
+   *
+   * @returns Array of backup file info sorted by createdTime descending
    */
   async list(): Promise<BackupFileInfo[]> {
     await this.init();
@@ -202,7 +221,7 @@ export class GoogleDriveStorage implements IBackupStorage {
       .filter((f) => f.name?.startsWith('backup-') && f.name?.endsWith('.db'))
       .map((f) => ({
         filename: f.name!,
-        size: parseInt(f.size || '0', 10),
+        size: Number(f.size) || 0,
         createdAt: f.createdTime ? new Date(f.createdTime) : new Date(0),
         shareLink: f.webViewLink || f.webContentLink || undefined,
       }));
@@ -211,7 +230,11 @@ export class GoogleDriveStorage implements IBackupStorage {
   }
 
   /**
-   * Delete file from Google Drive
+   * Delete a backup file from Google Drive.
+   * Logs a warning and returns silently if the file is not found.
+   *
+   * @param filename - Validated backup filename
+   * @throws Error if filename is invalid or API call fails
    */
   async delete(filename: string): Promise<void> {
     if (!validateBackupFilename(filename)) {
@@ -238,7 +261,10 @@ export class GoogleDriveStorage implements IBackupStorage {
   }
 
   /**
-   * Get share link for a file
+   * Get the shareable link for a backup file.
+   *
+   * @param filename - Backup filename to look up
+   * @returns Share URL, or `null` if not found
    */
   async getShareLink(filename: string): Promise<string | null> {
     const backups = await this.list();
@@ -247,7 +273,10 @@ export class GoogleDriveStorage implements IBackupStorage {
   }
 
   /**
-   * Find file ID by filename
+   * Find a file's Google Drive ID by its filename.
+   *
+   * @param filename - Exact filename to search for
+   * @returns Google Drive file ID, or `null` if not found
    */
   private async getFileId(filename: string): Promise<string | null> {
     if (!this.drive) return null;
