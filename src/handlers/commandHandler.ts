@@ -14,54 +14,12 @@ const __dirname = dirname(__filename);
 let clientCommands: ExtendedClient['commands'] | null = null;
 
 /**
- * Load all commands from the commands directory
+ * Load all commands from feature modules
  * @param client The Discord client to load commands into
  */
 export async function loadCommands(client: ExtendedClient): Promise<void> {
   clientCommands = client.commands;
 
-  const commandsPath = join(__dirname, '..', 'commands');
-  if (existsSync(commandsPath)) {
-    const categoryFolders = readdirSync(commandsPath, { withFileTypes: true })
-      .filter((dirent) => dirent.isDirectory())
-      .map((dirent) => dirent.name);
-
-    for (const category of categoryFolders) {
-      const categoryPath = join(commandsPath, category);
-      const commandFiles = readdirSync(categoryPath).filter(
-        (file) =>
-          (file.endsWith('.ts') || file.endsWith('.js')) &&
-          !file.startsWith('index.')
-      );
-
-      for (const file of commandFiles) {
-        const filePath = join(categoryPath, file);
-        try {
-          const commandModule = await import(
-            `file://${filePath.replace(/\\/g, '/')}`
-          );
-          const command: Command =
-            commandModule.default ?? commandModule.command;
-
-          if (command?.data?.name && typeof command.execute === 'function') {
-            client.commands.set(command.data.name, command);
-            logger.debug(`Loaded command: ${command.data.name} (${category})`);
-          } else {
-            logger.warn(
-              `Invalid command file: ${filePath} - missing data.name or execute`
-            );
-          }
-        } catch (error) {
-          logger.error(
-            `Failed to load command from ${filePath}:`,
-            error instanceof Error ? error.message : error
-          );
-        }
-      }
-    }
-  }
-
-  // Also load from features/*/commands/ (feature-based architecture)
   const featuresPath = join(__dirname, '..', 'features');
   if (existsSync(featuresPath)) {
     const featureFolders = readdirSync(featuresPath, { withFileTypes: true })
