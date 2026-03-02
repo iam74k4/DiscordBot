@@ -3,7 +3,10 @@ import { Event } from '../../types/index.js';
 import { runMiddleware } from '../../middleware/index.js';
 import { logger } from '../../utils/logger.js';
 import { createErrorEmbed } from '../../utils/embed.js';
-import { handlePollVote, pollStore } from '../../features/poll/services/index.js';
+import {
+  handlePollVote,
+  pollStore,
+} from '../../features/poll/services/index.js';
 import { metrics } from '../../services/metrics/index.js';
 
 /**

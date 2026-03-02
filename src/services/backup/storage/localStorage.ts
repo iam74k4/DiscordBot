@@ -82,7 +82,7 @@ export class LocalStorage implements IBackupStorage {
           backups.push({
             filename: file,
             size: stats.size,
-            createdAt: stats.birthtime,
+            createdAt: stats.mtime,
             path: filePath,
           });
         }

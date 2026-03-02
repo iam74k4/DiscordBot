@@ -64,7 +64,9 @@ export class SteamClient {
       url.searchParams.set(key, value);
     }
 
-    logger.debug(`Steam API request: ${endpoint} (params: ${Object.keys(params).join(', ') || 'none'})`);
+    logger.debug(
+      `Steam API request: ${endpoint} (params: ${Object.keys(params).join(', ') || 'none'})`
+    );
 
     return withRetry(
       async () => {
