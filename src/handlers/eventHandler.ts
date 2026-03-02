@@ -92,9 +92,7 @@ export async function loadEvents(client: ExtendedClient): Promise<void> {
               );
             }
 
-            logger.debug(
-              `Loaded event: ${event.name} (features/${feature})`
-            );
+            logger.debug(`Loaded event: ${event.name} (features/${feature})`);
             eventCount++;
           } else {
             logger.warn(

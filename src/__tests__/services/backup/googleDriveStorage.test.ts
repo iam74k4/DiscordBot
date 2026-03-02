@@ -104,9 +104,8 @@ describe('GoogleDriveStorage', () => {
 
   describe('put', () => {
     it('should upload file and create share permission', async () => {
-      const { GoogleDriveStorage } = await import(
-        '../../../services/backup/storage/googleDriveStorage.js'
-      );
+      const { GoogleDriveStorage } =
+        await import('../../../services/backup/storage/googleDriveStorage.js');
       const storage = new GoogleDriveStorage();
 
       await storage.put('backup-2024-01-01T00-00-00.db', '/tmp/test.db');
@@ -126,9 +125,8 @@ describe('GoogleDriveStorage', () => {
     });
 
     it('should reject invalid filename', async () => {
-      const { GoogleDriveStorage } = await import(
-        '../../../services/backup/storage/googleDriveStorage.js'
-      );
+      const { GoogleDriveStorage } =
+        await import('../../../services/backup/storage/googleDriveStorage.js');
       const storage = new GoogleDriveStorage();
 
       await expect(
@@ -139,9 +137,8 @@ describe('GoogleDriveStorage', () => {
     it('should throw on upload failure', async () => {
       mockFilesCreate.mockRejectedValueOnce(new Error('Upload failed'));
 
-      const { GoogleDriveStorage } = await import(
-        '../../../services/backup/storage/googleDriveStorage.js'
-      );
+      const { GoogleDriveStorage } =
+        await import('../../../services/backup/storage/googleDriveStorage.js');
       const storage = new GoogleDriveStorage();
 
       await expect(
@@ -152,9 +149,8 @@ describe('GoogleDriveStorage', () => {
 
   describe('list', () => {
     it('should list backup files', async () => {
-      const { GoogleDriveStorage } = await import(
-        '../../../services/backup/storage/googleDriveStorage.js'
-      );
+      const { GoogleDriveStorage } =
+        await import('../../../services/backup/storage/googleDriveStorage.js');
       const storage = new GoogleDriveStorage();
 
       const list = await storage.list();
@@ -168,9 +164,8 @@ describe('GoogleDriveStorage', () => {
     it('should return empty array when no files exist', async () => {
       mockFilesList.mockResolvedValueOnce({ data: { files: [] } });
 
-      const { GoogleDriveStorage } = await import(
-        '../../../services/backup/storage/googleDriveStorage.js'
-      );
+      const { GoogleDriveStorage } =
+        await import('../../../services/backup/storage/googleDriveStorage.js');
       const storage = new GoogleDriveStorage();
 
       const list = await storage.list();
@@ -187,9 +182,8 @@ describe('GoogleDriveStorage', () => {
         },
       });
 
-      const { GoogleDriveStorage } = await import(
-        '../../../services/backup/storage/googleDriveStorage.js'
-      );
+      const { GoogleDriveStorage } =
+        await import('../../../services/backup/storage/googleDriveStorage.js');
       const storage = new GoogleDriveStorage();
 
       const data = await storage.get('backup-2024-01-01T00-00-00.db');
@@ -199,9 +193,8 @@ describe('GoogleDriveStorage', () => {
     });
 
     it('should reject invalid filename', async () => {
-      const { GoogleDriveStorage } = await import(
-        '../../../services/backup/storage/googleDriveStorage.js'
-      );
+      const { GoogleDriveStorage } =
+        await import('../../../services/backup/storage/googleDriveStorage.js');
       const storage = new GoogleDriveStorage();
 
       await expect(storage.get('../etc/passwd')).rejects.toThrow(
@@ -212,9 +205,8 @@ describe('GoogleDriveStorage', () => {
     it('should throw when file not found', async () => {
       mockFilesList.mockResolvedValueOnce({ data: { files: [] } });
 
-      const { GoogleDriveStorage } = await import(
-        '../../../services/backup/storage/googleDriveStorage.js'
-      );
+      const { GoogleDriveStorage } =
+        await import('../../../services/backup/storage/googleDriveStorage.js');
       const storage = new GoogleDriveStorage();
 
       await expect(
@@ -231,9 +223,8 @@ describe('GoogleDriveStorage', () => {
         },
       });
 
-      const { GoogleDriveStorage } = await import(
-        '../../../services/backup/storage/googleDriveStorage.js'
-      );
+      const { GoogleDriveStorage } =
+        await import('../../../services/backup/storage/googleDriveStorage.js');
       const storage = new GoogleDriveStorage();
 
       await storage.delete('backup-2024-01-01T00-00-00.db');
@@ -242,9 +233,8 @@ describe('GoogleDriveStorage', () => {
     });
 
     it('should reject invalid filename', async () => {
-      const { GoogleDriveStorage } = await import(
-        '../../../services/backup/storage/googleDriveStorage.js'
-      );
+      const { GoogleDriveStorage } =
+        await import('../../../services/backup/storage/googleDriveStorage.js');
       const storage = new GoogleDriveStorage();
 
       await expect(storage.delete('../etc/passwd')).rejects.toThrow(
@@ -256,9 +246,8 @@ describe('GoogleDriveStorage', () => {
       const { logger } = await import('../../../utils/logger.js');
       mockFilesList.mockResolvedValueOnce({ data: { files: [] } });
 
-      const { GoogleDriveStorage } = await import(
-        '../../../services/backup/storage/googleDriveStorage.js'
-      );
+      const { GoogleDriveStorage } =
+        await import('../../../services/backup/storage/googleDriveStorage.js');
       const storage = new GoogleDriveStorage();
 
       await storage.delete('backup-2024-01-01T00-00-00.db');

@@ -302,9 +302,7 @@ class BackupService {
         .toISOString()
         .replace('T', ' ')
         .slice(0, 19);
-      const linkPart = backup.shareLink
-        ? ` [View](${backup.shareLink})`
-        : '';
+      const linkPart = backup.shareLink ? ` [View](${backup.shareLink})` : '';
       return `${index + 1}. \`${backup.filename}\` (${sizeKB} KB) - ${date}${linkPart}`;
     });
 

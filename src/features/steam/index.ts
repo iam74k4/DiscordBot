@@ -3,10 +3,7 @@ import {
   startNotificationSystem,
   stopNotificationSystem,
 } from './services/notifications/index.js';
-import {
-  startScheduler,
-  stopScheduler,
-} from './services/scheduler/index.js';
+import { startScheduler, stopScheduler } from './services/scheduler/index.js';
 import { steamClient } from './services/steam/index.js';
 import { setServiceStatus } from '../../services/health/index.js';
 

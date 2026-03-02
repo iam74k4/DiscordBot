@@ -129,10 +129,7 @@ describe('BackupService', () => {
 
   describe('deleteOldBackups', () => {
     it('should delete backups older than retention period', async () => {
-      const oldFile = path.join(
-        testBackupDir,
-        'backup-2020-01-01T00-00-00.db'
-      );
+      const oldFile = path.join(testBackupDir, 'backup-2020-01-01T00-00-00.db');
       const recentFile = path.join(
         testBackupDir,
         'backup-2099-01-01T00-00-00.db'

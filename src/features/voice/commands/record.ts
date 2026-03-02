@@ -288,8 +288,7 @@ export const command: Command = {
         `Recording completed: ${duration}s from channel ${voiceChannel.name} (${voiceChannel.id}) by ${interaction.user.tag}`
       );
     } catch (error) {
-      const rawMessage =
-        error instanceof Error ? error.message : String(error);
+      const rawMessage = error instanceof Error ? error.message : String(error);
       logger.error(
         `Recording failed for channel ${voiceChannel.id}:`,
         rawMessage
