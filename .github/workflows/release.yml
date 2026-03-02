@@ -41,6 +41,15 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
         shell: bash
 
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run type check
+        run: npm run type-check
+
+      - name: Run tests
+        run: npm run test
+
       - name: Build
         run: npm run build
 
@@ -52,6 +61,7 @@ jobs:
           cp package-lock.json release/
           cp README.md release/
           cp LICENSE release/
+          cp .env.example release/
           tar -czf discord-bot-${{ steps.version.outputs.version }}.tar.gz -C release .
           zip -r discord-bot-${{ steps.version.outputs.version }}.zip release/
 
