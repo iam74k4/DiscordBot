@@ -15,7 +15,11 @@ import {
 } from '../../services/steam/index.js';
 import { t, mapDiscordLocale } from '../../../../locales/index.js';
 import { logger } from '../../../../utils/logger.js';
-import { GAMES_PER_PAGE, resolveSteamId, buildButtons } from '../../lib/shared.js';
+import {
+  GAMES_PER_PAGE,
+  resolveSteamId,
+  buildButtons,
+} from '../../lib/shared.js';
 
 export async function handleGames(
   interaction: ChatInputCommandInteraction

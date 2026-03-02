@@ -42,7 +42,8 @@ export async function loadCommands(client: ExtendedClient): Promise<void> {
           const commandModule = await import(
             `file://${filePath.replace(/\\/g, '/')}`
           );
-          const command: Command = commandModule.default ?? commandModule.command;
+          const command: Command =
+            commandModule.default ?? commandModule.command;
 
           if (command?.data?.name && typeof command.execute === 'function') {
             client.commands.set(command.data.name, command);

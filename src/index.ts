@@ -3,8 +3,14 @@ import { env } from './config/index.js';
 import { loadCommands } from './handlers/commandHandler.js';
 import { loadEvents } from './handlers/eventHandler.js';
 import { logger } from './utils/logger.js';
-import { start as startSteam, stop as stopSteam } from './features/steam/index.js';
-import { start as startVoice, stop as stopVoice } from './features/voice/index.js';
+import {
+  start as startSteam,
+  stop as stopSteam,
+} from './features/steam/index.js';
+import {
+  start as startVoice,
+  stop as stopVoice,
+} from './features/voice/index.js';
 import {
   closeDatabase,
   initializeDatabase,

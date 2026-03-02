@@ -48,9 +48,7 @@ describe('LocalStorage', () => {
     it('should reject path traversal attempts', () => {
       expect(validateBackupFilename('../etc/passwd')).toBe(false);
       expect(
-        validateBackupFilename(
-          'backup-2024-01-01T00-00-00.db/../../../x'
-        )
+        validateBackupFilename('backup-2024-01-01T00-00-00.db/../../../x')
       ).toBe(false);
       expect(validateBackupFilename('..\\..\\etc\\passwd')).toBe(false);
     });
@@ -165,10 +163,7 @@ describe('LocalStorage', () => {
         path.join(testBackupDir, 'backup-invalid.db'),
         'invalid'
       );
-      fs.writeFileSync(
-        path.join(testBackupDir, 'other-file.txt'),
-        'other'
-      );
+      fs.writeFileSync(path.join(testBackupDir, 'other-file.txt'), 'other');
 
       const storage = new LocalStorage();
       const list = await storage.list();
@@ -178,14 +173,8 @@ describe('LocalStorage', () => {
     });
 
     it('should sort by createdAt descending', async () => {
-      const file1 = path.join(
-        testBackupDir,
-        'backup-2024-01-01T00-00-00.db'
-      );
-      const file2 = path.join(
-        testBackupDir,
-        'backup-2024-01-03T00-00-00.db'
-      );
+      const file1 = path.join(testBackupDir, 'backup-2024-01-01T00-00-00.db');
+      const file2 = path.join(testBackupDir, 'backup-2024-01-03T00-00-00.db');
       fs.writeFileSync(file1, 'a');
       fs.writeFileSync(file2, 'b');
 
