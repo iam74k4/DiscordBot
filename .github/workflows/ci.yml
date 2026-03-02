@@ -7,6 +7,10 @@ on:
     branches: [main, develop]
   workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -49,8 +53,7 @@ jobs:
         run: npm run test
 
       - name: Security audit
-        run: npm audit --omit=dev --audit-level=high
-        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=critical
 
       - name: Build
         run: npm run build
