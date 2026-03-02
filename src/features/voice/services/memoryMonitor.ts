@@ -82,7 +82,7 @@ export class MemoryMonitor {
   /**
    * Handle critical memory situation
    */
-  private handleCriticalMemory(): void {
+  private async handleCriticalMemory(): Promise<void> {
     const connections = connectionManager.getAllConnections();
     const connectionCount = connections.size;
 
@@ -93,7 +93,7 @@ export class MemoryMonitor {
     logger.warn(
       `Disconnecting ${disconnectCount} oldest connections due to critical memory usage`
     );
-    connectionManager.disconnectOldest(disconnectCount);
+    await connectionManager.disconnectOldest(disconnectCount);
   }
 
   /**

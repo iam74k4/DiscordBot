@@ -12,11 +12,11 @@ import {
 import { backupService } from './services/backup/index.js';
 import type { ExtendedClient } from './client.js';
 
-// Flag to prevent multiple shutdown attempts
+const SHUTDOWN_TIMEOUT_MS = 10_000;
 let isShuttingDown = false;
 
 /**
- * Graceful shutdown handler
+ * Graceful shutdown handler with per-step error isolation and a hard timeout
  */
 async function gracefulShutdown(
   client: ExtendedClient,
@@ -29,6 +29,12 @@ async function gracefulShutdown(
 
   isShuttingDown = true;
   logger.info(`Received ${signal}, initiating graceful shutdown...`);
+
+  const forceExitTimer = setTimeout(() => {
+    logger.error('Shutdown timed out, forcing exit');
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT_MS);
+  forceExitTimer.unref();
 
   const steps: [string, () => void | Promise<void>][] = [
     ['Voice feature', () => stopVoice()],
@@ -50,6 +56,7 @@ async function gracefulShutdown(
     }
   }
 
+  clearTimeout(forceExitTimer);
   logger.info('Graceful shutdown complete');
   process.exit(0);
 }
@@ -69,6 +76,7 @@ async function main(): Promise<void> {
   // Register shutdown handlers
   process.on('SIGINT', () => gracefulShutdown(client, 'SIGINT'));
   process.on('SIGTERM', () => gracefulShutdown(client, 'SIGTERM'));
+  process.on('SIGHUP', () => gracefulShutdown(client, 'SIGHUP'));
 
   // Process-level error handlers
   process.on('unhandledRejection', (reason, promise) => {
