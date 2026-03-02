@@ -4,6 +4,7 @@ import * as cron from 'node-cron';
 import { env } from '../../config/index.js';
 import { database } from '../database/index.js';
 import { logger } from '../../utils/logger.js';
+import { createBackupStorage, type IBackupStorage } from './storage/index.js';
 
 /**
  * Backup result information
@@ -21,9 +22,10 @@ export interface BackupResult {
  */
 export interface BackupInfo {
   filename: string;
-  path: string;
+  path?: string;
   size: number;
   createdAt: Date;
+  shareLink?: string;
 }
 
 /**
@@ -32,16 +34,17 @@ export interface BackupInfo {
 class BackupService {
   private task: cron.ScheduledTask | null = null;
   private backupDir: string;
-
+  private storage: IBackupStorage;
   private initialized: Promise<void>;
 
   constructor() {
     this.backupDir = env.BACKUP_DIR;
+    this.storage = createBackupStorage();
     this.initialized = this.ensureBackupDir();
   }
 
   /**
-   * Ensure backup directory exists
+   * Ensure backup directory exists (for local temp files)
    */
   private async ensureBackupDir(): Promise<void> {
     try {
@@ -82,6 +85,35 @@ class BackupService {
 
       const stats = await fsp.stat(backupPath);
 
+      try {
+        await this.storage.put(filename, backupPath);
+      } catch (storageError) {
+        const errorMessage =
+          storageError instanceof Error
+            ? storageError.message
+            : 'Unknown error';
+        logger.error('Storage upload failed:', errorMessage);
+
+        return {
+          success: false,
+          filename,
+          size: stats.size,
+          timestamp: new Date(),
+          error: errorMessage,
+        };
+      }
+
+      if (env.BACKUP_STORAGE_TYPE === 'google_drive') {
+        try {
+          await fsp.unlink(backupPath);
+        } catch (unlinkError) {
+          logger.warn(
+            'Failed to remove local backup after upload:',
+            unlinkError instanceof Error ? unlinkError.message : unlinkError
+          );
+        }
+      }
+
       logger.info(
         `Backup completed: ${filename} (${Math.round(stats.size / 1024)} KB)`
       );
@@ -119,26 +151,15 @@ class BackupService {
     await this.ensureBackupDir();
 
     try {
-      const files = await fsp.readdir(this.backupDir);
-      const backups: BackupInfo[] = [];
+      const files = await this.storage.list();
 
-      for (const file of files) {
-        if (file.startsWith('backup-') && file.endsWith('.db')) {
-          const filePath = path.join(this.backupDir, file);
-          const stats = await fsp.stat(filePath);
-
-          backups.push({
-            filename: file,
-            path: filePath,
-            size: stats.size,
-            createdAt: stats.birthtime,
-          });
-        }
-      }
-
-      return backups.sort(
-        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-      );
+      return files.map((f) => ({
+        filename: f.filename,
+        path: f.path,
+        size: f.size,
+        createdAt: f.createdAt,
+        shareLink: f.shareLink,
+      }));
     } catch (error) {
       logger.error('Failed to list backups:', error);
       return [];
@@ -158,7 +179,7 @@ class BackupService {
     for (const backup of backups) {
       if (backup.createdAt < cutoffDate) {
         try {
-          await fsp.unlink(backup.path);
+          await this.storage.delete(backup.filename);
           deleted++;
           logger.debug(`Deleted old backup: ${backup.filename}`);
         } catch (error) {
@@ -177,32 +198,32 @@ class BackupService {
   async restore(
     filename: string
   ): Promise<{ success: boolean; error?: string }> {
-    // Validate filename format BEFORE any filesystem access to prevent path traversal
     if (!filename.match(/^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.db$/)) {
       return { success: false, error: 'Invalid backup filename format' };
     }
 
-    const backupPath = path.join(this.backupDir, filename);
-
-    // Ensure resolved path is within the backup directory
-    const resolvedPath = path.resolve(backupPath);
-    const resolvedDir = path.resolve(this.backupDir);
-    if (!resolvedPath.startsWith(resolvedDir + path.sep)) {
-      return { success: false, error: 'Invalid backup path' };
-    }
-
     try {
-      await fsp.access(backupPath);
-    } catch {
-      return { success: false, error: 'Backup file not found' };
-    }
+      let data: Buffer;
 
-    try {
+      const backups = await this.listBackups();
+      const backup = backups.find((b) => b.filename === filename);
+
+      if (backup?.path) {
+        const resolvedPath = path.resolve(backup.path);
+        const resolvedDir = path.resolve(this.backupDir);
+        if (!resolvedPath.startsWith(resolvedDir + path.sep)) {
+          return { success: false, error: 'Invalid backup path' };
+        }
+        data = await fsp.readFile(backup.path);
+      } else {
+        data = await this.storage.get(filename);
+      }
+
       logger.warn(`Restoring database from backup: ${filename}`);
 
       database.close();
 
-      await fsp.copyFile(backupPath, env.DATABASE_PATH);
+      await fsp.writeFile(env.DATABASE_PATH, data);
 
       logger.info('Database restored successfully. Restart required.');
 
@@ -271,7 +292,10 @@ class BackupService {
         .toISOString()
         .replace('T', ' ')
         .slice(0, 19);
-      return `${index + 1}. \`${backup.filename}\` (${sizeKB} KB) - ${date}`;
+      const linkPart = backup.shareLink
+        ? ` [View](${backup.shareLink})`
+        : '';
+      return `${index + 1}. \`${backup.filename}\` (${sizeKB} KB) - ${date}${linkPart}`;
     });
 
     if (backups.length > 10) {
@@ -282,5 +306,4 @@ class BackupService {
   }
 }
 
-// Export singleton instance
 export const backupService = new BackupService();

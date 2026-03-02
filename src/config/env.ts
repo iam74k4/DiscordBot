@@ -56,6 +56,19 @@ function validateEnv(): void {
       `NODE_ENV "${process.env.NODE_ENV}" is not recognized, defaulting to "development"`
     );
   }
+
+  // Validate Google Drive credentials when BACKUP_STORAGE_TYPE=google_drive
+  if (process.env.BACKUP_STORAGE_TYPE === 'google_drive') {
+    const hasCredentials =
+      process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+      process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+    if (!hasCredentials) {
+      logger.error(
+        'BACKUP_STORAGE_TYPE=google_drive requires GOOGLE_APPLICATION_CREDENTIALS or GOOGLE_SERVICE_ACCOUNT_JSON'
+      );
+      process.exit(1);
+    }
+  }
 }
 
 /**
@@ -202,12 +215,27 @@ export const env = {
   // -----------------------------------------------------------
   // Backup settings
   // -----------------------------------------------------------
-  /** Backup directory (default: data/backups/) */
+  /** Backup storage type: local | google_drive (default: local) */
+  BACKUP_STORAGE_TYPE: (process.env.BACKUP_STORAGE_TYPE || 'local') as
+    | 'local'
+    | 'google_drive',
+  /** Backup directory (default: data/backups/) - used for local storage and temp files */
   BACKUP_DIR: process.env.BACKUP_DIR || 'data/backups/',
   /** Backup retention days (default: 7) */
   BACKUP_RETENTION_DAYS: parseNumber(process.env.BACKUP_RETENTION_DAYS, 7),
   /** Backup cron schedule (default: 0 4 * * * = daily at 4am) */
   BACKUP_CRON: process.env.BACKUP_CRON || '0 4 * * *',
+
+  // -----------------------------------------------------------
+  // Google Drive (when BACKUP_STORAGE_TYPE=google_drive)
+  // -----------------------------------------------------------
+  /** Google Drive folder ID (empty = root) */
+  GOOGLE_DRIVE_FOLDER_ID: process.env.GOOGLE_DRIVE_FOLDER_ID || '',
+  /** Path to service account JSON key file */
+  GOOGLE_APPLICATION_CREDENTIALS:
+    process.env.GOOGLE_APPLICATION_CREDENTIALS || '',
+  /** Service account JSON as base64 (alternative to key file) */
+  GOOGLE_SERVICE_ACCOUNT_JSON: process.env.GOOGLE_SERVICE_ACCOUNT_JSON || '',
 
   // -----------------------------------------------------------
   // Timezone
