@@ -1,4 +1,3 @@
-// Event exports (for reference, events are loaded dynamically)
-export { event as readyEvent } from './client/ready.js';
-export { event as interactionCreateEvent } from './interaction/interactionCreate.js';
-// voiceStateUpdateEvent is loaded from features/voice/events/
+// Events are loaded dynamically by eventHandler.ts
+// Core events: client/ready.ts, interaction/interactionCreate.ts
+// Feature events: features/voice/events/voiceStateUpdate.ts

@@ -6,9 +6,7 @@
     "baseUrl": "./src",
     "paths": {
       "@/*": ["./*"],
-      "@/features/*": ["./features/*"],
-      "@/core/*": ["./core/*"],
-      "@/shared/*": ["./shared/*"]
+      "@/features/*": ["./features/*"]
     },
     "lib": ["ES2022"],
     "outDir": "./dist",
