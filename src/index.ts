@@ -3,21 +3,13 @@ import { env } from './config/index.js';
 import { loadCommands } from './handlers/commandHandler.js';
 import { loadEvents } from './handlers/eventHandler.js';
 import { logger } from './utils/logger.js';
-import { startScheduler, stopScheduler } from './services/scheduler/index.js';
-import {
-  startNotificationSystem,
-  stopNotificationSystem,
-} from './services/notifications/index.js';
-import { memoryMonitor } from './services/voice/memoryMonitor.js';
-import { fileCleanupService } from './services/voice/fileCleanup.js';
-import { audioBufferManager } from './services/voice/audioBuffer.js';
+import { start as startSteam, stop as stopSteam } from './features/steam/index.js';
+import { start as startVoice, stop as stopVoice } from './features/voice/index.js';
 import {
   closeDatabase,
   initializeDatabase,
 } from './services/database/index.js';
 import { backupService } from './services/backup/index.js';
-import { setServiceStatus } from './services/health/index.js';
-import { connectionManager } from './services/voice/connectionManager.js';
 import type { ExtendedClient } from './client.js';
 
 // Flag to prevent multiple shutdown attempts
@@ -40,31 +32,14 @@ async function gracefulShutdown(
 
   try {
     // Stop services in reverse order of startup
-    logger.debug('Stopping file cleanup service...');
-    fileCleanupService.stop();
-
-    logger.debug('Stopping memory monitor...');
-    memoryMonitor.stop();
-    setServiceStatus('memoryMonitor', false);
-
-    logger.debug('Disconnecting all voice connections...');
-    for (const [channelId] of connectionManager.getAllConnections()) {
-      await connectionManager.disconnect(channelId);
-    }
-
-    logger.debug('Stopping audio buffer cleanup...');
-    audioBufferManager.stopCleanup();
+    logger.debug('Stopping Voice feature...');
+    await stopVoice();
 
     logger.debug('Stopping backup service...');
     backupService.stop();
 
-    logger.debug('Stopping notification system...');
-    stopNotificationSystem();
-    setServiceStatus('notifications', false);
-
-    logger.debug('Stopping scheduler...');
-    stopScheduler();
-    setServiceStatus('scheduler', false);
+    logger.debug('Stopping Steam feature...');
+    stopSteam();
 
     logger.debug('Closing database connection...');
     closeDatabase();
@@ -121,20 +96,9 @@ async function main(): Promise<void> {
   // Login to Discord first (before starting services that depend on it)
   await client.login(env.DISCORD_TOKEN);
 
-  // Start scheduler after login
-  startScheduler();
-  setServiceStatus('scheduler', true);
-
-  // Start notification system after login
-  startNotificationSystem(client);
-  setServiceStatus('notifications', true);
-
-  // Start memory monitor
-  memoryMonitor.start();
-  setServiceStatus('memoryMonitor', true);
-
-  // Start file cleanup service
-  fileCleanupService.start();
+  // Start features
+  startSteam(client);
+  startVoice(client);
 
   // Start backup service
   backupService.start();

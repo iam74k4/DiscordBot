@@ -12,11 +12,11 @@ import {
   createProgressBar,
   formatPlaytimeWithBar,
   formatNumber,
-} from '../../../services/steam/utils.js';
+} from '../../../features/steam/services/steam/utils.js';
 import {
   PersonaState,
   CommunityVisibilityState,
-} from '../../../services/steam/types.js';
+} from '../../../features/steam/services/steam/types.js';
 
 describe('parseSteamInput', () => {
   it('should parse 17-digit Steam ID 64', () => {
