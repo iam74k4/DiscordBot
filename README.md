@@ -275,6 +275,7 @@ src/
 │   │   ├── commands/
 │   │   │   ├── steam.ts          # /steam command definition & routing
 │   │   │   ├── notification.ts   # /notify command with subcommands
+│   │   │   ├── server.ts         # /server stats command
 │   │   │   └── handlers/         # Subcommand handlers
 │   │   ├── services/
 │   │   │   ├── steam/            # Steam API client
@@ -309,8 +310,7 @@ src/
 │   ├── general/          # General commands
 │   │   └── commands/
 │   │       ├── ping.ts
-│   │       ├── help.ts
-│   │       └── server.ts
+│   │       └── help.ts
 │   └── community/        # Community commands
 │       └── commands/
 │           └── roulette.ts
@@ -334,7 +334,6 @@ src/
 │   │   └── settings.ts
 │   ├── cooldown/         # Cooldown management
 │   ├── audit/            # Audit log service
-│   ├── alert/            # Alert webhook service
 │   ├── backup/           # Database backup service
 │   ├── health/           # System health check
 │   └── metrics/          # Bot metrics service

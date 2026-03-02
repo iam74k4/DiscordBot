@@ -9,7 +9,7 @@ import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
 import { COLORS } from '../../../utils/constants/index.js';
 import { createPieChart } from '../../../utils/chart.js';
 import { getSteamUsersByDiscordIds } from '../../../services/database/index.js';
-import { steamClient } from '../../steam/index.js';
+import { steamClient } from '../index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 
 /**

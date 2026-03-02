@@ -10,14 +10,14 @@ alwaysApply: true
 Feature-based architecture: each feature (steam, voice, poll, admin, general, community) is self-contained under `src/features/`.
 
 - `src/features/` — Feature modules, each with commands/, services/, events/, and index.ts
-  - `src/features/steam/` — Steam integration (commands, steam client, notifications, scheduler)
+  - `src/features/steam/` — Steam integration (commands incl. /server stats, steam client, notifications, scheduler)
   - `src/features/voice/` — Voice recording (commands, connection manager, audio buffer, events)
   - `src/features/poll/` — Poll system (commands, poll store/service)
   - `src/features/admin/` — Admin commands (admin, settings)
-  - `src/features/general/` — General commands (ping, help, server)
+  - `src/features/general/` — General commands (ping, help)
   - `src/features/community/` — Community commands (roulette)
 - `src/events/` — Core event handlers (ready, interactionCreate)
-- `src/services/` — Shared services (database, backup, health, metrics, cooldown, audit, alert)
+- `src/services/` — Shared services (database, backup, health, metrics, cooldown, audit)
 - `src/handlers/` — Command/event loading from both features/*/commands/ and features/*/events/
 - `src/middleware/` — Pre-execution checks (cooldown, permissions, etc.)
 - `src/utils/` — Pure utilities (logger, embed builder, chart, retry, etc.)
