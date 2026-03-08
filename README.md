@@ -45,7 +45,7 @@ A modular Discord bot built with TypeScript and discord.js v14.
 | Category | Technology |
 |----------|------------|
 | Language | TypeScript |
-| Runtime | Node.js 18+ |
+| Runtime | Node.js 20+ |
 | Framework | discord.js v14 |
 | Voice | @discordjs/voice, prism-media |
 | Database | SQLite (better-sqlite3) |
@@ -60,7 +60,7 @@ A modular Discord bot built with TypeScript and discord.js v14.
 
 ## Requirements
 
-- Node.js 18.0.0 or higher
+- Node.js 20.0.0 or higher
 - Discord Bot Token
 - Discord Application Client ID
 - Steam Web API Key (optional — required for `/steam` commands)
@@ -260,109 +260,16 @@ npm start
 
 ## Project Structure
 
-Feature-based architecture: each feature is self-contained under `src/features/`.
+Feature-based architecture: each feature lives under `src/features/` and exports a lifecycle module from `index.ts`.
 
-```
-src/
-├── index.ts              # Entry point with graceful shutdown
-├── client.ts             # Discord client configuration
-├── config/               # Configuration management
-│   ├── index.ts
-│   ├── env.ts            # Environment variables (with validation)
-│   └── constants.ts      # Internal constants (audio, limits, monitoring)
-├── features/             # Feature modules (commands, services, events)
-│   ├── steam/            # Steam integration
-│   │   ├── commands/
-│   │   │   ├── steam.ts          # /steam command definition & routing
-│   │   │   ├── notification.ts   # /notify command with subcommands
-│   │   │   ├── server.ts         # /server stats command
-│   │   │   └── handlers/         # Subcommand handlers
-│   │   ├── services/
-│   │   │   ├── steam/            # Steam API client
-│   │   │   ├── notifications/    # Game start notification system
-│   │   │   └── scheduler/        # Scheduled tasks (playtime recording)
-│   │   ├── lib/
-│   │   │   └── shared.ts         # Shared utilities for steam commands
-│   │   └── index.ts              # Feature start/stop lifecycle
-│   ├── voice/            # Voice recording
-│   │   ├── commands/
-│   │   │   └── record.ts         # /record command
-│   │   ├── services/
-│   │   │   ├── connectionManager.ts
-│   │   │   ├── audioBuffer.ts
-│   │   │   ├── recordingService.ts
-│   │   │   ├── memoryMonitor.ts
-│   │   │   └── fileCleanup.ts
-│   │   ├── events/
-│   │   │   └── voiceStateUpdate.ts
-│   │   └── index.ts
-│   ├── poll/             # Poll system
-│   │   ├── commands/
-│   │   │   └── poll.ts
-│   │   ├── services/
-│   │   │   ├── pollStore.ts
-│   │   │   └── pollService.ts
-│   │   └── index.ts
-│   ├── admin/            # Admin commands
-│   │   └── commands/
-│   │       ├── admin.ts          # /admin command (bot owner)
-│   │       └── settings.ts       # /settings command (server admin)
-│   ├── general/          # General commands
-│   │   └── commands/
-│   │       ├── ping.ts
-│   │       └── help.ts
-│   └── community/        # Community commands
-│       └── commands/
-│           └── roulette.ts
-├── events/               # Core event handlers
-│   ├── client/
-│   │   └── ready.ts
-│   ├── interaction/
-│   │   └── interactionCreate.ts
-│   └── index.ts
-├── handlers/             # Loaders (scans features/*/commands/ and features/*/events/)
-│   ├── commandHandler.ts
-│   └── eventHandler.ts
-├── middleware/           # Middleware (pre-processing)
-│   ├── index.ts
-│   ├── permissions.ts
-│   └── cooldown.ts
-├── services/             # Shared services
-│   ├── database/         # SQLite database operations
-│   │   ├── index.ts
-│   │   ├── notifications.ts
-│   │   └── settings.ts
-│   ├── cooldown/         # Cooldown management
-│   ├── audit/            # Audit log service
-│   ├── backup/           # Database backup service
-│   ├── health/           # System health check
-│   └── metrics/          # Bot metrics service
-├── scripts/              # Utility scripts
-│   └── cleanup-commands.ts
-├── __tests__/            # Test files
-│   ├── utils/
-│   ├── services/
-│   └── integration/
-├── utils/                # Utilities
-│   ├── logger.ts
-│   ├── embed.ts
-│   ├── retry.ts
-│   ├── lruCache.ts
-│   ├── fuzzy.ts
-│   ├── chart.ts
-│   └── constants/
-├── locales/              # Internationalization (en, ja)
-│   ├── en.ts
-│   ├── ja.ts
-│   ├── types.ts
-│   └── index.ts
-└── types/                # Type definitions
-    ├── index.ts
-    ├── command.ts
-    ├── event.ts
-    ├── middleware.ts
-    └── voice.ts
-```
+- `src/features/index.ts` is the single registry for feature startup and shutdown.
+- `src/features/<feature>/commands/` contains only public slash command definitions.
+- `src/features/<feature>/application/` is the internal command/application layer.
+- `src/features/<feature>/repositories/` contains feature-specific persistence access.
+- `src/services/` is reserved for shared infrastructure such as database bootstrap, backup, health, and metrics.
+- `src/scripts/` contains TypeScript maintenance scripts, while root `scripts/` contains repo workflow shell scripts.
+
+See [`docs/architecture.md`](docs/architecture.md) for the full structure and lifecycle rules.
 
 ## Database
 

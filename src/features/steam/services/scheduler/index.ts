@@ -2,10 +2,9 @@ import * as cron from 'node-cron';
 import { logger } from '../../../../utils/logger.js';
 import { steamClient } from '../steam/index.js';
 import {
-  getAllSteamUsers,
-  recordPlaytime,
-  cleanupOldPlaytimeRecords,
-} from '../../../../services/database/index.js';
+  playtimeRepository,
+  steamUserRepository,
+} from '../../repositories/index.js';
 
 /**
  * Scheduled task registry
@@ -13,6 +12,7 @@ import {
 const scheduledTasks: cron.ScheduledTask[] = [];
 
 let isRecording = false;
+let isSchedulerStarted = false;
 
 /**
  * Record playtime for all registered users
@@ -33,7 +33,7 @@ async function recordAllUsersPlaytime(): Promise<void> {
   try {
     logger.info('Starting daily playtime recording...');
 
-    const users = getAllSteamUsers();
+    const users = steamUserRepository.getAll();
     let successCount = 0;
     let errorCount = 0;
 
@@ -41,7 +41,11 @@ async function recordAllUsersPlaytime(): Promise<void> {
       try {
         const totalPlaytime = await steamClient.getTotalPlaytime(user.steam_id);
 
-        recordPlaytime(user.discord_id, user.steam_id, totalPlaytime);
+        playtimeRepository.record(
+          user.discord_id,
+          user.steam_id,
+          totalPlaytime
+        );
         successCount++;
       } catch (error) {
         errorCount++;
@@ -67,7 +71,7 @@ async function recordAllUsersPlaytime(): Promise<void> {
  */
 function runCleanup(): void {
   try {
-    const deleted = cleanupOldPlaytimeRecords(365);
+    const deleted = playtimeRepository.cleanupOldRecords(365);
     if (deleted > 0) {
       logger.info(`Cleaned up ${deleted} old playtime records`);
     }
@@ -83,6 +87,11 @@ function runCleanup(): void {
  * Start all scheduled tasks
  */
 export function startScheduler(): void {
+  if (isSchedulerStarted) {
+    logger.debug('Scheduler already started, skipping duplicate start');
+    return;
+  }
+
   logger.info('Starting scheduler...');
 
   // Daily playtime recording at 00:00 (midnight)
@@ -109,6 +118,7 @@ export function startScheduler(): void {
   );
   scheduledTasks.push(cleanupTask);
 
+  isSchedulerStarted = true;
   logger.info('Scheduler started with 2 tasks');
 }
 
@@ -116,10 +126,15 @@ export function startScheduler(): void {
  * Stop all scheduled tasks
  */
 export function stopScheduler(): void {
+  if (!isSchedulerStarted) {
+    return;
+  }
+
   for (const task of scheduledTasks) {
     task.stop();
   }
   scheduledTasks.length = 0;
+  isSchedulerStarted = false;
   logger.info('Scheduler stopped');
 }
 

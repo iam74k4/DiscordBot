@@ -9,7 +9,7 @@ import {
 } from 'discord.js';
 import { Locale, t } from '../../../locales/index.js';
 import { steamClient } from '../services/steam/index.js';
-import { getSteamId } from '../../../services/database/index.js';
+import { steamUserRepository } from '../repositories/index.js';
 import { LRUCache } from '../../../utils/lruCache.js';
 
 // ============ Constants ============
@@ -76,7 +76,7 @@ export async function resolveSteamId(
   }
 
   if (targetUser) {
-    const steamId = getSteamId(targetUser.id);
+    const steamId = steamUserRepository.getSteamId(targetUser.id);
     if (!steamId) {
       return {
         steamId: null,
@@ -88,7 +88,7 @@ export async function resolveSteamId(
     return { steamId };
   }
 
-  const steamId = getSteamId(interaction.user.id);
+  const steamId = steamUserRepository.getSteamId(interaction.user.id);
   if (!steamId && requireRegistration) {
     return {
       steamId: null,

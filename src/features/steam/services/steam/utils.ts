@@ -1,9 +1,6 @@
 import { PersonaState, CommunityVisibilityState } from './types.js';
 import { STEAM_STATUS } from '../../lib/constants.js';
-import {
-  PROGRESS_BAR,
-  COLORS,
-} from '../../../../utils/constants/index.js';
+import { PROGRESS_BAR, COLORS } from '../../../../utils/constants/index.js';
 import { ColorResolvable } from 'discord.js';
 import { t, Locale, DEFAULT_LOCALE } from '../../../../locales/index.js';
 

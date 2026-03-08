@@ -3,21 +3,21 @@ import { Command } from '../../../types/index.js';
 import { createErrorEmbed } from '../../../utils/embed.js';
 import { steamClient } from '../services/steam/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-
-import { handleProfile } from './handlers/profile.js';
-import { handlePlaytime } from './handlers/playtime.js';
-import { handleGames } from './handlers/games.js';
-import { handleRecent } from './handlers/recent.js';
-import { handleRanking } from './handlers/ranking.js';
-import { handleHistory, handleHistoryGraph } from './handlers/history.js';
 import {
+  handleAutocomplete,
+  handleChart,
+  handleGames,
+  handleHelp,
+  handleHistory,
+  handleHistoryGraph,
+  handlePlaytime,
+  handleProfile,
+  handleRanking,
   handleRegister,
+  handleRecent,
   handleUnregister,
   handleWhoami,
-  handleHelp,
-} from './handlers/account.js';
-import { handleChart } from './handlers/chart.js';
-import { handleAutocomplete } from './handlers/autocomplete.js';
+} from '../application/index.js';
 
 export const command: Command = {
   data: new SlashCommandBuilder()

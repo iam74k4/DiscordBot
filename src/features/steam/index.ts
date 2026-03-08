@@ -7,26 +7,39 @@ import { startScheduler, stopScheduler } from './services/scheduler/index.js';
 import { steamClient } from './services/steam/index.js';
 import { setServiceStatus } from '../../services/health/index.js';
 
+export const name = 'steam';
+let isSteamFeatureStarted = false;
+
 /**
  * Start Steam feature services (notifications, scheduler)
  */
 export function start(client: Client): void {
+  if (isSteamFeatureStarted) {
+    return;
+  }
+
   startScheduler();
-  setServiceStatus('scheduler', true);
+  setServiceStatus('steamScheduler', true);
 
   startNotificationSystem(client);
-  setServiceStatus('notifications', true);
+  setServiceStatus('steamNotifications', true);
+  isSteamFeatureStarted = true;
 }
 
 /**
  * Stop Steam feature services
  */
 export async function stop(): Promise<void> {
+  if (!isSteamFeatureStarted) {
+    return;
+  }
+
   stopNotificationSystem();
-  setServiceStatus('notifications', false);
+  setServiceStatus('steamNotifications', false);
 
   stopScheduler();
-  setServiceStatus('scheduler', false);
+  setServiceStatus('steamScheduler', false);
+  isSteamFeatureStarted = false;
 }
 
 export { steamClient };
