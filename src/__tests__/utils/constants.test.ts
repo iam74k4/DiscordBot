@@ -1,12 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
   COLORS,
-  DEFAULT_COOLDOWN,
-  BOT_INFO,
   TITLES,
   PROGRESS_BAR,
   CHART_COLORS,
 } from '../../utils/constants/index.js';
+import { BOT_INFO } from '../../config/index.js';
 
 describe('COLORS', () => {
   it('should have all required color values', () => {
@@ -25,16 +24,6 @@ describe('COLORS', () => {
     expect(typeof COLORS.PRIMARY).toBe('number');
     expect(typeof COLORS.SUCCESS).toBe('number');
     expect(typeof COLORS.ERROR).toBe('number');
-  });
-});
-
-describe('DEFAULT_COOLDOWN', () => {
-  it('should be a positive number', () => {
-    expect(DEFAULT_COOLDOWN).toBeGreaterThan(0);
-  });
-
-  it('should be in milliseconds (reasonable value)', () => {
-    expect(DEFAULT_COOLDOWN).toBeLessThanOrEqual(60000); // Max 1 minute
   });
 });
 

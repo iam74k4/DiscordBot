@@ -5,5 +5,5 @@ export { settingsRepository } from './settingsRepository.js';
 export type {
   AuditAction,
   AuditLogRecord,
-  GuildSettingsRecord,
-} from './settingsRepository.js';
+} from './auditRepository.js';
+export type { GuildSettingsRecord } from './settingsRepository.js';

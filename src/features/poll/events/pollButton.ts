@@ -1,6 +1,7 @@
 import { Events, MessageFlags } from 'discord.js';
 import { Event } from '../../../types/index.js';
 import { getErrorMessage, logger } from '../../../utils/logger.js';
+import { createErrorEmbed } from '../../../utils/embed.js';
 import { handlePollVote, pollStore } from '../services/index.js';
 
 /**
@@ -18,9 +19,10 @@ export const event: Event<typeof Events.InteractionCreate> = {
         await handlePollVote(interaction);
       } catch (error) {
         logger.error('Error handling poll vote:', error);
+        const embed = createErrorEmbed('Poll Error', 'An error occurred while processing your vote.');
         await interaction
           .reply({
-            content: 'An error occurred while processing your vote.',
+            embeds: [embed],
             flags: MessageFlags.Ephemeral,
           })
           .catch((e: unknown) => {
@@ -28,9 +30,10 @@ export const event: Event<typeof Events.InteractionCreate> = {
           });
       }
     } else {
+      const embed = createErrorEmbed('Poll Ended', 'This poll has ended or no longer exists.');
       await interaction
         .reply({
-          content: 'This poll has ended or no longer exists.',
+          embeds: [embed],
           flags: MessageFlags.Ephemeral,
         })
         .catch((e: unknown) => {

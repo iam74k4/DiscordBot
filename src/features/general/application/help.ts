@@ -5,26 +5,11 @@ import {
 import { createEmbed } from '../../../utils/embed.js';
 import { COLORS } from '../../../utils/constants/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { adminHelpCategory } from '../../admin/helpCatalog.js';
-import { communityHelpCategory } from '../../community/helpCatalog.js';
-import type { CommandCategory, CommandInfo } from '../../helpCatalog.js';
-import { pollHelpCategory } from '../../poll/helpCatalog.js';
-import { steamHelpCategory } from '../../steam/helpCatalog.js';
-import { voiceHelpCategory } from '../../voice/helpCatalog.js';
-import { generalHelpCategory } from '../helpCatalog.js';
-
-const COMMAND_CATEGORIES: CommandCategory[] = [
-  generalHelpCategory,
-  steamHelpCategory,
-  voiceHelpCategory,
-  pollHelpCategory,
-  communityHelpCategory,
-  adminHelpCategory,
-];
+import { getHelpCategories, type CommandInfo } from '../../helpCatalog.js';
 
 function getAllCommandNames(): string[] {
   const names: string[] = [];
-  for (const category of COMMAND_CATEGORIES) {
+  for (const category of getHelpCategories()) {
     for (const cmd of category.commands) {
       names.push(cmd.name);
     }
@@ -33,7 +18,7 @@ function getAllCommandNames(): string[] {
 }
 
 function findCommand(name: string): CommandInfo | null {
-  for (const category of COMMAND_CATEGORIES) {
+  for (const category of getHelpCategories()) {
     for (const cmd of category.commands) {
       if (cmd.name === name) {
         return cmd;
@@ -99,7 +84,7 @@ export async function executeHelpCommand(
     return;
   }
 
-  const fields = COMMAND_CATEGORIES.map((category) => {
+  const fields = getHelpCategories().map((category) => {
     const categoryName = locale === 'ja' ? category.name.ja : category.name.en;
     const commandList = category.commands
       .map((cmd) => {

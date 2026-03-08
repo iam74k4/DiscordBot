@@ -2,7 +2,7 @@ import * as fsp from 'fs/promises';
 import * as path from 'path';
 import * as cron from 'node-cron';
 import { env } from '../../config/index.js';
-import { database } from '../database/index.js';
+import { database } from '../database/connection.js';
 import { logger } from '../../utils/logger.js';
 import {
   createBackupStorage,

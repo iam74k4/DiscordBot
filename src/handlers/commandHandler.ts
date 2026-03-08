@@ -10,16 +10,11 @@ import { ExtendedClient } from '../client.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Reference to the client's commands collection
-let clientCommands: ExtendedClient['commands'] | null = null;
-
 /**
  * Load all commands from feature modules
  * @param client The Discord client to load commands into
  */
 export async function loadCommands(client: ExtendedClient): Promise<void> {
-  clientCommands = client.commands;
-
   const featuresPath = join(__dirname, '..', 'features');
   if (existsSync(featuresPath)) {
     const featureFolders = readdirSync(featuresPath, { withFileTypes: true })
@@ -104,14 +99,3 @@ export async function registerCommands(client: ExtendedClient): Promise<void> {
   }
 }
 
-/**
- * Get a command by name from the client
- * @deprecated Use client.commands.get(name) directly
- */
-export function getCommand(name: string): Command | undefined {
-  if (!clientCommands) {
-    logger.warn('getCommand called before loadCommands - commands not loaded');
-    return undefined;
-  }
-  return clientCommands.get(name);
-}

@@ -1,5 +1,44 @@
 # Development Guide
 
+## Adding a New Feature
+
+The bot uses an **auto-discovery system** for features. You do not need to register features manually.
+
+1. Create a directory under `src/features/<name>/`:
+
+```
+src/features/myfeature/
+├── index.ts          # Required: exports { name, start, stop }
+├── commands/         # Slash commands (auto-loaded)
+├── application/      # Business logic
+├── repositories/     # Database access
+└── __tests__/        # Tests
+```
+
+2. Export the required interface from `index.ts`:
+
+```typescript
+import type { Client } from 'discord.js';
+
+export const name = 'myfeature';
+
+export function start(client: Client): void {
+  // Startup logic (e.g., register event listeners)
+}
+
+export function stop(): void {
+  // Cleanup logic
+}
+```
+
+3. **No manual registration** — features are discovered by scanning subdirectories of `src/features/`. Each feature must export `{ name, start, stop }` from its `index.ts`.
+
+4. Optional subdirectories:
+   - `commands/` — Slash command files (auto-loaded by the handler)
+   - `application/` — Business logic, separate from command definitions
+   - `repositories/` — Database access layer
+   - `__tests__/` — Feature-specific tests
+
 ## Adding New Commands
 
 1. Create a new feature directory `src/features/<name>/commands/` or add to an existing one:
@@ -54,6 +93,75 @@ export async function myMiddleware(
 
 2. Register in `src/middleware/index.ts`
 3. Add to `MiddlewareName` type in `src/types/middleware.ts`
+
+## Testing
+
+Tests are **colocated with features** and shared code:
+
+- **Feature tests**: `src/features/<name>/__tests__/` — tests for that feature
+- **Shared helpers**: `src/__tests__/helpers/` — reusable test utilities (e.g., mock Discord objects)
+- **Integration tests**: `src/__tests__/integration/` — end-to-end or cross-module tests
+
+### Commands
+
+| Command | Description |
+| ------- | ----------- |
+| `npm test` | Run all tests once |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run test:coverage` | Run tests with coverage report |
+
+### Mock Patterns
+
+- Use `vi.mock()` for external services (Discord client, database, APIs)
+- Import shared helpers from `__tests__/helpers/discord.ts` for mock Discord objects (`createMockClient`, `createMockInteraction`, `createMockUser`, etc.)
+
+## Database Migrations
+
+1. Add a new migration file in `src/services/database/migrations/` (e.g., `004_my_table.ts`):
+
+```typescript
+import { database } from '../connection.js';
+
+export function up(): void {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS my_table (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    )
+  `);
+
+  database.exec(`
+    CREATE INDEX IF NOT EXISTS idx_my_table_name ON my_table(name)
+  `);
+}
+```
+
+2. Import and register the migration in `src/services/database/migrations/index.ts`:
+
+```typescript
+import { up as myTableUp } from './004_my_table.js';
+
+const migrations = [steamUp, notificationsUp, settingsUp, myTableUp];
+```
+
+3. Use `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS` for idempotency — migrations can be run multiple times safely.
+
+## Localization
+
+- Add translation keys to both `src/locales/en.ts` and `src/locales/ja.ts`
+- Use `t(key, locale, params?)` for user-facing text:
+
+```typescript
+import { t, mapDiscordLocale } from '../../../locales/index.js';
+
+// In a command or application handler:
+const locale = mapDiscordLocale(interaction.locale);
+const message = t('common.success', locale);
+const withParams = t('settings.language.changed', locale, { language: 'Japanese' });
+```
+
+- Map Discord locales with `mapDiscordLocale(interaction.locale)` — Discord sends locale strings like `en-US` or `ja`, which are mapped to the bot's supported locales (`en`, `ja`).
 
 ## Available Scripts
 

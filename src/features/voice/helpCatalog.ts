@@ -1,4 +1,4 @@
-import type { CommandCategory } from '../helpCatalog.js';
+import { registerHelpCategory, type CommandCategory } from '../helpCatalog.js';
 
 export const voiceHelpCategory: CommandCategory = {
   name: { en: 'Voice', ja: 'ボイス' },
@@ -13,3 +13,5 @@ export const voiceHelpCategory: CommandCategory = {
     },
   ],
 };
+
+registerHelpCategory(voiceHelpCategory);

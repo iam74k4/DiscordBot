@@ -40,6 +40,14 @@ export const RETRY = {
 /**
  * Memory and disk monitoring thresholds
  */
+/**
+ * Bot metadata
+ */
+export const BOT_INFO = {
+  NAME: 'Discord Bot',
+  VERSION: '1.0.0',
+} as const;
+
 export const MONITORING = {
   /** Memory warning threshold in MB */
   MEMORY_WARNING_THRESHOLD_MB: 100,

@@ -7,26 +7,41 @@ alwaysApply: true
 
 ## Project Structure
 
-Feature-based architecture: each feature (steam, voice, poll, admin, general, community) is self-contained under `src/features/`.
+Feature-based architecture with auto-discovery. Each feature is self-contained under `src/features/`.
 
-- `src/features/` — Feature modules, each with commands/, services/, events/, and index.ts
-  - `src/features/steam/` — Steam integration (commands incl. /server stats, steam client, notifications, scheduler)
-  - `src/features/voice/` — Voice recording (commands, connection manager, audio buffer, events)
-  - `src/features/poll/` — Poll system (commands, poll store/service)
+- `src/features/` — Feature modules (auto-discovered at startup)
+  - `src/features/steam/` — Steam integration (profile, games, playtime, notifications)
+  - `src/features/voice/` — Voice recording
+  - `src/features/poll/` — Poll system
   - `src/features/admin/` — Admin commands (admin, settings)
   - `src/features/general/` — General commands (ping, help)
   - `src/features/community/` — Community commands (roulette)
 - `src/events/` — Core event handlers (ready, interactionCreate)
-- `src/services/` — Shared services (database, backup, health, metrics, cooldown, audit)
-  - `src/services/backup/storage/` — Backup storage abstraction (local)
-- `src/handlers/` — Command/event loading from both features/*/commands/ and features/*/events/
-- `src/middleware/` — Pre-execution checks (cooldown, permissions, etc.)
-- `src/utils/` — Pure utilities (logger, embed builder, chart, retry, etc.)
+- `src/services/` — Shared infrastructure only
+  - `src/services/database/` — Connection, transactions, migrations (NO business logic)
+  - `src/services/backup/` — Scheduled database backups
+  - `src/services/health/` — Health check service
+  - `src/services/metrics/` — In-memory metrics
+  - `src/services/audit/` — Audit logging orchestration
+- `src/handlers/` — Auto-loaders for commands and events
+- `src/middleware/` — Pre-execution checks
+  - `src/middleware/cooldown/` — Cooldown middleware + store
+  - `src/middleware/permissions.ts` — Permission checks
+- `src/utils/` — Pure utilities (logger, embed, chart, retry, etc.)
 - `src/config/` — Environment config, validation, and constants
 - `src/types/` — TypeScript type definitions
 - `src/locales/` — i18n translations (en, ja)
-- `src/scripts/` — Utility scripts (e.g., cleanup-commands)
-- `src/__tests__/` — Unit and integration tests (vitest)
+- `src/scripts/` — Utility scripts
+
+## Layer Architecture
+
+Each feature follows a layered structure:
+- `commands/` — Slash command definitions (presentation layer, auto-loaded)
+- `application/` — Business logic handlers (application layer)
+- `repositories/` — Database access with real SQL queries (persistence layer)
+- `services/` — External service integration, background jobs
+
+`services/database/` is pure infrastructure: connection, transactions, and migrations only. All SQL queries live in feature repositories.
 
 ## Coding Standards
 
@@ -40,10 +55,11 @@ Feature-based architecture: each feature (steam, voice, poll, admin, general, co
 
 ### Database
 
-- Use prepared statements for all queries (already enforced by better-sqlite3)
+- Use prepared statements for all queries (enforced by better-sqlite3)
 - Use `runTransaction()` for operations that modify multiple tables
-- Table names in dynamic queries must be validated against `ALLOWED_TABLES`
-- All table creation should be inside `initializeDatabase()` within a transaction
+- Table names in dynamic queries must be validated against allowlists
+- All table creation goes in `services/database/migrations/`
+- SQL queries belong in feature `repositories/`, NOT in `services/database/`
 
 ### Voice
 
@@ -54,24 +70,24 @@ Feature-based architecture: each feature (steam, voice, poll, admin, general, co
 ### Services & Features
 
 - Follow singleton pattern for service instances (export `const instance = new Service()`)
-- Each feature module exports `start(client)` / `stop()` in its `index.ts`
-- Register feature lifecycle in `src/index.ts` and handle cleanup in `gracefulShutdown()`
-- Start features that depend on Discord after `client.login()`
-- New features go in `src/features/<name>/` with `commands/`, `services/`, and optionally `events/`
+- Each feature module exports `{ name, start, stop }` from its `index.ts`
+- Features are auto-discovered — no manual registration needed
+- `startAllFeatures()` / `stopAllFeatures()` handle per-feature error isolation
+- Health status is automatically tracked for each feature
 
 ### Localization
 
-- Use `t(locale, key, ...args)` for user-facing text
+- Use `t(key, locale, params?)` for user-facing text
 - Map Discord locales with `mapDiscordLocale(interaction.locale)`
 - Add translations to both `en.ts` and `ja.ts`
 
 ### Testing
 
-- Test files go in `src/__tests__/` mirroring the source structure
-- Use vitest for all tests; mock Discord.js objects and external services
+- Colocate tests with features: `features/<name>/__tests__/`
+- Shared test helpers in `src/__tests__/helpers/`
 - Integration tests in `src/__tests__/integration/`
-- Use `vi.mock()` at the top of test files for module mocking
-- Prefer async/await tests; all service methods that return promises should be awaited in tests
+- Use vitest with `vi.mock()` for module mocking
+- Import mock Discord objects from `__tests__/helpers/discord.ts`
 
 ### File I/O
 

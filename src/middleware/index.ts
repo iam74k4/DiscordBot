@@ -1,25 +1,21 @@
 import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import {
   Command,
-  MiddlewareName,
   MiddlewareRegistry,
   MiddlewareResult,
 } from '../types/index.js';
 import { permissionsMiddleware } from './permissions.js';
-import { cooldownMiddleware } from './cooldown.js';
+import { cooldownMiddleware } from './cooldown/index.js';
 import { createErrorEmbed } from '../utils/embed.js';
 import { logger } from '../utils/logger.js';
 
-/**
- * Middleware registry
- */
 const middlewareRegistry: MiddlewareRegistry = {
   permissions: permissionsMiddleware,
   cooldown: cooldownMiddleware,
 };
 
 /**
- * Run all middleware for a command
+ * Run all middleware for a command.
  * @returns true if all middleware passed, false otherwise
  */
 export async function runMiddleware(
@@ -39,7 +35,6 @@ export async function runMiddleware(
     const result: MiddlewareResult = await middleware(interaction, command);
 
     if (!result.success) {
-      // Send error message to user
       const embed = createErrorEmbed(
         'Command Blocked',
         result.message || 'You cannot use this command.'
@@ -61,17 +56,9 @@ export async function runMiddleware(
   return true;
 }
 
-/**
- * Get available middleware names
- */
-export function getAvailableMiddleware(): MiddlewareName[] {
-  return Object.keys(middlewareRegistry) as MiddlewareName[];
-}
-
-// Re-export individual middleware
 export { permissionsMiddleware } from './permissions.js';
 export {
   cooldownMiddleware,
   clearCooldown,
   clearCommandCooldowns,
-} from './cooldown.js';
+} from './cooldown/index.js';
