@@ -57,20 +57,34 @@ export async function myMiddleware(
 
 ## Available Scripts
 
-| Script                  | Description                          |
-| ----------------------- | ------------------------------------ |
-| `npm run dev`           | Start with hot-reload (development)  |
-| `npm run build`         | Compile TypeScript to JavaScript     |
-| `npm start`             | Run compiled JavaScript (production) |
-| `npm run lint`          | Check code with ESLint               |
-| `npm run lint:fix`      | Fix ESLint errors automatically      |
-| `npm run format`        | Format code with Prettier            |
-| `npm run format:check`  | Check code formatting                |
-| `npm run type-check`    | Check TypeScript types               |
-| `npm test`              | Run unit tests                       |
-| `npm run test:watch`    | Run tests in watch mode              |
-| `npm run test:coverage` | Run tests with coverage report       |
+| Script                     | Description                          |
+| -------------------------- | ------------------------------------ |
+| `npm run dev`              | Start with hot-reload (development)  |
+| `npm run build`            | Compile TypeScript to JavaScript     |
+| `npm start`                | Run compiled JavaScript (production) |
+| `npm run lint`             | Check code with ESLint               |
+| `npm run lint:fix`         | Fix ESLint errors automatically      |
+| `npm run format`           | Format code with Prettier            |
+| `npm run format:check`     | Check code formatting                |
+| `npm run type-check`       | Check TypeScript types               |
+| `npm test`                 | Run unit tests                       |
+| `npm run test:watch`       | Run tests in watch mode              |
+| `npm run test:coverage`    | Run tests with coverage report       |
+| `npm run cleanup-commands` | Remove registered Discord commands   |
 
-For repo workflow scripts such as pre-push validation, see [`../scripts/README.md`](../scripts/README.md).
+## Repo Workflow Scripts
+
+| Script        | Description                                   |
+| ------------- | --------------------------------------------- |
+| `validate.sh` | Run format, lint, type-check, test, and build |
+| `pre-push.sh` | Validation for git pre-push hook              |
+
+Install the optional pre-push hook with:
+
+```bash
+cp scripts/pre-push.sh .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+```
+
+`pre-push.sh` resolves the repository root with `git rev-parse --show-toplevel` and then runs `scripts/validate.sh`, so the copy-based install works from `.git/hooks/pre-push`.
 
 [← Back to README](../README.md)
