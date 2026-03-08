@@ -1,11 +1,8 @@
 import { Client, TextChannel, EmbedBuilder } from 'discord.js';
 import { COLORS } from '../../utils/constants/index.js';
 import { logger } from '../../utils/logger.js';
-import {
-  getAuditChannel,
-  createAuditLog,
-  AuditAction,
-} from '../database/settings.js';
+import { formatAuditTarget } from './format.js';
+import { auditRepository, type AuditAction } from './repository.js';
 
 /**
  * Action display names
@@ -35,6 +32,24 @@ const ACTION_COLORS: Record<AuditAction, number> = {
   AUDIT_SETUP: COLORS.INFO as number,
 };
 
+async function resolveAuditTargetDisplay(
+  client: Client,
+  action: AuditAction,
+  targetId: string | undefined
+): Promise<string | null> {
+  const target = formatAuditTarget(action, targetId);
+  if (!target) {
+    return null;
+  }
+
+  if (action === 'AUDIT_SETUP') {
+    return target;
+  }
+
+  const targetUser = await client.users.fetch(targetId!).catch(() => null);
+  return targetUser ? `${targetUser.tag} (${target})` : target;
+}
+
 /**
  * Log an audit action and send to audit channel if configured
  */
@@ -47,10 +62,10 @@ export async function logAuditAction(
   details?: string
 ): Promise<void> {
   // Save to database
-  createAuditLog(guildId, userId, action, targetId, details);
+  auditRepository.createLog(guildId, userId, action, targetId, details);
 
   // Check if audit channel is configured
-  const auditChannelId = getAuditChannel(guildId);
+  const auditChannelId = auditRepository.getAuditChannel(guildId);
   if (!auditChannelId) return;
 
   try {
@@ -61,9 +76,11 @@ export async function logAuditAction(
     if (!channel) return;
 
     const user = await client.users.fetch(userId).catch(() => null);
-    const targetUser = targetId
-      ? await client.users.fetch(targetId).catch(() => null)
-      : null;
+    const targetDisplay = await resolveAuditTargetDisplay(
+      client,
+      action,
+      targetId
+    );
 
     const embed = new EmbedBuilder()
       .setTitle(ACTION_NAMES[action])
@@ -75,10 +92,10 @@ export async function logAuditAction(
       })
       .setTimestamp();
 
-    if (targetUser) {
+    if (targetDisplay) {
       embed.addFields({
         name: 'Target',
-        value: `${targetUser.tag} (<@${targetId}>)`,
+        value: targetDisplay,
         inline: true,
       });
     }

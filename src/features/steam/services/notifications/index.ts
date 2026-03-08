@@ -3,13 +3,10 @@ import { logger } from '../../../../utils/logger.js';
 import { createEmbed } from '../../../../utils/embed.js';
 import { COLORS, TITLES } from '../../../../utils/constants/index.js';
 import { steamClient } from '../steam/index.js';
-import { getAllSteamUsers } from '../../../../services/database/index.js';
 import {
-  getEnabledNotificationGuilds,
-  getGameActivityCache,
-  updateGameActivityCache,
-  getUserNotificationPref,
-} from '../../../../services/database/notifications.js';
+  steamNotificationRepository,
+  steamUserRepository,
+} from '../../repositories/index.js';
 
 // Check interval: 5 minutes
 const CHECK_INTERVAL = 5 * 60 * 1000;
@@ -18,6 +15,8 @@ const PROCESSING_TIMEOUT = 5 * 60 * 1000;
 
 let notificationClient: Client | null = null;
 let checkInterval: NodeJS.Timeout | null = null;
+let warmupTimeout: NodeJS.Timeout | null = null;
+let notificationSystemStarted = false;
 
 /**
  * Promise-based mutex that prevents concurrent notification processing.
@@ -72,12 +71,12 @@ async function checkGameActivity(): Promise<GameStartEvent[]> {
   }
 
   const events: GameStartEvent[] = [];
-  const users = getAllSteamUsers();
+  const users = steamUserRepository.getAll();
 
   for (const user of users) {
     try {
       // Check if user has notifications enabled
-      if (!getUserNotificationPref(user.discord_id)) {
+      if (!steamNotificationRepository.getUserPreference(user.discord_id)) {
         continue;
       }
 
@@ -88,7 +87,9 @@ async function checkGameActivity(): Promise<GameStartEvent[]> {
       if (!playerInfo) continue;
 
       const currentGame = playerInfo.currentGame || null;
-      const cache = getGameActivityCache(user.discord_id);
+      const cache = steamNotificationRepository.getGameActivityCache(
+        user.discord_id
+      );
 
       // Check if game started (was not playing, now playing)
       if (currentGame && (!cache || cache.current_game !== currentGame)) {
@@ -102,7 +103,7 @@ async function checkGameActivity(): Promise<GameStartEvent[]> {
       }
 
       // Update cache
-      updateGameActivityCache(
+      steamNotificationRepository.updateGameActivityCache(
         user.discord_id,
         currentGame,
         currentGame && (!cache || cache.current_game !== currentGame)
@@ -166,7 +167,7 @@ async function processNotifications(): Promise<void> {
 
       logger.debug(`Found ${events.length} game start events`);
 
-      const enabledGuilds = getEnabledNotificationGuilds();
+      const enabledGuilds = steamNotificationRepository.getEnabledGuilds();
 
       for (const guildSettings of enabledGuilds) {
         if (ac.signal.aborted) break;
@@ -217,12 +218,21 @@ async function processNotifications(): Promise<void> {
  * Start the notification system
  */
 export function startNotificationSystem(client: Client): void {
+  if (notificationSystemStarted) {
+    logger.debug(
+      'Notification system already started, skipping duplicate start'
+    );
+    notificationClient = client;
+    return;
+  }
+
+  notificationSystemStarted = true;
   notificationClient = client;
 
   logger.info('Starting notification system...');
 
   // Initial check after 1 minute (give time for caches to warm up)
-  setTimeout(() => {
+  warmupTimeout = setTimeout(() => {
     processNotifications();
   }, 60 * 1000);
 
@@ -240,10 +250,17 @@ export function startNotificationSystem(client: Client): void {
  * Stop the notification system
  */
 export function stopNotificationSystem(): void {
+  if (warmupTimeout) {
+    clearTimeout(warmupTimeout);
+    warmupTimeout = null;
+  }
+
   if (checkInterval) {
     clearInterval(checkInterval);
     checkInterval = null;
   }
+
+  notificationSystemStarted = false;
   notificationClient = null;
   logger.info('Notification system stopped');
 }

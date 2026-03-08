@@ -1,17 +1,11 @@
+import { once } from 'node:events';
+import { Events } from 'discord.js';
 import { createClient } from './client.js';
 import { env } from './config/index.js';
 import { loadCommands } from './handlers/commandHandler.js';
 import { loadEvents } from './handlers/eventHandler.js';
 import { logger } from './utils/logger.js';
-import {
-  start as startSteam,
-  stop as stopSteam,
-} from './features/steam/index.js';
-import {
-  start as startVoice,
-  stop as stopVoice,
-} from './features/voice/index.js';
-import { stop as stopPoll } from './features/poll/index.js';
+import { featureModules } from './features/index.js';
 import {
   closeDatabase,
   initializeDatabase,
@@ -44,10 +38,14 @@ async function gracefulShutdown(
   forceExitTimer.unref();
 
   const steps: [string, () => void | Promise<void>][] = [
-    ['Voice feature', () => stopVoice()],
     ['Backup service', () => backupService.stop()],
-    ['Steam feature', () => stopSteam()],
-    ['Poll feature', () => stopPoll()],
+    ...featureModules
+      .slice()
+      .reverse()
+      .map((feature): [string, () => void | Promise<void>] => [
+        `Feature: ${feature.name}`,
+        () => feature.stop(),
+      ]),
     ['Database', () => closeDatabase()],
     ['Discord client', () => client.destroy()],
   ];
@@ -108,9 +106,16 @@ async function main(): Promise<void> {
   // Login to Discord first (before starting services that depend on it)
   await client.login(env.DISCORD_TOKEN);
 
-  // Start features
-  startSteam(client);
-  startVoice(client);
+  // Wait for the Discord client to be ready before starting features.
+  if (!client.isReady()) {
+    await once(client, Events.ClientReady);
+  }
+
+  // Start features after the ready event so they can use Discord caches safely.
+  for (const feature of featureModules) {
+    logger.debug(`Starting feature: ${feature.name}`);
+    await feature.start(client);
+  }
 
   // Start backup service
   backupService.start();

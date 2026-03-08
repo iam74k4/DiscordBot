@@ -350,7 +350,11 @@ export class AudioBufferManager {
   /**
    * Start periodic cleanup
    */
-  private startCleanup(): void {
+  startCleanup(): void {
+    if (this.cleanupInterval) {
+      return;
+    }
+
     this.cleanupInterval = setInterval(() => {
       for (const buffer of this.buffers.values()) {
         buffer.cleanupOldFiles();
@@ -367,6 +371,7 @@ export class AudioBufferManager {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
+      logger.info('Stopped audio buffer cleanup interval');
     }
   }
 

@@ -25,29 +25,18 @@ export interface HealthStatus {
     connected: boolean;
     ping: number;
   };
-  services: {
-    scheduler: boolean;
-    notifications: boolean;
-    memoryMonitor: boolean;
-  };
+  services: Record<string, boolean>;
   timestamp: number;
 }
 
 // Service status tracking (updated by services themselves)
-const serviceStatus = {
-  scheduler: false,
-  notifications: false,
-  memoryMonitor: false,
-};
+const serviceStatus = new Map<string, boolean>();
 
 /**
  * Update service status
  */
-export function setServiceStatus(
-  service: keyof typeof serviceStatus,
-  running: boolean
-): void {
-  serviceStatus[service] = running;
+export function setServiceStatus(service: string, running: boolean): void {
+  serviceStatus.set(service, running);
 }
 
 /**
@@ -124,7 +113,7 @@ export function getHealthStatus(client: Client): HealthStatus {
     memory,
     database,
     discord,
-    services: { ...serviceStatus },
+    services: Object.fromEntries(serviceStatus),
     timestamp: Date.now(),
   };
 }
@@ -144,6 +133,20 @@ export function formatHealthStatus(health: HealthStatus): string {
   const uptimeHours = Math.floor((health.uptime % 86400) / 3600);
   const uptimeMinutes = Math.floor((health.uptime % 3600) / 60);
 
+  const serviceEntries = Object.entries(health.services).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
+  const serviceLines =
+    serviceEntries.length === 0
+      ? ['└ No tracked services']
+      : serviceEntries.map(([service, running], index) => {
+          const prefix = index === serviceEntries.length - 1 ? '└' : '├';
+          const label = service
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            .replace(/^./, (value) => value.toUpperCase());
+          return `${prefix} ${label}: ${running ? '✅' : '❌'}`;
+        });
+
   const lines = [
     `**Status:** ${statusEmoji} ${health.status.toUpperCase()}`,
     `**Uptime:** ${uptimeDays}d ${uptimeHours}h ${uptimeMinutes}m`,
@@ -162,9 +165,7 @@ export function formatHealthStatus(health: HealthStatus): string {
     `└ Tables: ${health.database.tables}`,
     '',
     '**Services**',
-    `├ Scheduler: ${health.services.scheduler ? '✅' : '❌'}`,
-    `├ Notifications: ${health.services.notifications ? '✅' : '❌'}`,
-    `└ Memory Monitor: ${health.services.memoryMonitor ? '✅' : '❌'}`,
+    ...serviceLines,
   ];
 
   return lines.join('\n');

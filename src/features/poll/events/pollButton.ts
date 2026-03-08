@@ -1,10 +1,7 @@
 import { Events, MessageFlags } from 'discord.js';
 import { Event } from '../../../types/index.js';
 import { logger } from '../../../utils/logger.js';
-import {
-  handlePollVote,
-  pollStore,
-} from '../services/index.js';
+import { handlePollVote, pollStore } from '../services/index.js';
 
 /**
  * Poll button interaction handler - handles poll vote button clicks
