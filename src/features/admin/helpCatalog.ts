@@ -1,4 +1,4 @@
-import type { CommandCategory } from '../helpCatalog.js';
+import { registerHelpCategory, type CommandCategory } from '../helpCatalog.js';
 
 export const adminHelpCategory: CommandCategory = {
   name: { en: 'Admin', ja: '管理者' },
@@ -14,3 +14,5 @@ export const adminHelpCategory: CommandCategory = {
     },
   ],
 };
+
+registerHelpCategory(adminHelpCategory);

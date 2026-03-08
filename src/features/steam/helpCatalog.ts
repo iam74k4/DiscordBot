@@ -1,4 +1,4 @@
-import type { CommandCategory } from '../helpCatalog.js';
+import { registerHelpCategory, type CommandCategory } from '../helpCatalog.js';
 
 export const steamHelpCategory: CommandCategory = {
   name: { en: 'Steam', ja: 'Steam' },
@@ -14,3 +14,5 @@ export const steamHelpCategory: CommandCategory = {
     },
   ],
 };
+
+registerHelpCategory(steamHelpCategory);

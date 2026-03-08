@@ -1,4 +1,5 @@
 import type { Client } from 'discord.js';
+import './helpCatalog.js';
 import {
   startNotificationSystem,
   stopNotificationSystem,

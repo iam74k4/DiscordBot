@@ -1,5 +1,5 @@
 import type { Client } from 'discord.js';
-import { database } from '../database/index.js';
+import { getTableCount } from '../database/connection.js';
 
 /**
  * Health status levels
@@ -44,14 +44,9 @@ export function setServiceStatus(service: string, running: boolean): void {
  */
 function checkDatabase(): { connected: boolean; tables: number } {
   try {
-    // Try to run a simple query
-    const result = database
-      .prepare("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'")
-      .get() as { count: number } | undefined;
-
     return {
       connected: true,
-      tables: result?.count ?? 0,
+      tables: getTableCount(),
     };
   } catch {
     return {

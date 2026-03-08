@@ -291,7 +291,9 @@ export class HybridAudioBuffer {
   clear(): void {
     this.memoryBuffer = [];
     for (const [, filePath] of this.diskBufferFiles.entries()) {
-      unlink(filePath).catch(() => {});
+      unlink(filePath).catch((e) => {
+        logger.debug(`Failed to delete buffer file ${filePath}: ${e}`);
+      });
     }
     this.diskBufferFiles.clear();
   }

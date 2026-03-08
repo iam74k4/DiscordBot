@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // Mock the database before importing backup service
-vi.mock('../../../services/database/index.js', () => ({
+vi.mock('../../../services/database/connection.js', () => ({
   database: {
     pragma: vi.fn(),
     backup: vi.fn().mockResolvedValue(undefined),

@@ -1,4 +1,5 @@
 import type { Client } from 'discord.js';
+import './helpCatalog.js';
 import { pollStore } from './services/pollStore.js';
 
 export const name = 'poll';

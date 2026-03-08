@@ -3,12 +3,12 @@ import { MessageFlags } from 'discord.js';
 import { createMockInteraction } from '../setup.js';
 
 // Mock dependencies
-vi.mock('../../../services/database/index.js', () => ({
-  getRegisteredUsersCount: vi.fn().mockReturnValue(100),
-  getTableRowCount: vi.fn().mockReturnValue(50),
-  db: {
+vi.mock('../../../services/database/connection.js', () => ({
+  database: {
     prepare: vi.fn().mockReturnValue({
       get: vi.fn().mockReturnValue({ count: 5 }),
+      all: vi.fn().mockReturnValue([]),
+      run: vi.fn().mockReturnValue({ changes: 0 }),
     }),
   },
 }));

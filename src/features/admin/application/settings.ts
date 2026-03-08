@@ -12,6 +12,7 @@ import {
 import { COLORS } from '../../../utils/constants/index.js';
 import {
   settingsRepository,
+  auditRepository,
   type AuditLogRecord,
 } from '../repositories/index.js';
 import { logAuditAction } from '../../../services/audit/index.js';
@@ -140,8 +141,8 @@ async function handleLogs(
     return;
   }
 
-  const logs = settingsRepository.getAuditLogs(interaction.guild.id, 20);
-  const totalCount = settingsRepository.getAuditLogsCount(interaction.guild.id);
+  const logs = auditRepository.getLogs(interaction.guild.id, 20);
+  const totalCount = auditRepository.getLogsCount(interaction.guild.id);
 
   if (logs.length === 0) {
     const warningEmbed = createWarningEmbed(

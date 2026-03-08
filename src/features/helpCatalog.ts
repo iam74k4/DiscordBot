@@ -14,3 +14,13 @@ export interface CommandCategory {
   };
   commands: CommandInfo[];
 }
+
+const categories: CommandCategory[] = [];
+
+export function registerHelpCategory(category: CommandCategory): void {
+  categories.push(category);
+}
+
+export function getHelpCategories(): readonly CommandCategory[] {
+  return categories;
+}

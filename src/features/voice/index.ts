@@ -1,4 +1,5 @@
 import type { Client } from 'discord.js';
+import './helpCatalog.js';
 import { memoryMonitor } from './services/memoryMonitor.js';
 import { fileCleanupService } from './services/fileCleanup.js';
 import { audioBufferManager } from './services/audioBuffer.js';

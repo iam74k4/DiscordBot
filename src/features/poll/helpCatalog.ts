@@ -1,4 +1,4 @@
-import type { CommandCategory } from '../helpCatalog.js';
+import { registerHelpCategory, type CommandCategory } from '../helpCatalog.js';
 
 export const pollHelpCategory: CommandCategory = {
   name: { en: 'Poll', ja: '投票' },
@@ -13,3 +13,5 @@ export const pollHelpCategory: CommandCategory = {
     },
   ],
 };
+
+registerHelpCategory(pollHelpCategory);

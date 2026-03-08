@@ -2,11 +2,14 @@ import { Client, TextChannel, EmbedBuilder } from 'discord.js';
 import { COLORS } from '../../utils/constants/index.js';
 import { logger } from '../../utils/logger.js';
 import { formatAuditTarget } from './format.js';
-import { auditRepository, type AuditAction } from './repository.js';
+import {
+  auditRepository,
+  type AuditAction,
+} from './repository.js';
 
-/**
- * Action display names
- */
+export { auditRepository };
+export type { AuditAction, AuditLogRecord } from './repository.js';
+
 const ACTION_NAMES: Record<AuditAction, string> = {
   STEAM_REGISTER: 'Steam Account Linked',
   STEAM_UNREGISTER: 'Steam Account Unlinked',
@@ -18,9 +21,6 @@ const ACTION_NAMES: Record<AuditAction, string> = {
   AUDIT_SETUP: 'Audit Log Configured',
 };
 
-/**
- * Action colors
- */
 const ACTION_COLORS: Record<AuditAction, number> = {
   STEAM_REGISTER: COLORS.SUCCESS as number,
   STEAM_UNREGISTER: COLORS.WARNING as number,
@@ -37,22 +37,17 @@ async function resolveAuditTargetDisplay(
   action: AuditAction,
   targetId: string | undefined
 ): Promise<string | null> {
+  if (!targetId) return null;
+
   const target = formatAuditTarget(action, targetId);
-  if (!target) {
-    return null;
-  }
+  if (!target) return null;
 
-  if (action === 'AUDIT_SETUP') {
-    return target;
-  }
+  if (action === 'AUDIT_SETUP') return target;
 
-  const targetUser = await client.users.fetch(targetId!).catch(() => null);
+  const targetUser = await client.users.fetch(targetId).catch(() => null);
   return targetUser ? `${targetUser.tag} (${target})` : target;
 }
 
-/**
- * Log an audit action and send to audit channel if configured
- */
 export async function logAuditAction(
   client: Client,
   guildId: string,
@@ -61,10 +56,8 @@ export async function logAuditAction(
   targetId?: string,
   details?: string
 ): Promise<void> {
-  // Save to database
   auditRepository.createLog(guildId, userId, action, targetId, details);
 
-  // Check if audit channel is configured
   const auditChannelId = auditRepository.getAuditChannel(guildId);
   if (!auditChannelId) return;
 
@@ -110,9 +103,6 @@ export async function logAuditAction(
   }
 }
 
-/**
- * Shorthand for common audit actions
- */
 export const audit = {
   steamRegister: (
     client: Client,
