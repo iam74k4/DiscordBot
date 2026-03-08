@@ -56,8 +56,7 @@ export async function executeRecordCommand(
     return;
   }
 
-  // deferReply early to avoid 3-second interaction timeout
-  await interaction.deferReply();
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const connection = connectionManager.getConnection(voiceChannel.id);
   if (!connection) {
@@ -178,7 +177,7 @@ export async function executeRecordCommand(
 
     while (retryCount <= maxRetries && !success) {
       try {
-        await interaction.editReply({
+        await interaction.followUp({
           embeds: [
             createEmbed({
               title: t('record.success', locale),

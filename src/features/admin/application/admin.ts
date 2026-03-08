@@ -7,6 +7,7 @@ import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
 import { COLORS } from '../../../utils/constants/index.js';
 import { isBotOwner } from '../../../config/env.js';
 import { logger } from '../../../utils/logger.js';
+import { withTimeout } from '../../../utils/timeout.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { databaseStatsRepository } from '../repositories/index.js';
 import {
@@ -146,28 +147,12 @@ async function handleBroadcast(
     .setColor(COLORS.INFO)
     .setTimestamp();
 
-  const BROADCAST_TIMEOUT_PER_GUILD = 5_000;
+  const BROADCAST_TIMEOUT = 5_000;
 
   for (const guild of client.guilds.cache.values()) {
     try {
-      const owner = await Promise.race([
-        guild.fetchOwner(),
-        new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error('Timed out fetching owner')),
-            BROADCAST_TIMEOUT_PER_GUILD
-          )
-        ),
-      ]);
-      await Promise.race([
-        owner.send({ embeds: [embed] }),
-        new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error('Timed out sending DM')),
-            BROADCAST_TIMEOUT_PER_GUILD
-          )
-        ),
-      ]);
+      const owner = await withTimeout(guild.fetchOwner(), BROADCAST_TIMEOUT);
+      await withTimeout(owner.send({ embeds: [embed] }), BROADCAST_TIMEOUT);
       sent++;
     } catch (error) {
       failed++;
