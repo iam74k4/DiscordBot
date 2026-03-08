@@ -21,7 +21,7 @@ export function start(client: Client): void {
 /**
  * Stop Steam feature services
  */
-export function stop(): void {
+export async function stop(): Promise<void> {
   stopNotificationSystem();
   setServiceStatus('notifications', false);
 
