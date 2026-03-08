@@ -118,14 +118,4 @@ export class LocalStorage implements IBackupStorage {
     }
     await fsp.unlink(filePath);
   }
-
-  /**
-   * Get share link - not supported for local storage.
-   *
-   * @param _filename - Unused
-   * @returns Always `null`
-   */
-  async getShareLink(_filename: string): Promise<string | null> {
-    return null;
-  }
 }

@@ -29,7 +29,6 @@ export interface BackupInfo {
   path?: string;
   size: number;
   createdAt: Date;
-  shareLink?: string;
 }
 
 /**
@@ -110,17 +109,6 @@ class BackupService {
         };
       }
 
-      if (env.BACKUP_STORAGE_TYPE === 'google_drive') {
-        try {
-          await fsp.unlink(backupPath);
-        } catch (unlinkError) {
-          logger.warn(
-            'Failed to remove local backup after upload:',
-            unlinkError instanceof Error ? unlinkError.message : unlinkError
-          );
-        }
-      }
-
       logger.info(
         `Backup completed: ${filename} (${Math.round(stats.size / 1024)} KB)`
       );
@@ -165,7 +153,6 @@ class BackupService {
         path: f.path,
         size: f.size,
         createdAt: f.createdAt,
-        shareLink: f.shareLink,
       }));
     } catch (error) {
       logger.error(
@@ -302,8 +289,7 @@ class BackupService {
         .toISOString()
         .replace('T', ' ')
         .slice(0, 19);
-      const linkPart = backup.shareLink ? ` [View](${backup.shareLink})` : '';
-      return `${index + 1}. \`${backup.filename}\` (${sizeKB} KB) - ${date}${linkPart}`;
+      return `${index + 1}. \`${backup.filename}\` (${sizeKB} KB) - ${date}`;
     });
 
     if (backups.length > 10) {

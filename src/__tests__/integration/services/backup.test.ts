@@ -14,7 +14,6 @@ vi.mock('../../../services/database/index.js', () => ({
 // Mock env
 vi.mock('../../../config/index.js', () => ({
   env: {
-    BACKUP_STORAGE_TYPE: 'local',
     BACKUP_DIR: 'test-backups',
     BACKUP_RETENTION_DAYS: 7,
     BACKUP_CRON: '0 4 * * *',

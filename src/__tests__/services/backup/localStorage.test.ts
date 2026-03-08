@@ -200,7 +200,6 @@ describe('LocalStorage', () => {
         path.join(testBackupDir, 'backup-2024-01-01T00-00-00.db')
       );
       expect(list[0].size).toBe(7);
-      expect(list[0].shareLink).toBeUndefined();
     });
   });
 });
