@@ -4,18 +4,12 @@ export const generalHelpCategory: CommandCategory = {
   name: { en: 'General', ja: '一般' },
   commands: [
     {
-      name: 'ping',
+      name: 'general',
       description: {
-        en: 'Check bot latency',
-        ja: 'Botのレイテンシを確認',
+        en: 'General utility and help commands',
+        ja: '一般ユーティリティとヘルプ',
       },
-    },
-    {
-      name: 'help',
-      description: {
-        en: 'Show command list',
-        ja: 'コマンド一覧を表示',
-      },
+      usage: '/general help, /general ping',
     },
   ],
 };

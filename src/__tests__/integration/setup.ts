@@ -81,6 +81,7 @@ export function createMockGuild(overrides: Partial<Guild> = {}): Guild {
 export function createMockInteraction(
   overrides: {
     commandName?: string;
+    subcommandGroup?: string;
     subcommand?: string;
     options?: Record<string, unknown>;
     user?: Partial<User>;
@@ -113,6 +114,9 @@ export function createMockInteraction(
     locale: overrides.locale ?? 'en-US',
     client: createMockClient(),
     options: {
+      getSubcommandGroup: vi
+        .fn()
+        .mockReturnValue(overrides.subcommandGroup ?? null),
       getSubcommand: vi.fn().mockReturnValue(overrides.subcommand ?? null),
       getString: vi.fn((name: string) => optionsData[name] ?? null),
       getInteger: vi.fn((name: string) => optionsData[name] ?? null),
