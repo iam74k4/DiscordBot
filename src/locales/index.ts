@@ -116,14 +116,6 @@ export function t(
 }
 
 /**
- * Get translation object for a specific locale
- * Useful for accessing nested translations
- */
-export function getTranslations(locale: Locale): TranslationKeys {
-  return translations[locale];
-}
-
-/**
  * Discord.js Localizations format for command builders
  * Returns localization map for setNameLocalizations/setDescriptionLocalizations
  *

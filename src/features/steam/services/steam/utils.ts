@@ -267,9 +267,3 @@ export function formatNumber(num: number): string {
   return num.toString();
 }
 
-/**
- * Create section header for embed fields
- */
-export function createSectionHeader(icon: string, title: string): string {
-  return `${icon} **${title}**`;
-}

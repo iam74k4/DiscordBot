@@ -13,7 +13,7 @@ import { COLORS } from '../../../utils/constants/index.js';
 import { steamClient, formatPlaytimeWithBar } from '../services/steam/index.js';
 import { steamUserRepository } from '../repositories/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { logger } from '../../../utils/logger.js';
+import { getErrorMessage, logger } from '../../../utils/logger.js';
 import { USERS_PER_PAGE, buildButtons } from '../lib/shared.js';
 
 export async function handleRanking(
@@ -200,9 +200,9 @@ export async function handleRanking(
   collector.on('end', async () => {
     await interaction
       .editReply({ components: [buildButtons(currentPage, totalPages, true)] })
-      .catch((e) => {
+      .catch((e: unknown) => {
         logger.debug(
-          `Failed to disable ranking pagination buttons: ${e.message}`
+          `Failed to disable ranking pagination buttons: ${getErrorMessage(e)}`
         );
       });
   });
