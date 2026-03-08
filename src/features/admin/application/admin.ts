@@ -146,10 +146,22 @@ async function handleBroadcast(
     .setColor(COLORS.INFO)
     .setTimestamp();
 
+  const BROADCAST_TIMEOUT_PER_GUILD = 5_000;
+
   for (const guild of client.guilds.cache.values()) {
     try {
-      const owner = await guild.fetchOwner();
-      await owner.send({ embeds: [embed] });
+      const owner = await Promise.race([
+        guild.fetchOwner(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Timed out fetching owner')), BROADCAST_TIMEOUT_PER_GUILD)
+        ),
+      ]);
+      await Promise.race([
+        owner.send({ embeds: [embed] }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Timed out sending DM')), BROADCAST_TIMEOUT_PER_GUILD)
+        ),
+      ]);
       sent++;
     } catch (error) {
       failed++;
@@ -196,6 +208,8 @@ async function handleHealth(
 async function handleBackupList(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
   const backupList = await backupService.formatBackupList();
 
   const embed = createEmbed({
@@ -205,7 +219,7 @@ async function handleBackupList(
     timestamp: true,
   });
 
-  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+  await interaction.editReply({ embeds: [embed] });
 }
 
 async function handleBackupRun(

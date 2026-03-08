@@ -89,7 +89,7 @@ export class VoiceConnectionManager {
         guildId: guild.id,
         adapterCreator: guild.voiceAdapterCreator,
         selfDeaf: false,
-        selfMute: true, // Bot doesn't need to speak
+        selfMute: true,
       });
 
       // Create audio player
@@ -100,34 +100,40 @@ export class VoiceConnectionManager {
       // Track active streams for cleanup on disconnect
       this.activeStreams.set(channelId, new Set());
 
+      // Track subscribed users to avoid duplicate subscriptions
+      const subscribedUsers = new Set<string>();
+
       // Set up audio reception for all users
       connection.receiver.speaking.on('start', (userId) => {
+        if (subscribedUsers.has(userId)) return;
+        subscribedUsers.add(userId);
+        logger.debug(`Speaking started for user ${userId} in channel ${channelId}`);
+
         const buffer = audioBufferManager.getBuffer(channelId);
 
         const opusStream = connection.receiver.subscribe(userId, {
           end: {
             behavior: EndBehaviorType.AfterSilence,
-            duration: 100,
+            duration: 1000,
           },
         });
 
-        // Discord sends: 48kHz, stereo, 16-bit signed little-endian
         const decoder = new prism.opus.Decoder({
           rate: 48000,
           channels: 2,
-          frameSize: 960, // 20ms at 48kHz
+          frameSize: 960,
         });
 
         const pcmStream = opusStream.pipe(decoder);
 
-        // Track streams for cleanup
         const streams = this.activeStreams.get(channelId);
         if (streams) {
           streams.add(opusStream as unknown as Readable);
           streams.add(pcmStream as unknown as Readable);
         }
 
-        const destroyStreams = () => {
+        const cleanup = () => {
+          subscribedUsers.delete(userId);
           if (!opusStream.destroyed) opusStream.destroy();
           if (!pcmStream.destroyed) pcmStream.destroy();
           if (streams) {
@@ -136,8 +142,12 @@ export class VoiceConnectionManager {
           }
         };
 
+        let chunkCount = 0;
         pcmStream.on('data', (chunk: Buffer) => {
-          // Convert stereo to mono by averaging left and right channels
+          chunkCount++;
+          if (chunkCount === 1) {
+            logger.debug(`First audio chunk received from user ${userId} (${chunk.length} bytes)`);
+          }
           const monoSamples = chunk.length / 4;
           const monoChunk = Buffer.allocUnsafe(monoSamples * 2);
 
@@ -157,7 +167,7 @@ export class VoiceConnectionManager {
             `Audio decode error for user ${userId}:`,
             error instanceof Error ? error.message : error
           );
-          destroyStreams();
+          cleanup();
         });
 
         opusStream.on('error', (error) => {
@@ -165,18 +175,20 @@ export class VoiceConnectionManager {
             `Audio stream error for user ${userId}:`,
             error instanceof Error ? error.message : error
           );
-          destroyStreams();
+          cleanup();
         });
 
         pcmStream.on('close', () => {
-          if (streams) {
-            streams.delete(opusStream as unknown as Readable);
-            streams.delete(pcmStream as unknown as Readable);
-          }
+          cleanup();
         });
       });
 
-      // Handle disconnect using official discord.js pattern
+      connection.on('stateChange', (oldState, newState) => {
+        logger.debug(
+          `Voice connection state: ${oldState.status} -> ${newState.status}`
+        );
+      });
+
       connection.on(VoiceConnectionStatus.Disconnected, async () => {
         try {
           await Promise.race([

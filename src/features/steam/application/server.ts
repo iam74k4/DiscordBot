@@ -9,6 +9,8 @@ import { createPieChart } from '../../../utils/chart.js';
 import { steamClient } from '../index.js';
 import { steamUserRepository } from '../repositories/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { logger } from '../../../utils/logger.js';
+import { withTimeout } from '../../../utils/timeout.js';
 
 export async function executeServerCommand(
   interaction: ChatInputCommandInteraction
@@ -31,7 +33,12 @@ export async function executeServerCommand(
 
   const guild = interaction.guild;
   if (guild.members.cache.size < guild.memberCount) {
-    await guild.members.fetch({ limit: 1000 });
+    await withTimeout(
+      guild.members.fetch({ limit: 1000 }),
+      10_000
+    ).catch((e) => {
+      logger.warn(`guild.members.fetch timed out: ${e instanceof Error ? e.message : e}`);
+    });
   }
 
   const totalMembers = guild.memberCount;
@@ -51,17 +58,36 @@ export async function executeServerCommand(
   const steamUsers = steamUserRepository.getByDiscordIds(humanIds);
   const steamRegistered = steamUsers.length;
 
-  const playtimeResults = steamClient.isConfigured()
-    ? await Promise.allSettled(
-        steamUsers.map(async (user) => {
-          const playtime = await steamClient.getTotalPlaytime(user.steam_id);
+  const BATCH_SIZE = 5;
+  const playtimeResults: PromiseSettledResult<{
+    name: string;
+    playtimeMinutes: number;
+  }>[] = [];
+
+  if (steamClient.isConfigured()) {
+    for (let i = 0; i < steamUsers.length; i += BATCH_SIZE) {
+      const batch = steamUsers.slice(i, i + BATCH_SIZE);
+
+      const batchResults = await Promise.allSettled(
+        batch.map(async (user) => {
+          const playtime = await withTimeout(
+            steamClient.getTotalPlaytime(user.steam_id),
+            10_000
+          );
           return {
             name: user.steam_name || 'Unknown',
             playtimeMinutes: playtime,
           };
         })
-      )
-    : [];
+      );
+
+      playtimeResults.push(...batchResults);
+
+      if (i + BATCH_SIZE < steamUsers.length) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+    }
+  }
 
   const topPlayers = playtimeResults
     .filter(

@@ -1,5 +1,6 @@
 import { Events, MessageFlags } from 'discord.js';
 import { Event } from '../../types/index.js';
+import { ExtendedClient } from '../../client.js';
 import { runMiddleware } from '../../middleware/index.js';
 import { getErrorMessage, logger } from '../../utils/logger.js';
 import { createErrorEmbed } from '../../utils/embed.js';
@@ -12,6 +13,7 @@ export const event: Event<typeof Events.InteractionCreate> = {
   name: Events.InteractionCreate,
   once: false,
   async execute(client, interaction) {
+    if (!(client as ExtendedClient).isFullyReady) return;
     // Handle autocomplete interactions
     if (interaction.isAutocomplete()) {
       const command = client.commands.get(interaction.commandName);

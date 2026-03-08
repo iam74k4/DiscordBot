@@ -15,6 +15,7 @@ import { steamUserRepository } from '../repositories/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { getErrorMessage, logger } from '../../../utils/logger.js';
 import { USERS_PER_PAGE, buildButtons } from '../lib/shared.js';
+import { withTimeout } from '../../../utils/timeout.js';
 
 export async function handleRanking(
   interaction: ChatInputCommandInteraction
@@ -37,7 +38,12 @@ export async function handleRanking(
 
   const guild = interaction.guild as Guild;
   if (guild.members.cache.size < guild.memberCount * 0.5) {
-    await guild.members.fetch({ limit: 1000 });
+    await withTimeout(
+      guild.members.fetch({ limit: 1000 }),
+      10_000
+    ).catch((e) => {
+      logger.warn(`guild.members.fetch timed out: ${e instanceof Error ? e.message : e}`);
+    });
   }
   const memberIds = guild.members.cache.map((m) => m.id);
   const registeredUsers = steamUserRepository.getByDiscordIds(memberIds);
@@ -79,8 +85,8 @@ export async function handleRanking(
     const results = await Promise.allSettled(
       batch.map(async (user) => {
         const [totalPlaytime, playerInfo] = await Promise.all([
-          steamClient.getTotalPlaytime(user.steam_id),
-          steamClient.getFormattedPlayerInfo(user.steam_id),
+          withTimeout(steamClient.getTotalPlaytime(user.steam_id), 10_000),
+          withTimeout(steamClient.getFormattedPlayerInfo(user.steam_id), 10_000),
         ]);
 
         return {

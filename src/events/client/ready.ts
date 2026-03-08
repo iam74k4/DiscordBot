@@ -21,9 +21,9 @@ export const event: Event<typeof Events.ClientReady> = {
       status: 'online',
     });
 
-    // Register slash commands with Discord API
     await registerCommands(client);
 
+    client.isFullyReady = true;
     logger.info('Bot is ready!');
   },
 };
