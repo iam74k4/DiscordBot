@@ -107,7 +107,9 @@ export class VoiceConnectionManager {
       connection.receiver.speaking.on('start', (userId) => {
         if (subscribedUsers.has(userId)) return;
         subscribedUsers.add(userId);
-        logger.debug(`Speaking started for user ${userId} in channel ${channelId}`);
+        logger.debug(
+          `Speaking started for user ${userId} in channel ${channelId}`
+        );
 
         const buffer = audioBufferManager.getBuffer(channelId);
 
@@ -146,7 +148,9 @@ export class VoiceConnectionManager {
         pcmStream.on('data', (chunk: Buffer) => {
           chunkCount++;
           if (chunkCount === 1) {
-            logger.debug(`First audio chunk received from user ${userId} (${chunk.length} bytes)`);
+            logger.debug(
+              `First audio chunk received from user ${userId} (${chunk.length} bytes)`
+            );
           }
           const monoSamples = chunk.length / 4;
           const monoChunk = Buffer.allocUnsafe(monoSamples * 2);

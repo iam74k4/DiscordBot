@@ -79,16 +79,19 @@ async function handleCreatePoll(
   );
 
   if (duration) {
-    pollData.timeout = setTimeout(async () => {
-      try {
-        await endPoll(message.id);
-      } catch (error) {
-        logger.error(
-          `Failed to auto-end poll ${message.id}:`,
-          error instanceof Error ? error.message : error
-        );
-      }
-    }, duration * 60 * 1000);
+    pollData.timeout = setTimeout(
+      async () => {
+        try {
+          await endPoll(message.id);
+        } catch (error) {
+          logger.error(
+            `Failed to auto-end poll ${message.id}:`,
+            error instanceof Error ? error.message : error
+          );
+        }
+      },
+      duration * 60 * 1000
+    );
   }
 }
 

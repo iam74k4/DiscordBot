@@ -9,10 +9,7 @@ export class TimeoutError extends Error {
   }
 }
 
-export function withTimeout<T>(
-  promise: Promise<T>,
-  ms: number
-): Promise<T> {
+export function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timer: NodeJS.Timeout;
 
   const timeout = new Promise<never>((_, reject) => {

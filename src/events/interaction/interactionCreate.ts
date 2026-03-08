@@ -20,7 +20,9 @@ export const event: Event<typeof Events.InteractionCreate> = {
 
       if (!command || !command.autocomplete) {
         await interaction.respond([]).catch((e: unknown) => {
-          logger.debug(`Failed to respond to autocomplete: ${getErrorMessage(e)}`);
+          logger.debug(
+            `Failed to respond to autocomplete: ${getErrorMessage(e)}`
+          );
         });
         return;
       }
@@ -33,7 +35,9 @@ export const event: Event<typeof Events.InteractionCreate> = {
           error
         );
         await interaction.respond([]).catch((e: unknown) => {
-          logger.debug(`Failed to respond to autocomplete error: ${getErrorMessage(e)}`);
+          logger.debug(
+            `Failed to respond to autocomplete error: ${getErrorMessage(e)}`
+          );
         });
       }
       return;
@@ -79,14 +83,20 @@ export const event: Event<typeof Events.InteractionCreate> = {
       );
 
       if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ embeds: [errorEmbed] }).catch((e: unknown) => {
-          logger.debug(`Failed to edit reply with error embed: ${getErrorMessage(e)}`);
-        });
+        await interaction
+          .editReply({ embeds: [errorEmbed] })
+          .catch((e: unknown) => {
+            logger.debug(
+              `Failed to edit reply with error embed: ${getErrorMessage(e)}`
+            );
+          });
       } else {
         await interaction
           .reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral })
           .catch((e: unknown) => {
-            logger.debug(`Failed to reply with error embed: ${getErrorMessage(e)}`);
+            logger.debug(
+              `Failed to reply with error embed: ${getErrorMessage(e)}`
+            );
           });
       }
     }

@@ -153,13 +153,19 @@ async function handleBroadcast(
       const owner = await Promise.race([
         guild.fetchOwner(),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Timed out fetching owner')), BROADCAST_TIMEOUT_PER_GUILD)
+          setTimeout(
+            () => reject(new Error('Timed out fetching owner')),
+            BROADCAST_TIMEOUT_PER_GUILD
+          )
         ),
       ]);
       await Promise.race([
         owner.send({ embeds: [embed] }),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Timed out sending DM')), BROADCAST_TIMEOUT_PER_GUILD)
+          setTimeout(
+            () => reject(new Error('Timed out sending DM')),
+            BROADCAST_TIMEOUT_PER_GUILD
+          )
         ),
       ]);
       sent++;

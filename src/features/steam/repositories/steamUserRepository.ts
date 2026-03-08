@@ -24,9 +24,7 @@ function register(
 }
 
 function unregister(discordId: string): boolean {
-  const stmt = database.prepare(
-    'DELETE FROM steam_users WHERE discord_id = ?'
-  );
+  const stmt = database.prepare('DELETE FROM steam_users WHERE discord_id = ?');
   const result = stmt.run(discordId);
   logger.debug(`Unregistered Steam user: ${discordId}`);
   return result.changes > 0;

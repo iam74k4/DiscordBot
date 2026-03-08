@@ -46,9 +46,7 @@ function getClosestRecordBefore(
   return (stmt.get(discordId, time) as PlaytimeHistoryRecord) ?? null;
 }
 
-function getLatestRecord(
-  discordId: string
-): PlaytimeHistoryRecord | null {
+function getLatestRecord(discordId: string): PlaytimeHistoryRecord | null {
   const stmt = database.prepare(`
     SELECT * FROM playtime_history
     WHERE discord_id = ?

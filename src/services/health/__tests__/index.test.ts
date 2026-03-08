@@ -13,10 +13,12 @@ import {
 } from '../index.js';
 import { getTableCount } from '../../database/connection.js';
 
-function createMockClient(overrides: {
-  isReady?: boolean;
-  ping?: number;
-} = {}): Client {
+function createMockClient(
+  overrides: {
+    isReady?: boolean;
+    ping?: number;
+  } = {}
+): Client {
   return {
     isReady: vi.fn().mockReturnValue(overrides.isReady ?? true),
     ws: { ping: overrides.ping ?? 50 },
@@ -101,13 +103,19 @@ describe('health service', () => {
     });
 
     it('includes status emoji for healthy', () => {
-      const formatted = formatHealthStatus({ ...baseHealth, status: 'healthy' });
+      const formatted = formatHealthStatus({
+        ...baseHealth,
+        status: 'healthy',
+      });
       expect(formatted).toContain('🟢');
       expect(formatted).toContain('HEALTHY');
     });
 
     it('includes status emoji for degraded', () => {
-      const formatted = formatHealthStatus({ ...baseHealth, status: 'degraded' });
+      const formatted = formatHealthStatus({
+        ...baseHealth,
+        status: 'degraded',
+      });
       expect(formatted).toContain('🟡');
       expect(formatted).toContain('DEGRADED');
     });

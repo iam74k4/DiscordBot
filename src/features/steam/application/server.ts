@@ -33,12 +33,13 @@ export async function executeServerCommand(
 
   const guild = interaction.guild;
   if (guild.members.cache.size < guild.memberCount) {
-    await withTimeout(
-      guild.members.fetch({ limit: 1000 }),
-      10_000
-    ).catch((e) => {
-      logger.warn(`guild.members.fetch timed out: ${e instanceof Error ? e.message : e}`);
-    });
+    await withTimeout(guild.members.fetch({ limit: 1000 }), 10_000).catch(
+      (e) => {
+        logger.warn(
+          `guild.members.fetch timed out: ${e instanceof Error ? e.message : e}`
+        );
+      }
+    );
   }
 
   const totalMembers = guild.memberCount;
