@@ -11,6 +11,7 @@ import {
   start as startVoice,
   stop as stopVoice,
 } from './features/voice/index.js';
+import { stop as stopPoll } from './features/poll/index.js';
 import {
   closeDatabase,
   initializeDatabase,
@@ -46,6 +47,7 @@ async function gracefulShutdown(
     ['Voice feature', () => stopVoice()],
     ['Backup service', () => backupService.stop()],
     ['Steam feature', () => stopSteam()],
+    ['Poll feature', () => stopPoll()],
     ['Database', () => closeDatabase()],
     ['Discord client', () => client.destroy()],
   ];

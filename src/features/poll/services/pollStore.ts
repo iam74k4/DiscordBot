@@ -83,6 +83,15 @@ class PollStore {
   get size(): number {
     return this.store.size;
   }
+
+  /**
+   * Clear all polls and cancel their timeouts (for graceful shutdown)
+   */
+  clearAll(): void {
+    for (const [messageId] of this.entries()) {
+      this.delete(messageId);
+    }
+  }
 }
 
 /**

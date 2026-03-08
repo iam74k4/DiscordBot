@@ -16,10 +16,7 @@ describe('PollStore', () => {
   });
 
   beforeEach(() => {
-    // Clear any existing polls
-    for (const [key] of pollStore.entries()) {
-      pollStore.delete(key);
-    }
+    pollStore.clearAll();
   });
 
   describe('set and get', () => {
@@ -80,6 +77,19 @@ describe('PollStore', () => {
 
       const entries = [...pollStore.entries()];
       expect(entries.length).toBe(2);
+    });
+  });
+
+  describe('clearAll', () => {
+    it('should clear all polls', () => {
+      pollStore.set('msg1', createMockPoll('1'));
+      pollStore.set('msg2', createMockPoll('2'));
+      expect(pollStore.size).toBe(2);
+
+      pollStore.clearAll();
+      expect(pollStore.size).toBe(0);
+      expect(pollStore.has('msg1')).toBe(false);
+      expect(pollStore.has('msg2')).toBe(false);
     });
   });
 

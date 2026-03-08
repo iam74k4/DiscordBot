@@ -1,6 +1,6 @@
 import { PersonaState, CommunityVisibilityState } from './types.js';
+import { STEAM_STATUS } from '../../lib/constants.js';
 import {
-  STEAM_STATUS,
   PROGRESS_BAR,
   COLORS,
 } from '../../../../utils/constants/index.js';

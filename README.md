@@ -469,7 +469,17 @@ In Railway dashboard, add the following variables:
 | `BACKUP_CRON` | Backup schedule cron expression (default: `0 4 * * *`) | No |
 | `ALERT_WEBHOOK_URL` | Discord webhook URL for alerts | No |
 
-#### 4. Deploy
+#### 4. Enable Wait for CI (Recommended)
+
+To ensure deployments only proceed after CI passes (lint, test, build):
+
+1. In your Railway project, go to the service
+2. Click **Settings** → **Source**
+3. Enable **Wait for CI**
+
+When enabled, Railway waits for GitHub Actions to complete successfully before deploying. Failed CI will skip the deployment.
+
+#### 5. Deploy
 
 Railway will automatically deploy when you push to the `main` branch.
 
@@ -496,6 +506,8 @@ This project uses GitHub Actions for CI and Railway for deployment.
 ### Deployment
 
 Railway automatically deploys from the `main` branch when changes are pushed. Railway is configured to watch the GitHub repository and deploy automatically.
+
+**Wait for CI**: Enable "Wait for CI" in Railway Settings → Source. When enabled, deployments proceed only after the CI workflow (lint, type-check, test, build) succeeds. This prevents broken code from reaching production.
 
 For manual releases, create a tag (e.g., `v1.0.0`) to trigger the release workflow which creates a GitHub Release with build artifacts.
 

@@ -3,10 +3,6 @@ import { Event } from '../../types/index.js';
 import { runMiddleware } from '../../middleware/index.js';
 import { logger } from '../../utils/logger.js';
 import { createErrorEmbed } from '../../utils/embed.js';
-import {
-  handlePollVote,
-  pollStore,
-} from '../../features/poll/services/index.js';
 import { metrics } from '../../services/metrics/index.js';
 
 /**
@@ -37,40 +33,6 @@ export const event: Event<typeof Events.InteractionCreate> = {
         await interaction.respond([]).catch((e) => {
           logger.debug(`Failed to respond to autocomplete error: ${e.message}`);
         });
-      }
-      return;
-    }
-
-    // Handle button interactions (poll votes)
-    if (interaction.isButton()) {
-      if (interaction.customId.startsWith('poll_vote_')) {
-        // Check if poll exists in store
-        if (pollStore.has(interaction.message.id)) {
-          try {
-            await handlePollVote(interaction);
-          } catch (error) {
-            logger.error('Error handling poll vote:', error);
-            await interaction
-              .reply({
-                content: 'An error occurred while processing your vote.',
-                flags: MessageFlags.Ephemeral,
-              })
-              .catch((e) => {
-                logger.debug(
-                  `Failed to reply to poll vote error: ${e.message}`
-                );
-              });
-          }
-        } else {
-          await interaction
-            .reply({
-              content: 'This poll has ended or no longer exists.',
-              flags: MessageFlags.Ephemeral,
-            })
-            .catch((e) => {
-              logger.debug(`Failed to reply to ended poll: ${e.message}`);
-            });
-        }
       }
       return;
     }
