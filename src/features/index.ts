@@ -33,7 +33,7 @@ function isFeatureModule(mod: unknown): mod is FeatureModule {
 export async function loadFeatures(): Promise<void> {
   const featuresPath = __dirname;
   const dirs = readdirSync(featuresPath, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
+    .filter((d) => d.isDirectory() && !d.name.startsWith('_'))
     .map((d) => d.name);
 
   const loaded: FeatureModule[] = [];
