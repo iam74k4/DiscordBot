@@ -11,7 +11,7 @@ import {
 import { COLORS } from '../../../utils/constants/index.js';
 import { steamClient, formatPlaytimeWithBar } from '../services/steam/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { logger } from '../../../utils/logger.js';
+import { getErrorMessage, logger } from '../../../utils/logger.js';
 import { GAMES_PER_PAGE, resolveSteamId, buildButtons } from '../lib/shared.js';
 
 export async function handleGames(
@@ -142,9 +142,9 @@ export async function handleGames(
   collector.on('end', async () => {
     await interaction
       .editReply({ components: [buildButtons(currentPage, totalPages, true)] })
-      .catch((e) => {
+      .catch((e: unknown) => {
         logger.debug(
-          `Failed to disable games pagination buttons: ${e.message}`
+          `Failed to disable games pagination buttons: ${getErrorMessage(e)}`
         );
       });
   });

@@ -1,6 +1,6 @@
 import { Events, MessageFlags } from 'discord.js';
 import { Event } from '../../../types/index.js';
-import { logger } from '../../../utils/logger.js';
+import { getErrorMessage, logger } from '../../../utils/logger.js';
 import { handlePollVote, pollStore } from '../services/index.js';
 
 /**
@@ -23,8 +23,8 @@ export const event: Event<typeof Events.InteractionCreate> = {
             content: 'An error occurred while processing your vote.',
             flags: MessageFlags.Ephemeral,
           })
-          .catch((e) => {
-            logger.debug(`Failed to reply to poll vote error: ${e.message}`);
+          .catch((e: unknown) => {
+            logger.debug(`Failed to reply to poll vote error: ${getErrorMessage(e)}`);
           });
       }
     } else {
@@ -33,8 +33,8 @@ export const event: Event<typeof Events.InteractionCreate> = {
           content: 'This poll has ended or no longer exists.',
           flags: MessageFlags.Ephemeral,
         })
-        .catch((e) => {
-          logger.debug(`Failed to reply to ended poll: ${e.message}`);
+        .catch((e: unknown) => {
+          logger.debug(`Failed to reply to ended poll: ${getErrorMessage(e)}`);
         });
     }
   },

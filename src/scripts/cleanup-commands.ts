@@ -5,13 +5,10 @@
 
 import 'dotenv/config';
 import { REST, Routes } from 'discord.js';
+import { env } from '../config/index.js';
 import { logger } from '../utils/logger.js';
 
-const TOKEN = process.env.DISCORD_TOKEN!;
-const CLIENT_ID = process.env.DISCORD_CLIENT_ID!;
-const GUILD_ID = process.env.DISCORD_GUILD_ID;
-
-const rest = new REST().setToken(TOKEN);
+const rest = new REST().setToken(env.DISCORD_TOKEN);
 
 async function cleanupCommands() {
   logger.info('Starting command cleanup...\n');
@@ -20,7 +17,7 @@ async function cleanupCommands() {
     // Delete global commands
     logger.info('Fetching global commands...');
     const globalCommands = (await rest.get(
-      Routes.applicationCommands(CLIENT_ID)
+      Routes.applicationCommands(env.DISCORD_CLIENT_ID)
     )) as Array<{ id: string; name: string }>;
 
     logger.info(`Found ${globalCommands.length} global commands:`);
@@ -30,15 +27,14 @@ async function cleanupCommands() {
 
     if (globalCommands.length > 0) {
       logger.info('\nDeleting all global commands...');
-      await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] });
+      await rest.put(Routes.applicationCommands(env.DISCORD_CLIENT_ID), { body: [] });
       logger.info('Global commands deleted.');
     }
 
-    // Delete guild commands if GUILD_ID is set
-    if (GUILD_ID) {
-      logger.info(`\nFetching guild commands for ${GUILD_ID}...`);
+    if (env.DISCORD_GUILD_ID) {
+      logger.info(`\nFetching guild commands for ${env.DISCORD_GUILD_ID}...`);
       const guildCommands = (await rest.get(
-        Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID)
+        Routes.applicationGuildCommands(env.DISCORD_CLIENT_ID, env.DISCORD_GUILD_ID)
       )) as Array<{ id: string; name: string }>;
 
       logger.info(`Found ${guildCommands.length} guild commands:`);
@@ -48,7 +44,7 @@ async function cleanupCommands() {
 
       if (guildCommands.length > 0) {
         logger.info('\nDeleting all guild commands...');
-        await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
+        await rest.put(Routes.applicationGuildCommands(env.DISCORD_CLIENT_ID, env.DISCORD_GUILD_ID), {
           body: [],
         });
         logger.info('Guild commands deleted.');

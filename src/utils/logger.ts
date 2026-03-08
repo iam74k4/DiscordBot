@@ -165,6 +165,13 @@ function isDebugEnabled(): boolean {
 /**
  * Logger utility with automatic sensitive data masking
  */
+/**
+ * Safely extract an error message from an unknown thrown value.
+ */
+export function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export const logger = {
   /**
    * Log debug message (only in development)
