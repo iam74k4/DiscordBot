@@ -6,28 +6,11 @@ export const steamHelpCategory: CommandCategory = {
     {
       name: 'steam',
       description: {
-        en: 'Steam profile and statistics',
-        ja: 'Steamプロフィールと統計',
+        en: 'Steam profiles, stats, notifications, and server info',
+        ja: 'Steamプロフィール、統計、通知、サーバー情報',
       },
       usage:
-        '/steam profile, /steam playtime, /steam games, /steam recent, /steam ranking, /steam history, /steam chart, /steam history-graph, /steam register, /steam unregister, /steam whoami, /steam help',
-    },
-    {
-      name: 'notify',
-      description: {
-        en: 'Game launch notifications',
-        ja: 'ゲーム起動通知',
-      },
-      usage:
-        '/notify setup, /notify status, /notify enable, /notify disable, /notify remove, /notify me',
-    },
-    {
-      name: 'server',
-      description: {
-        en: 'Display server information',
-        ja: 'サーバー情報を表示',
-      },
-      usage: '/server stats',
+        '/steam user profile, /steam user playtime, /steam user games, /steam user recent, /steam stats ranking, /steam stats history, /steam stats chart, /steam stats history-graph, /steam account register, /steam account unregister, /steam account whoami, /steam notifications setup, /steam notifications status, /steam notifications enable, /steam notifications disable, /steam notifications remove, /steam notifications me, /steam server stats, /steam info help',
     },
   ],
 };

@@ -264,7 +264,20 @@ export async function executeAdminCommand(
     return;
   }
 
+  const group = interaction.options.getSubcommandGroup(false);
   const subcommand = interaction.options.getSubcommand();
+
+  if (group === 'backup') {
+    switch (subcommand) {
+      case 'list':
+        await handleBackupList(interaction);
+        break;
+      case 'run':
+        await handleBackupRun(interaction);
+        break;
+    }
+    return;
+  }
 
   switch (subcommand) {
     case 'stats':
@@ -281,12 +294,6 @@ export async function executeAdminCommand(
       break;
     case 'health':
       await handleHealth(interaction);
-      break;
-    case 'backup-list':
-      await handleBackupList(interaction);
-      break;
-    case 'backup-run':
-      await handleBackupRun(interaction);
       break;
     case 'metrics':
       await handleMetrics(interaction);

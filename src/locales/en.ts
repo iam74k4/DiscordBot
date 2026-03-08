@@ -44,7 +44,7 @@ export const en: TranslationKeys = {
       showing: 'Showing {count} of {total} logs',
     },
     view: {
-      footer: 'Use /settings to modify',
+      footer: 'Use /admin settings to modify',
     },
   },
 
@@ -232,7 +232,7 @@ export const en: TranslationKeys = {
       setup: 'Notification channel set to <#{channel}>',
       howItWorks: 'How it works',
       howItWorksDesc:
-        'Registered users will be notified when they start a game\nChecks run every 5 minutes\nUsers can opt-out with `/notify me off`',
+        'Registered users will be notified when they start a game\nChecks run every 5 minutes\nUsers can opt-out with `/steam notifications me action:off`',
       statusOn: 'ON',
       statusOff: 'OFF',
       yourStatus: 'Your notification status: {status}',
@@ -240,8 +240,8 @@ export const en: TranslationKeys = {
       channel: 'Channel',
       configured: 'Configured',
       notSetup:
-        'Notifications are not set up for this server.\n\nUse `/notify setup` to configure.',
-      setupFirst: 'Please run `/notify setup` first.',
+        'Notifications are not set up for this server.\n\nUse `/steam notifications setup` to configure.',
+      setupFirst: 'Please run `/steam notifications setup` first.',
       noSettings: 'There are no notification settings to remove.',
       nowEnabled: 'Game notifications are now **enabled** for this server.',
       nowDisabled: 'Game notifications are now **disabled** for this server.',
@@ -337,9 +337,9 @@ export const en: TranslationKeys = {
   help: {
     title: 'Command List',
     description:
-      'List of available commands. Use `/help <command>` for details.',
+      'List of available commands. Use `/general help` with a command name for details.',
     usage: 'Usage',
-    footer: 'Use /help <command> for details',
+    footer: 'Use /general help for details',
     commandNotFound: 'Command Not Found',
     commandNotFoundDesc: 'Command `{command}` does not exist.',
   },

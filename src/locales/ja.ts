@@ -44,7 +44,7 @@ export const ja: TranslationKeys = {
       showing: '{total}件中{count}件を表示',
     },
     view: {
-      footer: '/settings で変更可能',
+      footer: '/admin settings で変更可能',
     },
   },
 
@@ -234,7 +234,7 @@ export const ja: TranslationKeys = {
       setup: '通知チャンネルを <#{channel}> に設定しました',
       howItWorks: '仕組み',
       howItWorksDesc:
-        '登録ユーザーがゲームを開始すると通知されます\n5分ごとにチェックします\nユーザーは `/notify me off` でオプトアウトできます',
+        '登録ユーザーがゲームを開始すると通知されます\n5分ごとにチェックします\nユーザーは `/steam notifications me action:off` でオプトアウトできます',
       statusOn: 'オン',
       statusOff: 'オフ',
       yourStatus: 'あなたの通知状態: {status}',
@@ -242,8 +242,8 @@ export const ja: TranslationKeys = {
       channel: 'チャンネル',
       configured: '設定済み',
       notSetup:
-        'このサーバーでは通知が設定されていません。\n\n`/notify setup` で設定してください。',
-      setupFirst: '先に `/notify setup` を実行してください。',
+        'このサーバーでは通知が設定されていません。\n\n`/steam notifications setup` で設定してください。',
+      setupFirst: '先に `/steam notifications setup` を実行してください。',
       noSettings: '削除する通知設定がありません。',
       nowEnabled: 'このサーバーのゲーム通知を**有効**にしました。',
       nowDisabled: 'このサーバーのゲーム通知を**無効**にしました。',
@@ -339,9 +339,9 @@ export const ja: TranslationKeys = {
   help: {
     title: 'コマンド一覧',
     description:
-      '利用可能なコマンドの一覧です。詳細は `/help <コマンド名>` で確認できます。',
+      '利用可能なコマンドの一覧です。詳細は `/general help` にコマンド名を指定して確認できます。',
     usage: '使い方',
-    footer: '/help <コマンド名> で詳細を表示',
+    footer: '/general help で詳細を表示',
     commandNotFound: 'コマンドが見つかりません',
     commandNotFoundDesc: '`{command}` というコマンドは存在しません。',
   },

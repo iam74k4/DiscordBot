@@ -65,6 +65,7 @@ describe('Admin Command', () => {
     it('should reject non-owner users', async () => {
       const interaction = createMockInteraction({
         commandName: 'admin',
+        subcommandGroup: 'system',
         subcommand: 'stats',
         user: { id: 'not-owner-id' },
       });
@@ -84,6 +85,7 @@ describe('Admin Command', () => {
     it('should allow bot owner', async () => {
       const interaction = createMockInteraction({
         commandName: 'admin',
+        subcommandGroup: 'system',
         subcommand: 'stats',
         user: { id: '987654321098765432' },
       });
@@ -101,6 +103,7 @@ describe('Admin Command', () => {
     it('should display health status', async () => {
       const interaction = createMockInteraction({
         commandName: 'admin',
+        subcommandGroup: 'system',
         subcommand: 'health',
         user: { id: '987654321098765432' },
       });
@@ -127,7 +130,8 @@ describe('Admin Command', () => {
     it('should list backups', async () => {
       const interaction = createMockInteraction({
         commandName: 'admin',
-        subcommand: 'backup-list',
+        subcommandGroup: 'backup',
+        subcommand: 'list',
         user: { id: '987654321098765432' },
       });
 
@@ -151,7 +155,8 @@ describe('Admin Command', () => {
     it('should run manual backup', async () => {
       const interaction = createMockInteraction({
         commandName: 'admin',
-        subcommand: 'backup-run',
+        subcommandGroup: 'backup',
+        subcommand: 'run',
         user: { id: '987654321098765432' },
       });
 
@@ -178,6 +183,7 @@ describe('Admin Command', () => {
     it('should display metrics', async () => {
       const interaction = createMockInteraction({
         commandName: 'admin',
+        subcommandGroup: 'system',
         subcommand: 'metrics',
         user: { id: '987654321098765432' },
       });

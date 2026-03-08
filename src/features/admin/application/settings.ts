@@ -1,4 +1,9 @@
-import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  MessageFlags,
+  PermissionFlagsBits,
+  PermissionsBitField,
+} from 'discord.js';
 import {
   createEmbed,
   createErrorEmbed,
@@ -218,6 +223,24 @@ async function handleLanguage(
 export async function executeSettingsCommand(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
+  const memberPermissions = interaction.member?.permissions;
+  const hasManageGuild =
+    memberPermissions instanceof PermissionsBitField &&
+    memberPermissions.has(PermissionFlagsBits.ManageGuild);
+
+  if (!interaction.guild || !hasManageGuild) {
+    const errorEmbed = createErrorEmbed(
+      t('common.error', locale),
+      t('common.noPermission', locale)
+    );
+    await interaction.reply({
+      embeds: [errorEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
   const subcommand = interaction.options.getSubcommand();
 
   switch (subcommand) {

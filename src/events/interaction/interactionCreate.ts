@@ -1,7 +1,7 @@
 import { Events, MessageFlags } from 'discord.js';
 import { Event } from '../../types/index.js';
 import { runMiddleware } from '../../middleware/index.js';
-import { logger } from '../../utils/logger.js';
+import { getErrorMessage, logger } from '../../utils/logger.js';
 import { createErrorEmbed } from '../../utils/embed.js';
 import { metrics } from '../../services/metrics/index.js';
 
@@ -17,8 +17,8 @@ export const event: Event<typeof Events.InteractionCreate> = {
       const command = client.commands.get(interaction.commandName);
 
       if (!command || !command.autocomplete) {
-        await interaction.respond([]).catch((e) => {
-          logger.debug(`Failed to respond to autocomplete: ${e.message}`);
+        await interaction.respond([]).catch((e: unknown) => {
+          logger.debug(`Failed to respond to autocomplete: ${getErrorMessage(e)}`);
         });
         return;
       }
@@ -30,8 +30,8 @@ export const event: Event<typeof Events.InteractionCreate> = {
           `Autocomplete error for ${interaction.commandName}:`,
           error
         );
-        await interaction.respond([]).catch((e) => {
-          logger.debug(`Failed to respond to autocomplete error: ${e.message}`);
+        await interaction.respond([]).catch((e: unknown) => {
+          logger.debug(`Failed to respond to autocomplete error: ${getErrorMessage(e)}`);
         });
       }
       return;
@@ -77,14 +77,14 @@ export const event: Event<typeof Events.InteractionCreate> = {
       );
 
       if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ embeds: [errorEmbed] }).catch((e) => {
-          logger.debug(`Failed to edit reply with error embed: ${e.message}`);
+        await interaction.editReply({ embeds: [errorEmbed] }).catch((e: unknown) => {
+          logger.debug(`Failed to edit reply with error embed: ${getErrorMessage(e)}`);
         });
       } else {
         await interaction
           .reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral })
-          .catch((e) => {
-            logger.debug(`Failed to reply with error embed: ${e.message}`);
+          .catch((e: unknown) => {
+            logger.debug(`Failed to reply with error embed: ${getErrorMessage(e)}`);
           });
       }
     }
