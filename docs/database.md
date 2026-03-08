@@ -51,13 +51,13 @@ Discord–Steam account links.
 
 Historical playtime records per user.
 
-| Column       | Type    | Constraints                    |
-| ------------ | ------- | ------------------------------ |
-| id           | INTEGER | PRIMARY KEY AUTOINCREMENT      |
-| discord_id   | TEXT    | NOT NULL, FK → steam_users     |
-| steam_id     | TEXT    | NOT NULL                       |
-| total_playtime | INTEGER | NOT NULL                     |
-| recorded_at  | INTEGER | NOT NULL                       |
+| Column         | Type    | Constraints                |
+| -------------- | ------- | -------------------------- |
+| id             | INTEGER | PRIMARY KEY AUTOINCREMENT  |
+| discord_id     | TEXT    | NOT NULL, FK → steam_users |
+| steam_id       | TEXT    | NOT NULL                   |
+| total_playtime | INTEGER | NOT NULL                   |
+| recorded_at    | INTEGER | NOT NULL                   |
 
 **Indices:**
 
@@ -70,12 +70,12 @@ Historical playtime records per user.
 
 Per-guild notification configuration.
 
-| Column     | Type    | Constraints           |
-| ---------- | ------- | --------------------- |
-| guild_id   | TEXT    | PRIMARY KEY           |
-| channel_id | TEXT    | NOT NULL              |
-| enabled    | INTEGER | NOT NULL DEFAULT 1   |
-| created_at | INTEGER | NOT NULL              |
+| Column     | Type    | Constraints        |
+| ---------- | ------- | ------------------ |
+| guild_id   | TEXT    | PRIMARY KEY        |
+| channel_id | TEXT    | NOT NULL           |
+| enabled    | INTEGER | NOT NULL DEFAULT 1 |
+| created_at | INTEGER | NOT NULL           |
 
 ---
 
@@ -83,10 +83,10 @@ Per-guild notification configuration.
 
 Per-user notification preferences.
 
-| Column         | Type    | Constraints                |
-| -------------- | ------- | -------------------------- |
+| Column         | Type    | Constraints                   |
+| -------------- | ------- | ----------------------------- |
 | discord_id     | TEXT    | PRIMARY KEY, FK → steam_users |
-| notify_enabled | INTEGER | NOT NULL DEFAULT 1        |
+| notify_enabled | INTEGER | NOT NULL DEFAULT 1            |
 
 ---
 
@@ -94,12 +94,12 @@ Per-user notification preferences.
 
 Cached game activity for notification logic.
 
-| Column          | Type    | Constraints      |
-| --------------- | ------- | ---------------- |
-| discord_id      | TEXT    | PRIMARY KEY      |
-| current_game    | TEXT    |                  |
-| game_started_at | INTEGER |                  |
-| last_checked    | INTEGER | NOT NULL         |
+| Column          | Type    | Constraints |
+| --------------- | ------- | ----------- |
+| discord_id      | TEXT    | PRIMARY KEY |
+| current_game    | TEXT    |             |
+| game_started_at | INTEGER |             |
+| last_checked    | INTEGER | NOT NULL    |
 
 ---
 
@@ -107,13 +107,13 @@ Cached game activity for notification logic.
 
 Per-guild settings (language, audit channel, etc.).
 
-| Column           | Type    | Constraints         |
-| ---------------- | ------- | ------------------- |
-| guild_id         | TEXT    | PRIMARY KEY         |
-| language         | TEXT    | DEFAULT 'ja'         |
-| audit_channel_id | TEXT    |                     |
-| created_at       | INTEGER | NOT NULL            |
-| updated_at       | INTEGER | NOT NULL            |
+| Column           | Type    | Constraints  |
+| ---------------- | ------- | ------------ |
+| guild_id         | TEXT    | PRIMARY KEY  |
+| language         | TEXT    | DEFAULT 'ja' |
+| audit_channel_id | TEXT    |              |
+| created_at       | INTEGER | NOT NULL     |
+| updated_at       | INTEGER | NOT NULL     |
 
 ---
 
@@ -121,15 +121,15 @@ Per-guild settings (language, audit channel, etc.).
 
 Audit log entries for admin actions.
 
-| Column     | Type    | Constraints              |
-| ---------- | ------- | ------------------------ |
+| Column     | Type    | Constraints               |
+| ---------- | ------- | ------------------------- |
 | id         | INTEGER | PRIMARY KEY AUTOINCREMENT |
-| guild_id   | TEXT    | NOT NULL                 |
-| user_id    | TEXT    | NOT NULL                 |
-| action     | TEXT    | NOT NULL                 |
-| target_id  | TEXT    |                          |
-| details    | TEXT    |                          |
-| created_at | INTEGER | NOT NULL                 |
+| guild_id   | TEXT    | NOT NULL                  |
+| user_id    | TEXT    | NOT NULL                  |
+| action     | TEXT    | NOT NULL                  |
+| target_id  | TEXT    |                           |
+| details    | TEXT    |                           |
+| created_at | INTEGER | NOT NULL                  |
 
 **Indices:**
 
@@ -142,16 +142,16 @@ Audit log entries for admin actions.
 
 The `action` column in `audit_logs` stores one of these values:
 
-| Value           | Description                |
-| --------------- | -------------------------- |
-| `STEAM_REGISTER`   | Steam account linked        |
-| `STEAM_UNREGISTER` | Steam account unlinked      |
-| `NOTIFY_SETUP`     | Notification setup         |
-| `NOTIFY_ENABLE`    | Notifications enabled      |
-| `NOTIFY_DISABLE`   | Notifications disabled     |
+| Value              | Description                   |
+| ------------------ | ----------------------------- |
+| `STEAM_REGISTER`   | Steam account linked          |
+| `STEAM_UNREGISTER` | Steam account unlinked        |
+| `NOTIFY_SETUP`     | Notification setup            |
+| `NOTIFY_ENABLE`    | Notifications enabled         |
+| `NOTIFY_DISABLE`   | Notifications disabled        |
 | `NOTIFY_REMOVE`    | Notification settings removed |
-| `SETTINGS_CHANGE`  | Guild settings changed     |
-| `AUDIT_SETUP`      | Audit log channel configured |
+| `SETTINGS_CHANGE`  | Guild settings changed        |
+| `AUDIT_SETUP`      | Audit log channel configured  |
 
 Defined in `src/features/admin/repositories/auditRepository.ts` and re-exported from `src/services/audit/index.ts`.
 
@@ -159,11 +159,11 @@ Defined in `src/features/admin/repositories/auditRepository.ts` and re-exported 
 
 ## Repository Ownership
 
-| Tables                                                       | Feature | Repositories |
-| ------------------------------------------------------------ | ------- | ------------ |
-| steam_users, playtime_history                                | steam   | `steamUserRepository.ts`, `playtimeRepository.ts` |
-| notification_settings, user_notification_prefs, game_activity_cache | steam   | `notificationRepository.ts` |
-| guild_settings, audit_logs                                   | admin   | `settingsRepository.ts`, `auditRepository.ts` |
+| Tables                                                              | Feature | Repositories                                      |
+| ------------------------------------------------------------------- | ------- | ------------------------------------------------- |
+| steam_users, playtime_history                                       | steam   | `steamUserRepository.ts`, `playtimeRepository.ts` |
+| notification_settings, user_notification_prefs, game_activity_cache | steam   | `notificationRepository.ts`                       |
+| guild_settings, audit_logs                                          | admin   | `settingsRepository.ts`, `auditRepository.ts`     |
 
 All repositories live under `src/features/<feature>/repositories/`.
 

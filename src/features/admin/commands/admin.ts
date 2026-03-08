@@ -39,7 +39,9 @@ export const command: Command = {
             .addChannelOption((opt) =>
               opt
                 .setName('channel')
-                .setDescription('Channel for audit logs (leave empty to disable)')
+                .setDescription(
+                  'Channel for audit logs (leave empty to disable)'
+                )
                 .setDescriptionLocalizations({
                   ja: '監査ログを送信するチャンネル（空で無効化）',
                 })

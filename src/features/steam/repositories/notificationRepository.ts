@@ -27,9 +27,7 @@ function setChannel(guildId: string, channelId: string): void {
   stmt.run(guildId, channelId, Date.now());
 }
 
-function getGuildSettings(
-  guildId: string
-): NotificationSettingsRecord | null {
+function getGuildSettings(guildId: string): NotificationSettingsRecord | null {
   const stmt = database.prepare(
     'SELECT * FROM notification_settings WHERE guild_id = ?'
   );

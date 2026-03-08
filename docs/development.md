@@ -104,10 +104,10 @@ Tests are **colocated with features** and shared code:
 
 ### Commands
 
-| Command | Description |
-| ------- | ----------- |
-| `npm test` | Run all tests once |
-| `npm run test:watch` | Run tests in watch mode |
+| Command                 | Description                    |
+| ----------------------- | ------------------------------ |
+| `npm test`              | Run all tests once             |
+| `npm run test:watch`    | Run tests in watch mode        |
 | `npm run test:coverage` | Run tests with coverage report |
 
 ### Mock Patterns
@@ -158,7 +158,9 @@ import { t, mapDiscordLocale } from '../../../locales/index.js';
 // In a command or application handler:
 const locale = mapDiscordLocale(interaction.locale);
 const message = t('common.success', locale);
-const withParams = t('settings.language.changed', locale, { language: 'Japanese' });
+const withParams = t('settings.language.changed', locale, {
+  language: 'Japanese',
+});
 ```
 
 - Map Discord locales with `mapDiscordLocale(interaction.locale)` — Discord sends locale strings like `en-US` or `ja`, which are mapped to the bot's supported locales (`en`, `ja`).

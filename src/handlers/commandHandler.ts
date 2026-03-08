@@ -98,4 +98,3 @@ export async function registerCommands(client: ExtendedClient): Promise<void> {
     throw error;
   }
 }
-

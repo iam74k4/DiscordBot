@@ -1,5 +1,6 @@
 import { Events, MessageFlags } from 'discord.js';
 import { Event } from '../../types/index.js';
+import { ExtendedClient } from '../../client.js';
 import { runMiddleware } from '../../middleware/index.js';
 import { getErrorMessage, logger } from '../../utils/logger.js';
 import { createErrorEmbed } from '../../utils/embed.js';
@@ -12,13 +13,16 @@ export const event: Event<typeof Events.InteractionCreate> = {
   name: Events.InteractionCreate,
   once: false,
   async execute(client, interaction) {
+    if (!(client as ExtendedClient).isFullyReady) return;
     // Handle autocomplete interactions
     if (interaction.isAutocomplete()) {
       const command = client.commands.get(interaction.commandName);
 
       if (!command || !command.autocomplete) {
         await interaction.respond([]).catch((e: unknown) => {
-          logger.debug(`Failed to respond to autocomplete: ${getErrorMessage(e)}`);
+          logger.debug(
+            `Failed to respond to autocomplete: ${getErrorMessage(e)}`
+          );
         });
         return;
       }
@@ -31,7 +35,9 @@ export const event: Event<typeof Events.InteractionCreate> = {
           error
         );
         await interaction.respond([]).catch((e: unknown) => {
-          logger.debug(`Failed to respond to autocomplete error: ${getErrorMessage(e)}`);
+          logger.debug(
+            `Failed to respond to autocomplete error: ${getErrorMessage(e)}`
+          );
         });
       }
       return;
@@ -77,14 +83,20 @@ export const event: Event<typeof Events.InteractionCreate> = {
       );
 
       if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ embeds: [errorEmbed] }).catch((e: unknown) => {
-          logger.debug(`Failed to edit reply with error embed: ${getErrorMessage(e)}`);
-        });
+        await interaction
+          .editReply({ embeds: [errorEmbed] })
+          .catch((e: unknown) => {
+            logger.debug(
+              `Failed to edit reply with error embed: ${getErrorMessage(e)}`
+            );
+          });
       } else {
         await interaction
           .reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral })
           .catch((e: unknown) => {
-            logger.debug(`Failed to reply with error embed: ${getErrorMessage(e)}`);
+            logger.debug(
+              `Failed to reply with error embed: ${getErrorMessage(e)}`
+            );
           });
       }
     }

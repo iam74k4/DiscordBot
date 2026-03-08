@@ -71,9 +71,7 @@ function getLogsCount(guildId: string): number {
 
 function deleteOldLogs(daysOld: number): number {
   const cutoff = Date.now() - daysOld * 24 * 60 * 60 * 1000;
-  const stmt = database.prepare(
-    'DELETE FROM audit_logs WHERE created_at < ?'
-  );
+  const stmt = database.prepare('DELETE FROM audit_logs WHERE created_at < ?');
   const result = stmt.run(cutoff);
   return result.changes;
 }

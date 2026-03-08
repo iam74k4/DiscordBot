@@ -21,9 +21,7 @@ function getTableRowCount(tableName: string): number | null {
   }
 
   try {
-    const stmt = database.prepare(
-      `SELECT COUNT(*) as count FROM ${tableName}`
-    );
+    const stmt = database.prepare(`SELECT COUNT(*) as count FROM ${tableName}`);
     const result = stmt.get() as { count: number } | undefined;
     return result?.count ?? null;
   } catch {

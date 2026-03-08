@@ -16,7 +16,8 @@ export const event: Event<typeof Events.VoiceStateUpdate> = {
     oldState: VoiceState,
     newState: VoiceState
   ) {
-    // Ignore bot's own state changes
+    if (!client.isFullyReady) return;
+
     if (newState.member?.user.id === client.user?.id) {
       return;
     }
@@ -69,11 +70,14 @@ async function handleUserJoined(
     return;
   }
 
-  // Connect to voice channel
   const connection = await connectionManager.connect(guild, channel);
   if (connection) {
     logger.info(
       `Auto-joined voice channel ${channel.name} (${channel.id}) in guild ${guild.name}`
+    );
+  } else {
+    logger.warn(
+      `Failed to auto-join voice channel ${channel.name} (${channel.id}) in guild ${guild.name}`
     );
   }
 }

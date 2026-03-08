@@ -1,8 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  pollStore,
-  type PollData,
-} from '../../services/pollStore.js';
+import { pollStore, type PollData } from '../../services/pollStore.js';
 
 describe('PollStore', () => {
   const createMockPoll = (id: string): PollData => ({

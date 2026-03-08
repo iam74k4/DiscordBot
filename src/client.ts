@@ -7,6 +7,8 @@ import { Command } from './types/index.js';
 export class ExtendedClient extends Client {
   /** Collection of loaded commands */
   public commands: Collection<string, Command> = new Collection();
+  /** Whether the bot has fully initialised (ready event + commands registered) */
+  public isFullyReady = false;
 
   constructor() {
     super({
