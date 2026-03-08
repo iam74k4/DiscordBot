@@ -5,7 +5,7 @@ import {
   PROGRESS_BAR,
   CHART_COLORS,
 } from '../../utils/constants/index.js';
-import { BOT_INFO } from '../../config/index.js';
+import { BOT_INFO } from '../../config/constants.js';
 
 describe('COLORS', () => {
   it('should have all required color values', () => {

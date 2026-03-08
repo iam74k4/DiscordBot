@@ -1,8 +1,4 @@
-import {
-  ChannelType,
-  SlashCommandBuilder,
-  MessageFlags,
-} from 'discord.js';
+import { ChannelType, SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { Command } from '../../../types/index.js';
 import { createErrorEmbed } from '../../../utils/embed.js';
 import { steamClient } from '../services/steam/index.js';
@@ -407,7 +403,10 @@ export const command: Command = {
       'register',
     ]);
 
-    if (apiKeyRequiredSubcommands.has(subcommand) && !steamClient.isConfigured()) {
+    if (
+      apiKeyRequiredSubcommands.has(subcommand) &&
+      !steamClient.isConfigured()
+    ) {
       const locale = mapDiscordLocale(interaction.locale);
       await interaction.reply({
         embeds: [

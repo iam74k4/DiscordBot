@@ -186,9 +186,14 @@ export async function recordAudio(
   // Create recording promise
   const recordingPromise = (async (): Promise<RecordingResult> => {
     try {
-      // Get audio data from buffer
       const buffer = audioBufferManager.getBuffer(channelId);
       const audioData = await buffer.getAudioData(duration);
+
+      if (audioData.length === 0) {
+        throw new Error(
+          'No audio data in buffer. Make sure someone is speaking in the voice channel.'
+        );
+      }
 
       // Resample from 48kHz (Discord default) to 32kHz
       const resampledData = resampleAudio(audioData, 48000, AUDIO.SAMPLE_RATE);

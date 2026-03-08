@@ -27,14 +27,19 @@ async function cleanupCommands() {
 
     if (globalCommands.length > 0) {
       logger.info('\nDeleting all global commands...');
-      await rest.put(Routes.applicationCommands(env.DISCORD_CLIENT_ID), { body: [] });
+      await rest.put(Routes.applicationCommands(env.DISCORD_CLIENT_ID), {
+        body: [],
+      });
       logger.info('Global commands deleted.');
     }
 
     if (env.DISCORD_GUILD_ID) {
       logger.info(`\nFetching guild commands for ${env.DISCORD_GUILD_ID}...`);
       const guildCommands = (await rest.get(
-        Routes.applicationGuildCommands(env.DISCORD_CLIENT_ID, env.DISCORD_GUILD_ID)
+        Routes.applicationGuildCommands(
+          env.DISCORD_CLIENT_ID,
+          env.DISCORD_GUILD_ID
+        )
       )) as Array<{ id: string; name: string }>;
 
       logger.info(`Found ${guildCommands.length} guild commands:`);
@@ -44,9 +49,15 @@ async function cleanupCommands() {
 
       if (guildCommands.length > 0) {
         logger.info('\nDeleting all guild commands...');
-        await rest.put(Routes.applicationGuildCommands(env.DISCORD_CLIENT_ID, env.DISCORD_GUILD_ID), {
-          body: [],
-        });
+        await rest.put(
+          Routes.applicationGuildCommands(
+            env.DISCORD_CLIENT_ID,
+            env.DISCORD_GUILD_ID
+          ),
+          {
+            body: [],
+          }
+        );
         logger.info('Guild commands deleted.');
       }
     }

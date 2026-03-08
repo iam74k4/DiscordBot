@@ -2,10 +2,7 @@ import { Client, TextChannel, EmbedBuilder } from 'discord.js';
 import { COLORS } from '../../utils/constants/index.js';
 import { logger } from '../../utils/logger.js';
 import { formatAuditTarget } from './format.js';
-import {
-  auditRepository,
-  type AuditAction,
-} from './repository.js';
+import { auditRepository, type AuditAction } from './repository.js';
 
 export { auditRepository };
 export type { AuditAction, AuditLogRecord } from './repository.js';

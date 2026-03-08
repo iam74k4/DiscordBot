@@ -7,6 +7,7 @@ import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
 import { COLORS } from '../../../utils/constants/index.js';
 import { isBotOwner } from '../../../config/env.js';
 import { logger } from '../../../utils/logger.js';
+import { withTimeout } from '../../../utils/timeout.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { databaseStatsRepository } from '../repositories/index.js';
 import {
@@ -146,10 +147,12 @@ async function handleBroadcast(
     .setColor(COLORS.INFO)
     .setTimestamp();
 
+  const BROADCAST_TIMEOUT = 5_000;
+
   for (const guild of client.guilds.cache.values()) {
     try {
-      const owner = await guild.fetchOwner();
-      await owner.send({ embeds: [embed] });
+      const owner = await withTimeout(guild.fetchOwner(), BROADCAST_TIMEOUT);
+      await withTimeout(owner.send({ embeds: [embed] }), BROADCAST_TIMEOUT);
       sent++;
     } catch (error) {
       failed++;
@@ -196,6 +199,8 @@ async function handleHealth(
 async function handleBackupList(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
   const backupList = await backupService.formatBackupList();
 
   const embed = createEmbed({
@@ -205,7 +210,7 @@ async function handleBackupList(
     timestamp: true,
   });
 
-  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+  await interaction.editReply({ embeds: [embed] });
 }
 
 async function handleBackupRun(

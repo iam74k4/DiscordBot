@@ -60,10 +60,7 @@ function setGuildSettings(
   }
 }
 
-function setAuditChannel(
-  guildId: string,
-  channelId: string | null
-): void {
+function setAuditChannel(guildId: string, channelId: string | null): void {
   setGuildSettings(guildId, { audit_channel_id: channelId });
 }
 

@@ -91,15 +91,6 @@ async function handleAudit(
   if (channel) {
     settingsRepository.setAuditChannel(interaction.guild.id, channel.id);
 
-    await logAuditAction(
-      interaction.client,
-      interaction.guild.id,
-      interaction.user.id,
-      'AUDIT_SETUP',
-      channel.id,
-      `Audit channel set to: #${channel.name}`
-    );
-
     const embed = createEmbed({
       title: t('settings.audit.name', locale),
       description: t('settings.audit.configured', locale, {
@@ -110,6 +101,15 @@ async function handleAudit(
     });
 
     await interaction.reply({ embeds: [embed] });
+
+    void logAuditAction(
+      interaction.client,
+      interaction.guild.id,
+      interaction.user.id,
+      'AUDIT_SETUP',
+      channel.id,
+      `Audit channel set to: #${channel.name}`
+    );
   } else {
     settingsRepository.setAuditChannel(interaction.guild.id, null);
 
@@ -198,15 +198,6 @@ async function handleLanguage(
 
   settingsRepository.setGuildSettings(interaction.guild.id, { language: lang });
 
-  await logAuditAction(
-    interaction.client,
-    interaction.guild.id,
-    interaction.user.id,
-    'SETTINGS_CHANGE',
-    undefined,
-    `Language changed to: ${lang}`
-  );
-
   const languageDisplay = lang === 'ja' ? '日本語' : 'English';
 
   const embed = createEmbed({
@@ -219,6 +210,15 @@ async function handleLanguage(
   });
 
   await interaction.reply({ embeds: [embed] });
+
+  void logAuditAction(
+    interaction.client,
+    interaction.guild.id,
+    interaction.user.id,
+    'SETTINGS_CHANGE',
+    undefined,
+    `Language changed to: ${lang}`
+  );
 }
 
 export async function executeSettingsCommand(

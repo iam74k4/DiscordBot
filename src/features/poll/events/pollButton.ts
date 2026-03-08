@@ -19,18 +19,26 @@ export const event: Event<typeof Events.InteractionCreate> = {
         await handlePollVote(interaction);
       } catch (error) {
         logger.error('Error handling poll vote:', error);
-        const embed = createErrorEmbed('Poll Error', 'An error occurred while processing your vote.');
+        const embed = createErrorEmbed(
+          'Poll Error',
+          'An error occurred while processing your vote.'
+        );
         await interaction
           .reply({
             embeds: [embed],
             flags: MessageFlags.Ephemeral,
           })
           .catch((e: unknown) => {
-            logger.debug(`Failed to reply to poll vote error: ${getErrorMessage(e)}`);
+            logger.debug(
+              `Failed to reply to poll vote error: ${getErrorMessage(e)}`
+            );
           });
       }
     } else {
-      const embed = createErrorEmbed('Poll Ended', 'This poll has ended or no longer exists.');
+      const embed = createErrorEmbed(
+        'Poll Ended',
+        'This poll has ended or no longer exists.'
+      );
       await interaction
         .reply({
           embeds: [embed],

@@ -56,16 +56,17 @@ export async function executeRecordCommand(
     return;
   }
 
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
   const connection = connectionManager.getConnection(voiceChannel.id);
   if (!connection) {
-    await interaction.reply({
+    await interaction.editReply({
       embeds: [
         createErrorEmbed(
           t('record.errors.botNotInVoice', locale),
           t('record.errors.botNotInVoiceDesc', locale)
         ),
       ],
-      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -78,14 +79,13 @@ export async function executeRecordCommand(
       !permissions.has(PermissionFlagsBits.AttachFiles) ||
       !permissions.has(PermissionFlagsBits.ViewChannel)
     ) {
-      await interaction.reply({
+      await interaction.editReply({
         embeds: [
           createErrorEmbed(
             t('record.errors.noPermission', locale),
             t('record.errors.noPermissionDesc', locale)
           ),
         ],
-        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -95,20 +95,19 @@ export async function executeRecordCommand(
   try {
     duration = parseDurationString(durationStr);
   } catch {
-    await interaction.reply({
+    await interaction.editReply({
       embeds: [
         createErrorEmbed(
           t('record.errors.invalidDuration', locale),
           t('record.errors.invalidDurationDesc', locale)
         ),
       ],
-      flags: MessageFlags.Ephemeral,
     });
     return;
   }
 
   if (duration > env.MAX_RECORDING_DURATION) {
-    await interaction.reply({
+    await interaction.editReply({
       embeds: [
         createErrorEmbed(
           t('record.errors.durationTooLong', locale),
@@ -117,13 +116,12 @@ export async function executeRecordCommand(
           })
         ),
       ],
-      flags: MessageFlags.Ephemeral,
     });
     return;
   }
 
   if (duration > env.AUDIO_BUFFER_DURATION) {
-    await interaction.reply({
+    await interaction.editReply({
       embeds: [
         createErrorEmbed(
           t('record.errors.durationExceedsBuffer', locale),
@@ -132,12 +130,9 @@ export async function executeRecordCommand(
           })
         ),
       ],
-      flags: MessageFlags.Ephemeral,
     });
     return;
   }
-
-  await interaction.deferReply();
 
   await interaction.editReply({
     embeds: [
@@ -182,7 +177,7 @@ export async function executeRecordCommand(
 
     while (retryCount <= maxRetries && !success) {
       try {
-        await interaction.editReply({
+        await interaction.followUp({
           embeds: [
             createEmbed({
               title: t('record.success', locale),
