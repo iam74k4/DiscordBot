@@ -13,14 +13,13 @@ export function validateBackupFilename(filename: string): boolean {
 }
 
 /**
- * Backup file information (storage-agnostic)
+ * Backup file information
  */
 export interface BackupFileInfo {
   filename: string;
   size: number;
   createdAt: Date;
-  shareLink?: string;
-  /** Local path (only for LocalStorage) */
+  /** Local path */
   path?: string;
 }
 
@@ -57,11 +56,4 @@ export interface IBackupStorage {
    * @throws Error if filename is invalid or deletion fails
    */
   delete(filename: string): Promise<void>;
-
-  /**
-   * Get a shareable link for a backup file.
-   * @param filename - Validated backup filename
-   * @returns Share URL, or `null` if sharing is not supported
-   */
-  getShareLink(filename: string): Promise<string | null>;
 }
