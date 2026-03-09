@@ -413,6 +413,68 @@ export const en: TranslationKeys = {
     },
   },
 
+  github: {
+    pr: {
+      list: {
+        title: 'Pull Requests',
+        noPrs: 'No pull requests found',
+        open: 'Open',
+        closed: 'Closed',
+      },
+      view: {
+        title: 'PR #{number}',
+        state: 'State',
+        author: 'Author',
+        base: 'Base',
+        head: 'Head',
+      },
+      create: {
+        success: 'PR Created',
+        successDesc: 'Created **{title}**.',
+      },
+      merge: {
+        success: 'PR Merged',
+        successDesc: 'Merged PR #{number}.',
+      },
+    },
+    issue: {
+      list: {
+        title: 'Issues',
+        noIssues: 'No issues found',
+      },
+      view: {
+        title: 'Issue #{number}',
+        state: 'State',
+        author: 'Author',
+      },
+      create: {
+        success: 'Issue Created',
+        successDesc: 'Created **{title}**.',
+      },
+    },
+    repo: {
+      info: {
+        title: 'Repository Info',
+        description: 'Description',
+        stars: 'Stars',
+        forks: 'Forks',
+        language: 'Language',
+        defaultBranch: 'Default Branch',
+        noDesc: 'No description',
+      },
+    },
+    errors: {
+      tokenNotSet: 'GITHUB_TOKEN is not configured. Ask the bot administrator to set it.',
+      noPermission: 'You need "Manage Server" permission or be a bot owner to use this command.',
+      invalidRepo: 'Invalid repository format. Use `owner/name`.',
+      notFound: 'Repository, PR, or Issue not found.',
+      isPullRequest: 'This number is a PR. Use `/github pr view` instead.',
+      forbidden: 'Insufficient permissions. Check your token scopes.',
+      conflict: 'Cannot merge (conflict or branch protection).',
+      apiError: 'GitHub API error: {message}',
+    },
+  },
+
   record: {
     title: 'Recording',
     recording: 'Recording...',

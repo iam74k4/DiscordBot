@@ -35,6 +35,11 @@ function validateEnv(): void {
       'STEAM_API_KEY is not set. Steam-related commands will not work.'
     );
   }
+  if (!process.env.GITHUB_TOKEN) {
+    logger.warn(
+      'GITHUB_TOKEN is not set. GitHub-related commands will not work.'
+    );
+  }
 
   // Validate webhook URL format if provided
   if (process.env.ALERT_WEBHOOK_URL) {
@@ -150,6 +155,9 @@ export const env = {
 
   /** Steam Web API key (optional — Steam commands require this) */
   STEAM_API_KEY: process.env.STEAM_API_KEY || '',
+
+  /** GitHub Personal Access Token (optional — GitHub commands require this) */
+  GITHUB_TOKEN: process.env.GITHUB_TOKEN || '',
 
   /** Bot owner IDs (comma-separated) */
   BOT_OWNER_IDS: parseOwnerIds(process.env.BOT_OWNER_IDS),
