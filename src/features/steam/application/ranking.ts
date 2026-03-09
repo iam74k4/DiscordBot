@@ -1,8 +1,4 @@
-import {
-  ChatInputCommandInteraction,
-  Guild,
-  MessageFlags,
-} from 'discord.js';
+import { ChatInputCommandInteraction, Guild, MessageFlags } from 'discord.js';
 import {
   createEmbed,
   createErrorEmbed,
@@ -144,9 +140,7 @@ export async function handleRanking(
         .map((user, index) => {
           const rank = startIndex + index + 1;
           const medal =
-            rank <= 3
-              ? `${rank}.`
-              : `\`${rank.toString().padStart(2, ' ')}\``;
+            rank <= 3 ? `${rank}.` : `\`${rank.toString().padStart(2, ' ')}\``;
           const bar = formatPlaytimeWithBar(user.totalPlaytime, maxPlaytime);
           return `${medal} **${user.steamName}** (<@${user.discordId}>)\n    ${bar}`;
         })

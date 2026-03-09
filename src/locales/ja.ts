@@ -480,9 +480,12 @@ export const ja: TranslationKeys = {
       },
     },
     errors: {
-      tokenNotSet: 'GITHUB_TOKEN が設定されていません。Bot管理者に設定を依頼してください。',
-      noPermission: 'このコマンドには「サーバー管理」権限またはBotオーナーである必要があります。',
-      invalidRepo: 'リポジトリ形式が不正です。`owner/name` で指定してください。',
+      tokenNotSet:
+        'GITHUB_TOKEN が設定されていません。Bot管理者に設定を依頼してください。',
+      noPermission:
+        'このコマンドには「サーバー管理」権限またはBotオーナーである必要があります。',
+      invalidRepo:
+        'リポジトリ形式が不正です。`owner/name` で指定してください。',
       notFound: 'リポジトリ、PR、またはIssueが見つかりません。',
       isPullRequest: 'この番号はPRです。`/github pr view` を使用してください。',
       forbidden: '権限が不足しています。トークンのスコープを確認してください。',

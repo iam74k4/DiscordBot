@@ -122,9 +122,7 @@ async function handleEndPoll(
   const pollQuestion = pollData?.question ?? '';
   const confirmed = await awaitConfirmation(
     interaction,
-    pollQuestion
-      ? `**${pollQuestion}**`
-      : t('poll.ended', locale),
+    pollQuestion ? `**${pollQuestion}**` : t('poll.ended', locale),
     { ephemeral: true }
   );
 

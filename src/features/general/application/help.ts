@@ -137,10 +137,7 @@ export async function executeHelpCommand(
   if (commandName) {
     const cmd = findCommand(commandName);
 
-    if (
-      !cmd ||
-      !canUserSeeCommand(cmd, interaction)
-    ) {
+    if (!cmd || !canUserSeeCommand(cmd, interaction)) {
       const embed = createEmbed({
         title: t('help.commandNotFound', locale),
         description: t('help.commandNotFoundDesc', locale, {

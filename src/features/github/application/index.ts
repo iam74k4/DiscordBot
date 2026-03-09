@@ -75,8 +75,7 @@ export async function executeGitHubCommand(
     );
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : String(error);
+    const message = error instanceof Error ? error.message : String(error);
     const embed = createErrorEmbed(
       t('common.error', locale),
       t('github.errors.apiError', locale, { message })
@@ -84,4 +83,3 @@ export async function executeGitHubCommand(
     await interaction.editReply({ embeds: [embed] });
   }
 }
-

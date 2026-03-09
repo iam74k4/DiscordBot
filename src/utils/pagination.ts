@@ -14,7 +14,11 @@ const DEFAULT_TIMEOUT = 120_000;
 export interface PaginationOptions<T> {
   items: T[];
   itemsPerPage: number;
-  formatPage: (pageItems: T[], page: number, totalPages: number) => EmbedBuilder;
+  formatPage: (
+    pageItems: T[],
+    page: number,
+    totalPages: number
+  ) => EmbedBuilder;
   interaction: ChatInputCommandInteraction;
   timeout?: number;
   /** Message shown when a non-owner tries to navigate */

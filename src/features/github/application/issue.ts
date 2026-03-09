@@ -89,7 +89,9 @@ export async function executeIssueCommand(
       }
 
       const stateLabel =
-        data.state === 'open' ? t('github.pr.list.open', locale) : t('github.pr.list.closed', locale);
+        data.state === 'open'
+          ? t('github.pr.list.open', locale)
+          : t('github.pr.list.closed', locale);
 
       const embed = createEmbed({
         title: t('github.issue.view.title', locale, { number }),

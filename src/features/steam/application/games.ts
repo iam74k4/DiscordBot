@@ -81,9 +81,7 @@ export async function handleGames(
         .map((game, index) => {
           const rank = startIndex + index + 1;
           const medal =
-            rank <= 3
-              ? `${rank}.`
-              : `\`${rank.toString().padStart(2, ' ')}\``;
+            rank <= 3 ? `${rank}.` : `\`${rank.toString().padStart(2, ' ')}\``;
           const bar = formatPlaytimeWithBar(game.playtimeForever, maxPlaytime);
           return `${medal} **${game.name}**\n    ${bar}`;
         })

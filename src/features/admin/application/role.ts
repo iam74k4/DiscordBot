@@ -59,7 +59,9 @@ export async function executeRoleCommand(
   const user = interaction.options.getUser('user', true);
   const role = interaction.options.getRole('role', true);
 
-  const member = await interaction.guild.members.fetch(user.id).catch(() => null);
+  const member = await interaction.guild.members
+    .fetch(user.id)
+    .catch(() => null);
   if (!member || !(member instanceof GuildMember)) {
     const embed = createErrorEmbed(
       t('common.error', locale),
@@ -109,7 +111,10 @@ export async function executeRoleCommand(
         color: COLORS.SUCCESS,
         timestamp: true,
       });
-      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+      await interaction.reply({
+        embeds: [embed],
+        flags: MessageFlags.Ephemeral,
+      });
     } else {
       if (!member.roles.cache.has(role.id)) {
         const embed = createErrorEmbed(
@@ -132,12 +137,17 @@ export async function executeRoleCommand(
         color: COLORS.SUCCESS,
         timestamp: true,
       });
-      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+      await interaction.reply({
+        embeds: [embed],
+        flags: MessageFlags.Ephemeral,
+      });
     }
   } catch (error) {
     const embed = createErrorEmbed(
       t('common.error', locale),
-      error instanceof Error ? error.message : t('admin.role.errors.failed', locale)
+      error instanceof Error
+        ? error.message
+        : t('admin.role.errors.failed', locale)
     );
     await interaction.reply({
       embeds: [embed],

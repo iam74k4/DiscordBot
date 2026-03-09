@@ -14,7 +14,8 @@ export const en: TranslationKeys = {
     noPermission: 'You do not have permission to use this command.',
     status: 'Status',
     noData: 'No data',
-    unexpectedError: 'An unexpected error occurred while executing this command.',
+    unexpectedError:
+      'An unexpected error occurred while executing this command.',
     cooldown: 'Please wait {time} seconds before using `/{command}` again.',
     commandBlocked: 'Command Blocked',
     permissionsRequired: 'You need the following permissions: {permissions}',
@@ -356,9 +357,11 @@ export const en: TranslationKeys = {
         successDesc: 'Removed role **{role}** from **{user}**.',
       },
       errors: {
-        noPermission: 'You need the "Manage Roles" permission to use this command.',
+        noPermission:
+          'You need the "Manage Roles" permission to use this command.',
         memberNotFound: 'Member not found.',
-        roleHierarchy: 'Cannot manage roles higher than the bot\'s highest role.',
+        roleHierarchy:
+          "Cannot manage roles higher than the bot's highest role.",
         alreadyHasRole: 'This member already has that role.',
         doesNotHaveRole: 'This member does not have that role.',
         failed: 'Failed to modify role.',
@@ -478,8 +481,10 @@ export const en: TranslationKeys = {
       },
     },
     errors: {
-      tokenNotSet: 'GITHUB_TOKEN is not configured. Ask the bot administrator to set it.',
-      noPermission: 'You need "Manage Server" permission or be a bot owner to use this command.',
+      tokenNotSet:
+        'GITHUB_TOKEN is not configured. Ask the bot administrator to set it.',
+      noPermission:
+        'You need "Manage Server" permission or be a bot owner to use this command.',
       invalidRepo: 'Invalid repository format. Use `owner/name`.',
       notFound: 'Repository, PR, or Issue not found.',
       isPullRequest: 'This number is a PR. Use `/github pr view` instead.',

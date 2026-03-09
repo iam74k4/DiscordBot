@@ -76,9 +76,7 @@ export async function awaitConfirmation(
       )
     );
 
-    await interaction
-      .editReply({ components: [disabledRow] })
-      .catch(() => {});
+    await interaction.editReply({ components: [disabledRow] }).catch(() => {});
 
     return false;
   }
