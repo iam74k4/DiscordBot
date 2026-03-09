@@ -65,7 +65,7 @@ async function gracefulShutdown(
 async function main(): Promise<void> {
   logger.info('Starting Discord bot...');
 
-  initializeDatabase();
+  await initializeDatabase();
 
   const client = createClient();
 

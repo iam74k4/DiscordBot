@@ -29,6 +29,20 @@ import {
 
 const STEAM_API_BASE = 'https://api.steampowered.com';
 
+class SteamApiError extends Error {
+  constructor(
+    message: string,
+    public readonly statusCode: number
+  ) {
+    super(message);
+    this.name = 'SteamApiError';
+  }
+
+  get isRetryable(): boolean {
+    return this.statusCode >= 500;
+  }
+}
+
 /**
  * Steam API Client
  */
@@ -75,11 +89,13 @@ export class SteamClient {
         const response = await fetch(url.toString());
 
         if (!response.ok) {
-          // Track errors
           if (response.status >= 500) {
             metrics.incrementSteamError();
           }
-          throw new Error(`Steam API error: ${response.status}`);
+          throw new SteamApiError(
+            `Steam API error: ${response.status}`,
+            response.status
+          );
         }
 
         return response.json() as Promise<T>;
@@ -89,19 +105,12 @@ export class SteamClient {
         baseDelayMs: 1000,
         operationName: `Steam API ${endpoint}`,
         shouldRetry: (error) => {
-          // Retry on 5xx errors and network errors
-          if (error instanceof Error) {
-            const message = error.message;
-            if (
-              message.includes('500') ||
-              message.includes('502') ||
-              message.includes('503') ||
-              message.includes('504') ||
-              message.includes('network') ||
-              message.includes('timeout')
-            ) {
-              return true;
-            }
+          if (error instanceof SteamApiError) {
+            return error.isRetryable;
+          }
+          if (error instanceof TypeError) {
+            // fetch throws TypeError on network failures
+            return true;
           }
           return false;
         },

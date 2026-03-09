@@ -22,11 +22,9 @@ function validateEnv(): void {
   }
 
   if (missing.length > 0) {
-    logger.error(
-      `Missing required environment variables: ${missing.join(', ')}`
+    throw new Error(
+      `Missing required environment variables: ${missing.join(', ')}. Please check your .env file.`
     );
-    logger.error('Please check your .env file');
-    process.exit(1);
   }
 
   // Warn about optional but recommended variables
@@ -49,8 +47,7 @@ function validateEnv(): void {
         logger.warn('ALERT_WEBHOOK_URL should use HTTPS');
       }
     } catch {
-      logger.error('ALERT_WEBHOOK_URL is not a valid URL');
-      process.exit(1);
+      throw new Error('ALERT_WEBHOOK_URL is not a valid URL');
     }
   }
 
@@ -109,10 +106,7 @@ function validateNumericalConfig(): void {
   }
 
   if (errors.length > 0) {
-    for (const e of errors) {
-      logger.error(`Config validation: ${e}`);
-    }
-    process.exit(1);
+    throw new Error(`Config validation failed: ${errors.join('; ')}`);
   }
 }
 

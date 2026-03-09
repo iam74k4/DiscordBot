@@ -41,7 +41,7 @@ A modular Discord bot built with TypeScript and discord.js v14.
 | Category     | Technology                    |
 | ------------ | ----------------------------- |
 | Language     | TypeScript                    |
-| Runtime      | Node.js 20+                   |
+| Runtime      | Node.js 22+                   |
 | Framework    | discord.js v14                |
 | Voice        | @discordjs/voice, prism-media |
 | Database     | SQLite (better-sqlite3)       |
@@ -56,7 +56,7 @@ A modular Discord bot built with TypeScript and discord.js v14.
 
 ## Requirements
 
-- Node.js 20.0.0 or higher
+- Node.js 22.12.0 or higher
 - Discord Bot Token
 - Discord Application Client ID
 - Steam Web API Key (optional — required for `/steam` commands)

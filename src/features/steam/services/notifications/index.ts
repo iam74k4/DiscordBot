@@ -192,7 +192,11 @@ async function processNotifications(): Promise<void> {
             continue;
           }
 
-          const memberIds = new Set(guild.members.cache.map((m) => m.id));
+          const relevantIds = events.map((e) => e.discordId);
+          const members = await guild.members
+            .fetch({ user: relevantIds })
+            .catch(() => guild.members.cache);
+          const memberIds = new Set(members.map((m) => m.id));
 
           for (const event of events) {
             if (memberIds.has(event.discordId)) {

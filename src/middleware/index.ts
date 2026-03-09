@@ -7,7 +7,7 @@ import {
 import { permissionsMiddleware } from './permissions.js';
 import { cooldownMiddleware } from './cooldown/index.js';
 import { createErrorEmbed } from '../utils/embed.js';
-import { logger } from '../utils/logger.js';
+import { getErrorMessage, logger } from '../utils/logger.js';
 import { t, mapDiscordLocale } from '../locales/index.js';
 
 const middlewareRegistry: MiddlewareRegistry = {
@@ -42,13 +42,19 @@ export async function runMiddleware(
         result.message || t('common.noPermission', locale)
       );
 
-      if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ embeds: [embed] });
-      } else {
-        await interaction.reply({
-          embeds: [embed],
-          flags: MessageFlags.Ephemeral,
-        });
+      try {
+        if (interaction.deferred || interaction.replied) {
+          await interaction.editReply({ embeds: [embed] });
+        } else {
+          await interaction.reply({
+            embeds: [embed],
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+      } catch (e: unknown) {
+        logger.debug(
+          `Failed to send middleware rejection: ${getErrorMessage(e)}`
+        );
       }
 
       return false;
