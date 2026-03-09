@@ -1,13 +1,26 @@
-import { ChatInputCommandInteraction } from 'discord.js';
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ChatInputCommandInteraction,
+  ComponentType,
+} from 'discord.js';
 import type { Octokit } from 'octokit';
 import type { Locale } from '../../../locales/types.js';
-import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
+import {
+  createEmbed,
+  createErrorEmbed,
+  createWarningEmbed,
+} from '../../../utils/embed.js';
 import { COLORS } from '../../../utils/constants/index.js';
 import { t } from '../../../locales/index.js';
 import { parseRepo } from '../services/githubClient.js';
 import { handleApiError } from './githubUtils.js';
+import { sendPaginatedMessage } from '../../../utils/pagination.js';
+import { trackRepo } from './autocomplete.js';
 
-const MAX_LIST_ITEMS = 10;
+const ITEMS_PER_PAGE = 10;
+const MAX_FETCH = 100;
 
 export async function executePrCommand(
   interaction: ChatInputCommandInteraction,
@@ -25,6 +38,7 @@ export async function executePrCommand(
     return;
   }
 
+  trackRepo(repoStr);
   const subcommand = interaction.options.getSubcommand();
 
   try {
@@ -37,7 +51,7 @@ export async function executePrCommand(
         owner: parsed.owner,
         repo: parsed.repo,
         state,
-        per_page: MAX_LIST_ITEMS,
+        per_page: MAX_FETCH,
       });
 
       if (data.length === 0) {
@@ -45,27 +59,31 @@ export async function executePrCommand(
           title: t('github.pr.list.title', locale),
           description: t('github.pr.list.noPrs', locale),
           color: COLORS.INFO,
-          timestamp: true,
         });
         await interaction.editReply({ embeds: [embed] });
         return;
       }
 
-      const list = data
-        .map(
-          (pr) =>
-            `[#${pr.number} ${pr.title}](${pr.html_url}) - ${pr.user?.login ?? '?'}`
-        )
-        .join('\n');
+      await sendPaginatedMessage({
+        items: data,
+        itemsPerPage: ITEMS_PER_PAGE,
+        interaction,
+        formatPage: (pagePrs, page, totalPages) => {
+          const list = pagePrs
+            .map(
+              (pr) =>
+                `[#${pr.number} ${pr.title}](${pr.html_url}) - ${pr.user?.login ?? '?'}`
+            )
+            .join('\n');
 
-      const embed = createEmbed({
-        title: t('github.pr.list.title', locale),
-        description: list,
-        color: COLORS.PRIMARY,
-        footer: `${parsed.owner}/${parsed.repo} | ${state}`,
-        timestamp: true,
+          return createEmbed({
+            title: t('github.pr.list.title', locale),
+            description: list,
+            color: COLORS.PRIMARY,
+            footer: `${parsed.owner}/${parsed.repo} | ${state} | ${page + 1}/${totalPages}`,
+          });
+        },
       });
-      await interaction.editReply({ embeds: [embed] });
       return;
     }
 
@@ -81,6 +99,13 @@ export async function executePrCommand(
         data.state === 'open'
           ? t('github.pr.list.open', locale)
           : t('github.pr.list.closed', locale);
+
+      const labels =
+        data.labels
+          ?.map((l) => (typeof l === 'string' ? l : l.name))
+          .join(', ') || '-';
+      const mergeableText =
+        data.mergeable == null ? '-' : data.mergeable ? '✅' : '❌';
 
       const embed = createEmbed({
         title: t('github.pr.view.title', locale, { number }),
@@ -99,6 +124,11 @@ export async function executePrCommand(
             inline: true,
           },
           {
+            name: t('github.pr.view.mergeable', locale),
+            value: mergeableText,
+            inline: true,
+          },
+          {
             name: t('github.pr.view.base', locale),
             value: `${data.base?.ref ?? '?'}`,
             inline: true,
@@ -108,48 +138,23 @@ export async function executePrCommand(
             value: `${data.head?.ref ?? '?'}`,
             inline: true,
           },
+          {
+            name: t('github.pr.view.changes', locale),
+            value: `+${data.additions ?? 0} / -${data.deletions ?? 0} (${data.changed_files ?? 0} ${t('github.pr.view.files', locale)})`,
+            inline: true,
+          },
+          {
+            name: t('github.pr.view.labels', locale),
+            value: labels,
+            inline: false,
+          },
         ],
-        timestamp: true,
       });
       await interaction.editReply({ embeds: [embed] });
       return;
     }
 
-    if (subcommand === 'create') {
-      const title = interaction.options.getString('title', true);
-      const body = interaction.options.getString('body') ?? '';
-      const head = interaction.options.getString('head', true);
-      let base = interaction.options.getString('base');
-
-      if (!base) {
-        const { data: repoData } = await octokit.rest.repos.get({
-          owner: parsed.owner,
-          repo: parsed.repo,
-        });
-        base = repoData.default_branch ?? 'main';
-      }
-
-      const { data } = await octokit.rest.pulls.create({
-        owner: parsed.owner,
-        repo: parsed.repo,
-        title,
-        body: body || undefined,
-        head,
-        base,
-      });
-
-      const embed = createEmbed({
-        title: t('github.pr.create.success', locale),
-        description: t('github.pr.create.successDesc', locale, {
-          title: data.title ?? '',
-        }),
-        url: data.html_url ?? undefined,
-        color: COLORS.SUCCESS,
-        timestamp: true,
-      });
-      await interaction.editReply({ embeds: [embed] });
-      return;
-    }
+    // 'create' subcommand is handled via Modal (see events/githubModal.ts)
 
     if (subcommand === 'merge') {
       const number = interaction.options.getInteger('number', true);
@@ -158,20 +163,86 @@ export async function executePrCommand(
         | 'squash'
         | 'rebase';
 
-      await octokit.rest.pulls.merge({
-        owner: parsed.owner,
-        repo: parsed.repo,
-        pull_number: number,
-        merge_method: method,
+      const confirmId = `gh_merge_confirm_${interaction.id}`;
+      const cancelId = `gh_merge_cancel_${interaction.id}`;
+
+      const confirmRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId(confirmId)
+          .setLabel(t('github.pr.merge.confirmButton', locale))
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId(cancelId)
+          .setLabel(t('common.cancel', locale))
+          .setStyle(ButtonStyle.Secondary)
+      );
+
+      const confirmEmbed = createWarningEmbed(
+        t('github.pr.merge.confirmTitle', locale),
+        t('github.pr.merge.confirmDesc', locale, { number, method })
+      );
+
+      const reply = await interaction.editReply({
+        embeds: [confirmEmbed],
+        components: [confirmRow],
       });
 
-      const embed = createEmbed({
-        title: t('github.pr.merge.success', locale),
-        description: t('github.pr.merge.successDesc', locale, { number }),
-        color: COLORS.SUCCESS,
-        timestamp: true,
-      });
-      await interaction.editReply({ embeds: [embed] });
+      try {
+        const result = await reply.awaitMessageComponent({
+          componentType: ComponentType.Button,
+          filter: (i) => i.user.id === interaction.user.id,
+          time: 30_000,
+        });
+
+        if (result.customId === confirmId) {
+          await result.update({
+            embeds: [
+              createEmbed({
+                title: t('github.pr.merge.merging', locale),
+                color: COLORS.WARNING,
+                timestamp: false,
+              }),
+            ],
+            components: [],
+          });
+
+          await octokit.rest.pulls.merge({
+            owner: parsed.owner,
+            repo: parsed.repo,
+            pull_number: number,
+            merge_method: method,
+          });
+
+          const embed = createEmbed({
+            title: t('github.pr.merge.success', locale),
+            description: t('github.pr.merge.successDesc', locale, { number }),
+            color: COLORS.SUCCESS,
+          });
+          await interaction.editReply({ embeds: [embed] });
+        } else {
+          await result.update({
+            embeds: [
+              createEmbed({
+                title: t('common.cancelled', locale),
+                color: COLORS.INFO,
+              }),
+            ],
+            components: [],
+          });
+        }
+      } catch {
+        await interaction
+          .editReply({
+            embeds: [
+              createEmbed({
+                title: t('common.timeout', locale),
+                color: COLORS.INFO,
+              }),
+            ],
+            components: [],
+          })
+          .catch(() => {});
+      }
       return;
     }
   } catch (error) {
