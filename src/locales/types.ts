@@ -460,6 +460,69 @@ export interface TranslationKeys {
     };
   };
 
+  // GitHub command
+  github: {
+    pr: {
+      list: {
+        title: string;
+        noPrs: string;
+        open: string;
+        closed: string;
+      };
+      view: {
+        title: string;
+        state: string;
+        author: string;
+        base: string;
+        head: string;
+      };
+      create: {
+        success: string;
+        successDesc: string;
+      };
+      merge: {
+        success: string;
+        successDesc: string;
+      };
+    };
+    issue: {
+      list: {
+        title: string;
+        noIssues: string;
+      };
+      view: {
+        title: string;
+        state: string;
+        author: string;
+      };
+      create: {
+        success: string;
+        successDesc: string;
+      };
+    };
+    repo: {
+      info: {
+        title: string;
+        description: string;
+        stars: string;
+        forks: string;
+        language: string;
+        defaultBranch: string;
+        noDesc: string;
+      };
+    };
+    errors: {
+      tokenNotSet: string;
+      noPermission: string;
+      invalidRepo: string;
+      notFound: string;
+      isPullRequest: string;
+      forbidden: string;
+      conflict: string;
+      apiError: string;
+    };
+  };
+
   // Record command
   record: {
     title: string;

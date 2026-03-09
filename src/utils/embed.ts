@@ -7,6 +7,7 @@ import { COLORS } from './constants/index.js';
 interface EmbedOptions {
   title?: string;
   description?: string;
+  url?: string;
   color?: ColorResolvable;
   fields?: { name: string; value: string; inline?: boolean }[];
   footer?: string;
@@ -23,6 +24,10 @@ export function createEmbed(options: EmbedOptions): EmbedBuilder {
 
   if (options.title) {
     embed.setTitle(options.title);
+  }
+
+  if (options.url) {
+    embed.setURL(options.url);
   }
 
   if (options.description) {
