@@ -11,6 +11,7 @@ export const steamHelpCategory: CommandCategory = {
       },
       usage:
         '/steam user profile, /steam user playtime, /steam user games, /steam user recent, /steam stats ranking, /steam stats history, /steam stats chart, /steam stats history-graph, /steam account register, /steam account unregister, /steam account whoami, /steam notifications setup, /steam notifications status, /steam notifications enable, /steam notifications disable, /steam notifications remove, /steam notifications me, /steam server stats, /steam info help',
+      requiredPermission: 'everyone',
     },
   ],
 };
