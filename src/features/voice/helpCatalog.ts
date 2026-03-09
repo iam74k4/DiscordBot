@@ -10,6 +10,7 @@ export const voiceHelpCategory: CommandCategory = {
         ja: 'ボイスチャンネルの過去音声を録音',
       },
       usage: '/record <duration>',
+      requiredPermission: 'everyone',
     },
   ],
 };

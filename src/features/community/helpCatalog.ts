@@ -10,6 +10,7 @@ export const communityHelpCategory: CommandCategory = {
         ja: 'ボイスチャンネルからランダム選択',
       },
       usage: '/roulette member, /roulette team',
+      requiredPermission: 'everyone',
     },
   ],
 };
