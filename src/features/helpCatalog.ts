@@ -11,7 +11,7 @@ export interface CommandInfo {
     ja: string;
   };
   usage?: string;
-  /** 表示に必要な最低権限。複数指定時は OR（いずれかで表示） */
+  /** Minimum permission level required to display. Multiple values are OR (any match shows). */
   requiredPermission?: PermissionLevel | PermissionLevel[];
 }
 

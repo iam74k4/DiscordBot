@@ -56,6 +56,9 @@ export const ja: TranslationKeys = {
     view: {
       footer: '/admin settings で変更可能',
     },
+    howToChange: '変更方法',
+    selectSetting: '設定項目を選択...',
+    overview: '概要',
   },
 
   server: {
@@ -299,6 +302,12 @@ export const ja: TranslationKeys = {
       playtimeAdded: 'プレイ時間増加',
       playtimeChange: 'プレイ時間変化',
       recordedDaily: '履歴は毎日深夜（JST）に記録されます',
+      periodLabels: {
+        sevenDays: '7日間',
+        thirtyDays: '30日間',
+        ninetyDays: '90日間',
+        oneYear: '1年',
+      },
     },
     errors: {
       userNotFound: 'Steamユーザーが見つかりません。',
@@ -383,6 +392,9 @@ export const ja: TranslationKeys = {
       owner: 'Botオーナー',
     },
     filteredFooter: '実行可能なコマンドのみ表示しています',
+    selectCategory: 'カテゴリーを選択...',
+    showAll: 'すべて表示',
+    onlyCommandUser: 'コマンドを実行したユーザーのみ操作できます。',
   },
 
   notification: {

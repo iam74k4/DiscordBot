@@ -24,6 +24,11 @@ import { formatAuditTarget } from '../../../services/audit/format.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { getErrorMessage, logger } from '../../../utils/logger.js';
 
+const LANGUAGE_DISPLAY_NAMES: Record<string, string> = {
+  ja: '日本語',
+  en: 'English',
+};
+
 async function handleView(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
@@ -46,7 +51,7 @@ async function handleView(
   const buildOverviewEmbed = () => {
     const guildSettings = settingsRepository.getGuildSettings(guildId);
     const language = guildSettings?.language ?? 'ja';
-    const languageDisplay = language === 'ja' ? '日本語' : 'English';
+    const languageDisplay = LANGUAGE_DISPLAY_NAMES[language] ?? language;
     const auditChannel = guildSettings?.audit_channel_id
       ? `<#${guildSettings.audit_channel_id}>`
       : t('settings.audit.notSet', locale);
@@ -73,7 +78,7 @@ async function handleView(
   const buildLanguageEmbed = () => {
     const guildSettings = settingsRepository.getGuildSettings(guildId);
     const language = guildSettings?.language ?? 'ja';
-    const languageDisplay = language === 'ja' ? '日本語' : 'English';
+    const languageDisplay = LANGUAGE_DISPLAY_NAMES[language] ?? language;
 
     return createEmbed({
       title: t('settings.language.name', locale),
@@ -81,7 +86,7 @@ async function handleView(
       color: COLORS.INFO,
       fields: [
         {
-          name: locale === 'ja' ? '変更方法' : 'How to change',
+          name: t('settings.howToChange', locale),
           value: '`/admin settings language`',
           inline: false,
         },
@@ -101,7 +106,7 @@ async function handleView(
       color: COLORS.INFO,
       fields: [
         {
-          name: locale === 'ja' ? '変更方法' : 'How to change',
+          name: t('settings.howToChange', locale),
           value: '`/admin settings audit`',
           inline: false,
         },
@@ -111,12 +116,10 @@ async function handleView(
 
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId('settings_view')
-    .setPlaceholder(
-      locale === 'ja' ? '設定項目を選択...' : 'Select a setting...'
-    )
+    .setPlaceholder(t('settings.selectSetting', locale))
     .addOptions(
       new StringSelectMenuOptionBuilder()
-        .setLabel(locale === 'ja' ? '概要' : 'Overview')
+        .setLabel(t('settings.overview', locale))
         .setValue('overview')
         .setDefault(true),
       new StringSelectMenuOptionBuilder()
@@ -332,7 +335,7 @@ async function handleLanguage(
 
   settingsRepository.setGuildSettings(interaction.guild.id, { language: lang });
 
-  const languageDisplay = lang === 'ja' ? '日本語' : 'English';
+  const languageDisplay = LANGUAGE_DISPLAY_NAMES[lang] ?? lang;
 
   const embed = createEmbed({
     title: t('settings.language.name', locale),

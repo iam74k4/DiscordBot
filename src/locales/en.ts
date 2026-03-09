@@ -57,6 +57,9 @@ export const en: TranslationKeys = {
     view: {
       footer: 'Use /admin settings to modify',
     },
+    howToChange: 'How to change',
+    selectSetting: 'Select a setting...',
+    overview: 'Overview',
   },
 
   server: {
@@ -299,6 +302,12 @@ export const en: TranslationKeys = {
       playtimeAdded: 'Playtime Added',
       playtimeChange: 'Playtime Change',
       recordedDaily: 'History is recorded daily at midnight (JST)',
+      periodLabels: {
+        sevenDays: '7 Days',
+        thirtyDays: '30 Days',
+        ninetyDays: '90 Days',
+        oneYear: '1 Year',
+      },
     },
     errors: {
       userNotFound: 'Steam user not found.',
@@ -384,6 +393,9 @@ export const en: TranslationKeys = {
       owner: 'Bot Owner',
     },
     filteredFooter: 'Showing only commands you can use',
+    selectCategory: 'Select a category...',
+    showAll: 'Show All',
+    onlyCommandUser: 'Only the command user can interact.',
   },
 
   notification: {

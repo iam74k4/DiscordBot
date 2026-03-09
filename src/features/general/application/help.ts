@@ -231,12 +231,10 @@ export async function executeHelpCommand(
 
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId('help_category')
-    .setPlaceholder(
-      locale === 'ja' ? 'カテゴリーを選択...' : 'Select a category...'
-    )
+    .setPlaceholder(t('help.selectCategory', locale))
     .addOptions(
       new StringSelectMenuOptionBuilder()
-        .setLabel(locale === 'ja' ? 'すべて表示' : 'Show All')
+        .setLabel(t('help.showAll', locale))
         .setValue('all')
         .setDefault(true),
       ...filteredCategories.map((cat, index) => {
@@ -265,10 +263,7 @@ export async function executeHelpCommand(
   collector.on('collect', async (selectInteraction) => {
     if (selectInteraction.user.id !== interaction.user.id) {
       await selectInteraction.reply({
-        content:
-          locale === 'ja'
-            ? 'コマンドを実行したユーザーのみ操作できます。'
-            : 'Only the command user can interact.',
+        content: t('help.onlyCommandUser', locale),
         flags: MessageFlags.Ephemeral,
       });
       return;

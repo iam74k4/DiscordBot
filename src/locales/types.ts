@@ -111,6 +111,9 @@ export interface TranslationKeys {
     view: {
       footer: string;
     };
+    howToChange: string;
+    selectSetting: string;
+    overview: string;
   };
 
   // Server command
@@ -346,6 +349,12 @@ export interface TranslationKeys {
       playtimeAdded: string;
       playtimeChange: string;
       recordedDaily: string;
+      periodLabels: {
+        sevenDays: string;
+        thirtyDays: string;
+        ninetyDays: string;
+        oneYear: string;
+      };
     };
     errors: {
       userNotFound: string;
@@ -427,6 +436,9 @@ export interface TranslationKeys {
       owner: string;
     };
     filteredFooter: string;
+    selectCategory: string;
+    showAll: string;
+    onlyCommandUser: string;
   };
 
   // Notification command

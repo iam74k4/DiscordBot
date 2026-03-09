@@ -222,10 +222,12 @@ export async function handleHistoryGraph(
     (lastRecord.total_playtime - firstRecord.total_playtime) / 60
   );
 
-  const periodLabels: Record<string, string> =
-    locale === 'ja'
-      ? { '7d': '7日間', '30d': '30日間', '90d': '90日間', '1y': '1年' }
-      : { '7d': '7 Days', '30d': '30 Days', '90d': '90 Days', '1y': '1 Year' };
+  const periodLabels: Record<string, string> = {
+    '7d': t('steam.historyGraph.periodLabels.sevenDays', locale),
+    '30d': t('steam.historyGraph.periodLabels.thirtyDays', locale),
+    '90d': t('steam.historyGraph.periodLabels.ninetyDays', locale),
+    '1y': t('steam.historyGraph.periodLabels.oneYear', locale),
+  };
 
   const playtimePrefix = playtimeGain >= 0 ? '+' : '';
   const playtimeLabel =
