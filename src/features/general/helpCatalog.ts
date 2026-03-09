@@ -10,6 +10,7 @@ export const generalHelpCategory: CommandCategory = {
         ja: '一般ユーティリティとヘルプ',
       },
       usage: '/general help, /general ping',
+      requiredPermission: 'everyone',
     },
   ],
 };

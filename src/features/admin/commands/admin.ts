@@ -2,6 +2,7 @@ import { ChannelType, SlashCommandBuilder } from 'discord.js';
 import { Command } from '../../../types/index.js';
 import {
   executeAdminCommand,
+  executeRoleCommand,
   executeSettingsCommand,
 } from '../application/index.js';
 
@@ -167,6 +168,66 @@ export const command: Command = {
               ja: '手動でデータベースバックアップを実行',
             })
         )
+    )
+    .addSubcommandGroup((group) =>
+      group
+        .setName('role')
+        .setDescription('Assign or remove roles from members')
+        .setDescriptionLocalizations({
+          ja: 'メンバーにロールを付与・剥奪',
+        })
+        .addSubcommand((sub) =>
+          sub
+            .setName('add')
+            .setDescription('Add a role to a member')
+            .setDescriptionLocalizations({
+              ja: 'メンバーにロールを付与',
+            })
+            .addUserOption((opt) =>
+              opt
+                .setName('user')
+                .setDescription('Member to add the role to')
+                .setDescriptionLocalizations({
+                  ja: 'ロールを付与するメンバー',
+                })
+                .setRequired(true)
+            )
+            .addRoleOption((opt) =>
+              opt
+                .setName('role')
+                .setDescription('Role to add')
+                .setDescriptionLocalizations({
+                  ja: '付与するロール',
+                })
+                .setRequired(true)
+            )
+        )
+        .addSubcommand((sub) =>
+          sub
+            .setName('remove')
+            .setDescription('Remove a role from a member')
+            .setDescriptionLocalizations({
+              ja: 'メンバーからロールを剥奪',
+            })
+            .addUserOption((opt) =>
+              opt
+                .setName('user')
+                .setDescription('Member to remove the role from')
+                .setDescriptionLocalizations({
+                  ja: 'ロールを剥奪するメンバー',
+                })
+                .setRequired(true)
+            )
+            .addRoleOption((opt) =>
+              opt
+                .setName('role')
+                .setDescription('Role to remove')
+                .setDescriptionLocalizations({
+                  ja: '剥奪するロール',
+                })
+                .setRequired(true)
+            )
+        )
     ),
 
   async execute(interaction) {
@@ -174,6 +235,11 @@ export const command: Command = {
 
     if (group === 'settings') {
       await executeSettingsCommand(interaction);
+      return;
+    }
+
+    if (group === 'role') {
+      await executeRoleCommand(interaction);
       return;
     }
 

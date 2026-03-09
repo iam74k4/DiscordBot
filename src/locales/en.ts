@@ -332,6 +332,24 @@ export const en: TranslationKeys = {
       title: 'Commands Deployed',
       success: 'All commands have been deployed to Discord.',
     },
+    role: {
+      add: {
+        success: 'Role Added',
+        successDesc: 'Added role **{role}** to **{user}**.',
+      },
+      remove: {
+        success: 'Role Removed',
+        successDesc: 'Removed role **{role}** from **{user}**.',
+      },
+      errors: {
+        noPermission: 'You need the "Manage Roles" permission to use this command.',
+        memberNotFound: 'Member not found.',
+        roleHierarchy: 'Cannot manage roles higher than the bot\'s highest role.',
+        alreadyHasRole: 'This member already has that role.',
+        doesNotHaveRole: 'This member does not have that role.',
+        failed: 'Failed to modify role.',
+      },
+    },
   },
 
   help: {
@@ -342,6 +360,13 @@ export const en: TranslationKeys = {
     footer: 'Use /general help for details',
     commandNotFound: 'Command Not Found',
     commandNotFoundDesc: 'Command `{command}` does not exist.',
+    permission: {
+      everyone: 'Everyone',
+      manageGuild: 'Manage Server',
+      manageRoles: 'Manage Roles',
+      owner: 'Bot Owner',
+    },
+    filteredFooter: 'Showing only commands you can use',
   },
 
   notification: {

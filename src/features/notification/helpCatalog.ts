@@ -11,6 +11,7 @@ export const notificationHelpCategory: CommandCategory = {
       },
       usage:
         '/notification voice set, /notification welcome set, /notification status, /notification stats',
+      requiredPermission: 'everyone',
     },
   ],
 };

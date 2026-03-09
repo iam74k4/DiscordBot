@@ -10,6 +10,7 @@ export const pollHelpCategory: CommandCategory = {
         ja: '投票の作成と管理',
       },
       usage: '/poll create, /poll end',
+      requiredPermission: 'everyone',
     },
   ],
 };

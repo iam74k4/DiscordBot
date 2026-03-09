@@ -334,6 +334,24 @@ export const ja: TranslationKeys = {
       title: 'コマンドデプロイ',
       success: 'すべてのコマンドをDiscordにデプロイしました。',
     },
+    role: {
+      add: {
+        success: 'ロールを付与しました',
+        successDesc: '**{user}** にロール **{role}** を付与しました。',
+      },
+      remove: {
+        success: 'ロールを剥奪しました',
+        successDesc: '**{user}** からロール **{role}** を剥奪しました。',
+      },
+      errors: {
+        noPermission: 'このコマンドには「ロールの管理」権限が必要です。',
+        memberNotFound: 'メンバーが見つかりません。',
+        roleHierarchy: 'Botのロールより上位のロールは操作できません。',
+        alreadyHasRole: 'このメンバーは既にそのロールを持っています。',
+        doesNotHaveRole: 'このメンバーはそのロールを持っていません。',
+        failed: 'ロールの操作に失敗しました。',
+      },
+    },
   },
 
   help: {
@@ -344,6 +362,13 @@ export const ja: TranslationKeys = {
     footer: '/general help で詳細を表示',
     commandNotFound: 'コマンドが見つかりません',
     commandNotFoundDesc: '`{command}` というコマンドは存在しません。',
+    permission: {
+      everyone: '全員',
+      manageGuild: 'サーバー管理',
+      manageRoles: 'ロール管理',
+      owner: 'Botオーナー',
+    },
+    filteredFooter: '実行可能なコマンドのみ表示しています',
   },
 
   notification: {
