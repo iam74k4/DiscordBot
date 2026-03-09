@@ -1,6 +1,15 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, SlashCommandStringOption } from 'discord.js';
 import { Command } from '../../../types/index.js';
 import { executeGitHubCommand } from '../application/index.js';
+import { handleGitHubAutocomplete } from '../application/autocomplete.js';
+
+const repoOption = (o: SlashCommandStringOption) =>
+  o
+    .setName('repo')
+    .setDescription('Repository (owner/name)')
+    .setDescriptionLocalizations({ ja: 'リポジトリ (owner/name)' })
+    .setRequired(true)
+    .setAutocomplete(true);
 
 export const command: Command = {
   data: new SlashCommandBuilder()
@@ -19,13 +28,7 @@ export const command: Command = {
             .setName('list')
             .setDescription('List pull requests')
             .setDescriptionLocalizations({ ja: 'PR一覧を表示' })
-            .addStringOption((o) =>
-              o
-                .setName('repo')
-                .setDescription('Repository (owner/name)')
-                .setDescriptionLocalizations({ ja: 'リポジトリ (owner/name)' })
-                .setRequired(true)
-            )
+            .addStringOption(repoOption)
             .addStringOption((o) =>
               o
                 .setName('state')
@@ -43,13 +46,7 @@ export const command: Command = {
             .setName('view')
             .setDescription('View a pull request')
             .setDescriptionLocalizations({ ja: 'PRの詳細を表示' })
-            .addStringOption((o) =>
-              o
-                .setName('repo')
-                .setDescription('Repository (owner/name)')
-                .setDescriptionLocalizations({ ja: 'リポジトリ (owner/name)' })
-                .setRequired(true)
-            )
+            .addStringOption(repoOption)
             .addIntegerOption((o) =>
               o
                 .setName('number')
@@ -61,34 +58,11 @@ export const command: Command = {
         .addSubcommand((sub) =>
           sub
             .setName('create')
-            .setDescription('Create a pull request')
-            .setDescriptionLocalizations({ ja: 'PRを作成' })
-            .addStringOption((o) =>
-              o
-                .setName('repo')
-                .setDescription('Repository (owner/name)')
-                .setDescriptionLocalizations({ ja: 'リポジトリ (owner/name)' })
-                .setRequired(true)
-            )
-            .addStringOption((o) =>
-              o
-                .setName('title')
-                .setDescription('PR title')
-                .setDescriptionLocalizations({ ja: 'PRタイトル' })
-                .setRequired(true)
-                .setMaxLength(256)
-            )
-            .addStringOption((o) =>
-              o
-                .setName('body')
-                .setDescription(
-                  'PR description (summary only, add details on GitHub)'
-                )
-                .setDescriptionLocalizations({
-                  ja: 'PR説明（概要のみ、詳細はGitHubで追記）',
-                })
-                .setMaxLength(300)
-            )
+            .setDescription('Create a pull request (opens a form)')
+            .setDescriptionLocalizations({
+              ja: 'PRを作成（フォームが開きます）',
+            })
+            .addStringOption(repoOption)
             .addStringOption((o) =>
               o
                 .setName('head')
@@ -99,8 +73,10 @@ export const command: Command = {
             .addStringOption((o) =>
               o
                 .setName('base')
-                .setDescription('Base branch (target)')
-                .setDescriptionLocalizations({ ja: 'マージ先ブランチ' })
+                .setDescription('Base branch (target, default: main)')
+                .setDescriptionLocalizations({
+                  ja: 'マージ先ブランチ（デフォルト: main）',
+                })
             )
         )
         .addSubcommand((sub) =>
@@ -108,13 +84,7 @@ export const command: Command = {
             .setName('merge')
             .setDescription('Merge a pull request')
             .setDescriptionLocalizations({ ja: 'PRをマージ' })
-            .addStringOption((o) =>
-              o
-                .setName('repo')
-                .setDescription('Repository (owner/name)')
-                .setDescriptionLocalizations({ ja: 'リポジトリ (owner/name)' })
-                .setRequired(true)
-            )
+            .addStringOption(repoOption)
             .addIntegerOption((o) =>
               o
                 .setName('number')
@@ -145,13 +115,7 @@ export const command: Command = {
             .setName('list')
             .setDescription('List issues')
             .setDescriptionLocalizations({ ja: 'Issue一覧を表示' })
-            .addStringOption((o) =>
-              o
-                .setName('repo')
-                .setDescription('Repository (owner/name)')
-                .setDescriptionLocalizations({ ja: 'リポジトリ (owner/name)' })
-                .setRequired(true)
-            )
+            .addStringOption(repoOption)
             .addStringOption((o) =>
               o
                 .setName('state')
@@ -169,13 +133,7 @@ export const command: Command = {
             .setName('view')
             .setDescription('View an issue')
             .setDescriptionLocalizations({ ja: 'Issueの詳細を表示' })
-            .addStringOption((o) =>
-              o
-                .setName('repo')
-                .setDescription('Repository (owner/name)')
-                .setDescriptionLocalizations({ ja: 'リポジトリ (owner/name)' })
-                .setRequired(true)
-            )
+            .addStringOption(repoOption)
             .addIntegerOption((o) =>
               o
                 .setName('number')
@@ -187,34 +145,11 @@ export const command: Command = {
         .addSubcommand((sub) =>
           sub
             .setName('create')
-            .setDescription('Create an issue')
-            .setDescriptionLocalizations({ ja: 'Issueを作成' })
-            .addStringOption((o) =>
-              o
-                .setName('repo')
-                .setDescription('Repository (owner/name)')
-                .setDescriptionLocalizations({ ja: 'リポジトリ (owner/name)' })
-                .setRequired(true)
-            )
-            .addStringOption((o) =>
-              o
-                .setName('title')
-                .setDescription('Issue title')
-                .setDescriptionLocalizations({ ja: 'Issueタイトル' })
-                .setRequired(true)
-                .setMaxLength(256)
-            )
-            .addStringOption((o) =>
-              o
-                .setName('body')
-                .setDescription(
-                  'Issue description (summary only, add details on GitHub)'
-                )
-                .setDescriptionLocalizations({
-                  ja: 'Issue説明（概要のみ、詳細はGitHubで追記）',
-                })
-                .setMaxLength(300)
-            )
+            .setDescription('Create an issue (opens a form)')
+            .setDescriptionLocalizations({
+              ja: 'Issueを作成（フォームが開きます）',
+            })
+            .addStringOption(repoOption)
         )
     )
     .addSubcommandGroup((group) =>
@@ -227,13 +162,7 @@ export const command: Command = {
             .setName('info')
             .setDescription('Show repository info')
             .setDescriptionLocalizations({ ja: 'リポジトリ情報を表示' })
-            .addStringOption((o) =>
-              o
-                .setName('repo')
-                .setDescription('Repository (owner/name)')
-                .setDescriptionLocalizations({ ja: 'リポジトリ (owner/name)' })
-                .setRequired(true)
-            )
+            .addStringOption(repoOption)
         )
     ),
 
@@ -245,6 +174,10 @@ export const command: Command = {
 
   async execute(interaction) {
     await executeGitHubCommand(interaction);
+  },
+
+  async autocomplete(interaction) {
+    await handleGitHubAutocomplete(interaction);
   },
 };
 

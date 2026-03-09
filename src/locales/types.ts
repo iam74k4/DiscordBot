@@ -489,14 +489,23 @@ export interface TranslationKeys {
         author: string;
         base: string;
         head: string;
+        mergeable: string;
+        changes: string;
+        files: string;
+        labels: string;
       };
       create: {
         success: string;
         successDesc: string;
+        modalTitle: string;
       };
       merge: {
         success: string;
         successDesc: string;
+        confirmTitle: string;
+        confirmDesc: string;
+        confirmButton: string;
+        merging: string;
       };
     };
     issue: {
@@ -508,11 +517,22 @@ export interface TranslationKeys {
         title: string;
         state: string;
         author: string;
+        assignees: string;
+        labels: string;
+        milestone: string;
       };
       create: {
         success: string;
         successDesc: string;
+        modalTitle: string;
       };
+    };
+    modal: {
+      titleLabel: string;
+      bodyLabel: string;
+      bodyPlaceholder: string;
+      headLabel: string;
+      baseLabel: string;
     };
     repo: {
       info: {

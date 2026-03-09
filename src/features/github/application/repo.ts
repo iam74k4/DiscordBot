@@ -6,6 +6,7 @@ import { COLORS } from '../../../utils/constants/index.js';
 import { t } from '../../../locales/index.js';
 import { parseRepo } from '../services/githubClient.js';
 import { handleApiError } from './githubUtils.js';
+import { trackRepo } from './autocomplete.js';
 
 export async function executeRepoCommand(
   interaction: ChatInputCommandInteraction,
@@ -22,6 +23,8 @@ export async function executeRepoCommand(
     await interaction.editReply({ embeds: [embed] });
     return;
   }
+
+  trackRepo(repoStr);
 
   try {
     const { data } = await octokit.rest.repos.get({
@@ -59,7 +62,6 @@ export async function executeRepoCommand(
           inline: true,
         },
       ],
-      timestamp: true,
     });
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {

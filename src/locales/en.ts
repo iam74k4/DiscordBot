@@ -444,14 +444,23 @@ export const en: TranslationKeys = {
         author: 'Author',
         base: 'Base',
         head: 'Head',
+        mergeable: 'Mergeable',
+        changes: 'Changes',
+        files: 'files',
+        labels: 'Labels',
       },
       create: {
         success: 'PR Created',
         successDesc: 'Created **{title}**.',
+        modalTitle: 'Create Pull Request',
       },
       merge: {
         success: 'PR Merged',
         successDesc: 'Merged PR #{number}.',
+        confirmTitle: 'Confirm Merge',
+        confirmDesc: 'Merge PR **#{number}** using **{method}**?',
+        confirmButton: 'Merge',
+        merging: 'Merging...',
       },
     },
     issue: {
@@ -463,10 +472,14 @@ export const en: TranslationKeys = {
         title: 'Issue #{number}',
         state: 'State',
         author: 'Author',
+        assignees: 'Assignees',
+        labels: 'Labels',
+        milestone: 'Milestone',
       },
       create: {
         success: 'Issue Created',
         successDesc: 'Created **{title}**.',
+        modalTitle: 'Create Issue',
       },
     },
     repo: {
@@ -479,6 +492,13 @@ export const en: TranslationKeys = {
         defaultBranch: 'Default Branch',
         noDesc: 'No description',
       },
+    },
+    modal: {
+      titleLabel: 'Title',
+      bodyLabel: 'Description',
+      bodyPlaceholder: 'Optional. You can add more details on GitHub later.',
+      headLabel: 'Head branch (source)',
+      baseLabel: 'Base branch (target)',
     },
     errors: {
       tokenNotSet:
