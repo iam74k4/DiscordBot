@@ -378,6 +378,24 @@ export interface TranslationKeys {
       title: string;
       success: string;
     };
+    role: {
+      add: {
+        success: string;
+        successDesc: string;
+      };
+      remove: {
+        success: string;
+        successDesc: string;
+      };
+      errors: {
+        noPermission: string;
+        memberNotFound: string;
+        roleHierarchy: string;
+        alreadyHasRole: string;
+        doesNotHaveRole: string;
+        failed: string;
+      };
+    };
   };
 
   // Help command
@@ -388,6 +406,13 @@ export interface TranslationKeys {
     footer: string;
     commandNotFound: string;
     commandNotFoundDesc: string;
+    permission: {
+      everyone: string;
+      manageGuild: string;
+      manageRoles: string;
+      owner: string;
+    };
+    filteredFooter: string;
   };
 
   // Notification command
