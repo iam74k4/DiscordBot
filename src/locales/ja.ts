@@ -346,6 +346,43 @@ export const ja: TranslationKeys = {
     commandNotFoundDesc: '`{command}` というコマンドは存在しません。',
   },
 
+  notification: {
+    voice: {
+      setTitle: 'VC通知設定完了',
+      set: 'VC入退室通知を <#{channel}> に送信します',
+      removedTitle: 'VC通知無効化',
+      removed: 'VC入退室通知を無効にしました。',
+    },
+    welcome: {
+      setTitle: 'メンバー参加通知設定完了',
+      set: 'メンバー参加通知を <#{channel}> に送信します',
+      removedTitle: 'メンバー参加通知無効化',
+      removed: 'メンバー参加通知を無効にしました。',
+    },
+    status: {
+      title: '通知設定',
+      voiceLabel: 'VC入退室',
+      welcomeLabel: 'メンバー参加',
+      disabled: '未設定',
+    },
+    stats: {
+      title: 'あなたのVC統計',
+      noData: 'VCセッションデータがありません。',
+      total: '合計',
+      period: '期間',
+      periods: {
+        today: '今日',
+        week: '今週',
+        month: '今月',
+        all: '全期間',
+      },
+    },
+    errors: {
+      textChannelOnly: 'テキストチャンネルを選択してください。',
+      notConfigured: '削除する通知設定がありません。',
+    },
+  },
+
   record: {
     title: '録音',
     recording: '録音中...',

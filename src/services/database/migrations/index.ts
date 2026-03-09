@@ -3,8 +3,9 @@ import { runTransaction } from '../transaction.js';
 import { up as steamUp } from './001_steam.js';
 import { up as notificationsUp } from './002_notifications.js';
 import { up as settingsUp } from './003_settings.js';
+import { up as notificationUp } from './004_notification.js';
 
-const migrations = [steamUp, notificationsUp, settingsUp];
+const migrations = [steamUp, notificationsUp, settingsUp, notificationUp];
 
 let isInitialized = false;
 

@@ -390,6 +390,44 @@ export interface TranslationKeys {
     commandNotFoundDesc: string;
   };
 
+  // Notification command
+  notification: {
+    voice: {
+      setTitle: string;
+      set: string;
+      removedTitle: string;
+      removed: string;
+    };
+    welcome: {
+      setTitle: string;
+      set: string;
+      removedTitle: string;
+      removed: string;
+    };
+    status: {
+      title: string;
+      voiceLabel: string;
+      welcomeLabel: string;
+      disabled: string;
+    };
+    stats: {
+      title: string;
+      noData: string;
+      total: string;
+      period: string;
+      periods: {
+        today: string;
+        week: string;
+        month: string;
+        all: string;
+      };
+    };
+    errors: {
+      textChannelOnly: string;
+      notConfigured: string;
+    };
+  };
+
   // Record command
   record: {
     title: string;
