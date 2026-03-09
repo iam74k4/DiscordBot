@@ -62,7 +62,6 @@ export async function executeRepoCommand(
           inline: true,
         },
       ],
-      timestamp: true,
     });
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {

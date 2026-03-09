@@ -42,19 +42,11 @@ export async function handleGitHubAutocomplete(
 
     if (octokit && query.length >= 2) {
       try {
-        if (query.includes('/')) {
-          const { data } = await octokit.rest.search.repos({
-            q: query,
-            per_page: 10,
-          });
-          apiResults = data.items.map((r) => r.full_name);
-        } else {
-          const { data } = await octokit.rest.search.repos({
-            q: `${query} user:${query}`,
-            per_page: 10,
-          });
-          apiResults = data.items.map((r) => r.full_name);
-        }
+        const { data } = await octokit.rest.search.repos({
+          q: query,
+          per_page: 10,
+        });
+        apiResults = data.items.map((r) => r.full_name);
       } catch {
         // API search failed; rely on recent repos only
       }

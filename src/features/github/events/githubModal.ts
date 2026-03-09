@@ -1,13 +1,13 @@
-import { Events, MessageFlags } from 'discord.js';
+import { Events, MessageFlags, PermissionsBitField } from 'discord.js';
 import { Event } from '../../../types/index.js';
 import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
 import { COLORS } from '../../../utils/constants/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { getGitHubClient } from '../services/githubClient.js';
-import { parseRepo } from '../services/githubClient.js';
+import { getGitHubClient, parseRepo } from '../services/githubClient.js';
 import { handleApiError } from '../application/githubUtils.js';
 import { getErrorMessage, logger } from '../../../utils/logger.js';
 import { trackRepo } from '../application/autocomplete.js';
+import { isBotOwner } from '../../../config/env.js';
 
 export const event: Event<typeof Events.InteractionCreate> = {
   name: Events.InteractionCreate,
@@ -23,6 +23,24 @@ export const event: Event<typeof Events.InteractionCreate> = {
 
     const locale = mapDiscordLocale(interaction.locale);
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+    if (!isBotOwner(interaction.user.id)) {
+      const member = interaction.member;
+      const perms = member?.permissions;
+      if (
+        !interaction.guild ||
+        !member ||
+        !(perms instanceof PermissionsBitField) ||
+        !perms.has(PermissionsBitField.Flags.ManageGuild)
+      ) {
+        const embed = createErrorEmbed(
+          t('common.error', locale),
+          t('github.errors.noPermission', locale)
+        );
+        await interaction.editReply({ embeds: [embed] });
+        return;
+      }
+    }
 
     const repoStr = customId.split(':').slice(1).join(':');
     const parsed = parseRepo(repoStr);
