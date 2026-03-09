@@ -9,15 +9,57 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 /**
+ * Register a single event module on the client.
+ * @returns true if the event was successfully registered
+ */
+async function registerEvent(
+  client: ExtendedClient,
+  filePath: string,
+  label: string
+): Promise<boolean> {
+  try {
+    const eventModule = await import(
+      `file://${filePath.replace(/\\/g, '/')}`
+    );
+    const event: Event = eventModule.default ?? eventModule.event;
+
+    if (event?.name && typeof event.execute === 'function') {
+      if (event.once) {
+        client.once(event.name, (...args) =>
+          (event.execute as (client: ExtendedClient, ...a: unknown[]) => Promise<void>)(client, ...args)
+        );
+      } else {
+        client.on(event.name, (...args) =>
+          (event.execute as (client: ExtendedClient, ...a: unknown[]) => Promise<void>)(client, ...args)
+        );
+      }
+
+      logger.debug(`Loaded event: ${event.name} (${label})`);
+      return true;
+    }
+
+    logger.warn(`Invalid event file: ${filePath} - missing name or execute`);
+    return false;
+  } catch (error) {
+    logger.error(
+      `Failed to load event from ${filePath}:`,
+      error instanceof Error ? error.message : error
+    );
+    return false;
+  }
+}
+
+/**
  * Load all events from the events directory
  */
 export async function loadEvents(client: ExtendedClient): Promise<void> {
+  let eventCount = 0;
+
+  // Core events (src/events/*/)
   const eventsPath = join(__dirname, '..', 'events');
   const categoryFolders = readdirSync(eventsPath, { withFileTypes: true })
     .filter((dirent) => dirent.isDirectory())
     .map((dirent) => dirent.name);
-
-  let eventCount = 0;
 
   for (const category of categoryFolders) {
     const categoryPath = join(eventsPath, category);
@@ -26,39 +68,16 @@ export async function loadEvents(client: ExtendedClient): Promise<void> {
     );
 
     for (const file of eventFiles) {
-      const filePath = join(categoryPath, file);
-      try {
-        const eventModule = await import(
-          `file://${filePath.replace(/\\/g, '/')}`
-        );
-        const event: Event = eventModule.default ?? eventModule.event;
-
-        if (event?.name && typeof event.execute === 'function') {
-          if (event.once) {
-            client.once(event.name, (...args) =>
-              event.execute(client, ...args)
-            );
-          } else {
-            client.on(event.name, (...args) => event.execute(client, ...args));
-          }
-
-          logger.debug(`Loaded event: ${event.name} (${category})`);
-          eventCount++;
-        } else {
-          logger.warn(
-            `Invalid event file: ${filePath} - missing name or execute`
-          );
-        }
-      } catch (error) {
-        logger.error(
-          `Failed to load event from ${filePath}:`,
-          error instanceof Error ? error.message : error
-        );
-      }
+      const registered = await registerEvent(
+        client,
+        join(categoryPath, file),
+        category
+      );
+      if (registered) eventCount++;
     }
   }
 
-  // Also load from features/*/events/
+  // Feature events (src/features/*/events/)
   const featuresPath = join(__dirname, '..', 'features');
   if (existsSync(featuresPath)) {
     const featureFolders = readdirSync(featuresPath, { withFileTypes: true })
@@ -74,37 +93,12 @@ export async function loadEvents(client: ExtendedClient): Promise<void> {
       );
 
       for (const file of eventFiles) {
-        const filePath = join(featureEventsPath, file);
-        try {
-          const eventModule = await import(
-            `file://${filePath.replace(/\\/g, '/')}`
-          );
-          const event: Event = eventModule.default ?? eventModule.event;
-
-          if (event?.name && typeof event.execute === 'function') {
-            if (event.once) {
-              client.once(event.name, (...args) =>
-                event.execute(client, ...args)
-              );
-            } else {
-              client.on(event.name, (...args) =>
-                event.execute(client, ...args)
-              );
-            }
-
-            logger.debug(`Loaded event: ${event.name} (features/${feature})`);
-            eventCount++;
-          } else {
-            logger.warn(
-              `Invalid event file: ${filePath} - missing name or execute`
-            );
-          }
-        } catch (error) {
-          logger.error(
-            `Failed to load event from ${filePath}:`,
-            error instanceof Error ? error.message : error
-          );
-        }
+        const registered = await registerEvent(
+          client,
+          join(featureEventsPath, file),
+          `features/${feature}`
+        );
+        if (registered) eventCount++;
       }
     }
   }

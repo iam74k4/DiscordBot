@@ -222,7 +222,11 @@ class BackupService {
 
       await fsp.writeFile(env.DATABASE_PATH, data);
 
-      logger.info('Database restored successfully. Restart required.');
+      logger.info(
+        'Database restored successfully. Process will exit — restart the bot to use the restored database.'
+      );
+
+      setTimeout(() => process.exit(0), 1000);
 
       return { success: true };
     } catch (error) {

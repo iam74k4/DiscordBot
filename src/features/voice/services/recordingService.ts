@@ -17,29 +17,6 @@ const recordingQueues = new BoundedMap<string, Promise<RecordingResult>>(
   MAX_CONCURRENT_RECORDINGS
 );
 
-/**
- * Format duration string to seconds
- */
-function parseDuration(durationStr: string): number {
-  const match = durationStr.match(/^(\d+)([smh])$/i);
-  if (!match) {
-    throw new Error('Invalid duration format');
-  }
-
-  const value = Number.parseInt(match[1], 10);
-  const unit = match[2].toLowerCase();
-
-  switch (unit) {
-    case 's':
-      return value;
-    case 'm':
-      return value * 60;
-    case 'h':
-      return value * 3600;
-    default:
-      throw new Error('Invalid duration unit');
-  }
-}
 
 /**
  * Create WAV file header
@@ -154,6 +131,36 @@ function generateFileName(duration: number): string {
 }
 
 /**
+ * Write a WAV file (header + PCM data) to the given path.
+ */
+async function writeWavFile(filePath: string, pcmData: Buffer): Promise<void> {
+  const header = createWAVHeader(pcmData.length);
+  const fileStream = createWriteStream(filePath);
+
+  return new Promise<void>((resolve, reject) => {
+    fileStream.on('error', (error) => {
+      fileStream.destroy();
+      reject(error);
+    });
+    fileStream.write(header, (error) => {
+      if (error) {
+        fileStream.destroy();
+        reject(error);
+        return;
+      }
+      fileStream.write(pcmData, (error) => {
+        if (error) {
+          fileStream.destroy();
+          reject(error);
+          return;
+        }
+        fileStream.end(resolve);
+      });
+    });
+  });
+}
+
+/**
  * Record audio from buffer
  */
 export async function recordAudio(
@@ -161,12 +168,10 @@ export async function recordAudio(
 ): Promise<RecordingResult> {
   const { channelId, duration } = options;
 
-  // Check if recording is already in progress for this channel
   if (recordingQueues.has(channelId)) {
     throw new Error('Recording already in progress for this channel');
   }
 
-  // Validate duration
   if (duration <= 0) {
     throw new Error('Duration must be greater than 0');
   }
@@ -183,7 +188,6 @@ export async function recordAudio(
     );
   }
 
-  // Create recording promise
   const recordingPromise = (async (): Promise<RecordingResult> => {
     try {
       const buffer = audioBufferManager.getBuffer(channelId);
@@ -195,20 +199,16 @@ export async function recordAudio(
         );
       }
 
-      // Resample from 48kHz (Discord default) to 32kHz
       const resampledData = resampleAudio(audioData, 48000, AUDIO.SAMPLE_RATE);
 
-      // Ensure recordings directory exists
       const recordingsDir = join(process.cwd(), env.RECORDINGS_DIR);
       await mkdir(recordingsDir, { recursive: true });
 
-      // Check if file needs to be split
-      const estimatedSize = resampledData.length + 44; // WAV header is 44 bytes
+      const estimatedSize = resampledData.length + 44;
       const maxSize = DISCORD_LIMITS.MAX_FILE_SIZE_MB * 1024 * 1024;
 
       if (shouldSplitFile(estimatedSize)) {
-        // Split into multiple files
-        const splitSize = Math.floor(maxSize * 0.9); // Use 90% of max to be safe
+        const splitSize = Math.floor(maxSize * 0.9);
         const parts = splitAudioBuffer(resampledData, splitSize);
         const filePaths: string[] = [];
 
@@ -218,32 +218,7 @@ export async function recordAudio(
             `_part${i + 1}.wav`
           );
           const filePath = join(recordingsDir, fileName);
-
-          const header = createWAVHeader(parts[i].length);
-          const fileStream = createWriteStream(filePath);
-
-          await new Promise<void>((resolve, reject) => {
-            fileStream.on('error', (error) => {
-              fileStream.destroy();
-              reject(error);
-            });
-            fileStream.write(header, (error) => {
-              if (error) {
-                fileStream.destroy();
-                reject(error);
-                return;
-              }
-              fileStream.write(parts[i], (error) => {
-                if (error) {
-                  fileStream.destroy();
-                  reject(error);
-                  return;
-                }
-                fileStream.end(resolve);
-              });
-            });
-          });
-
+          await writeWavFile(filePath, parts[i]);
           filePaths.push(filePath);
         }
 
@@ -256,34 +231,9 @@ export async function recordAudio(
           additionalFiles: filePaths.slice(1),
         };
       } else {
-        // Single file
         const fileName = generateFileName(duration);
         const filePath = join(recordingsDir, fileName);
-
-        const header = createWAVHeader(resampledData.length);
-        const fileStream = createWriteStream(filePath);
-
-        await new Promise<void>((resolve, reject) => {
-          fileStream.on('error', (error) => {
-            fileStream.destroy();
-            reject(error);
-          });
-          fileStream.write(header, (error) => {
-            if (error) {
-              fileStream.destroy();
-              reject(error);
-              return;
-            }
-            fileStream.write(resampledData, (error) => {
-              if (error) {
-                fileStream.destroy();
-                reject(error);
-                return;
-              }
-              fileStream.end(resolve);
-            });
-          });
-        });
+        await writeWavFile(filePath, resampledData);
 
         const fileStats = await stat(filePath);
 
@@ -305,8 +255,25 @@ export async function recordAudio(
 }
 
 /**
- * Parse duration string (e.g., "30s", "1m", "5m")
+ * Parse a human-readable duration string (e.g. "30s", "1m", "5m") to seconds.
  */
 export function parseDurationString(durationStr: string): number {
-  return parseDuration(durationStr);
+  const match = durationStr.match(/^(\d+)([smh])$/i);
+  if (!match) {
+    throw new Error('Invalid duration format');
+  }
+
+  const value = Number.parseInt(match[1], 10);
+  const unit = match[2].toLowerCase();
+
+  switch (unit) {
+    case 's':
+      return value;
+    case 'm':
+      return value * 60;
+    case 'h':
+      return value * 3600;
+    default:
+      throw new Error('Invalid duration unit');
+  }
 }

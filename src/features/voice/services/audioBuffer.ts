@@ -97,16 +97,16 @@ export class HybridAudioBuffer {
 
     if (chunksToMove.length === 0) return;
 
-    // Write chunks to disk asynchronously
+    this.memoryBuffer = chunksToKeep;
+
     this.writeChunksToDisk(chunksToMove).catch((error) => {
       logger.error(
         `Failed to write chunks to disk for channel ${this.channelId}:`,
         error instanceof Error ? error.message : error
       );
+      // Restore evicted chunks to memory so audio data is not lost
+      this.memoryBuffer = [...chunksToMove, ...this.memoryBuffer];
     });
-
-    // Update memory buffer
-    this.memoryBuffer = chunksToKeep;
 
     logger.debug(
       `Moved ${chunksToMove.length} chunks to disk for channel ${this.channelId}`
@@ -320,9 +320,6 @@ export class AudioBufferManager {
       channels: AUDIO.CHANNELS,
       diskBufferDir: env.AUDIO_DISK_BUFFER_DIR,
     };
-
-    // Start periodic cleanup
-    this.startCleanup();
   }
 
   /**
