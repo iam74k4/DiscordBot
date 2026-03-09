@@ -443,14 +443,23 @@ export const ja: TranslationKeys = {
         author: '作成者',
         base: 'ベース',
         head: 'ヘッド',
+        mergeable: 'マージ可能',
+        changes: '変更',
+        files: 'ファイル',
+        labels: 'ラベル',
       },
       create: {
         success: 'PRを作成しました',
         successDesc: '**{title}** を作成しました。',
+        modalTitle: 'PR作成',
       },
       merge: {
         success: 'PRをマージしました',
         successDesc: 'PR #{number} をマージしました。',
+        confirmTitle: 'マージの確認',
+        confirmDesc: 'PR **#{number}** を **{method}** でマージしますか？',
+        confirmButton: 'マージ',
+        merging: 'マージ中...',
       },
     },
     issue: {
@@ -462,10 +471,14 @@ export const ja: TranslationKeys = {
         title: 'Issue #{number}',
         state: '状態',
         author: '作成者',
+        assignees: '担当者',
+        labels: 'ラベル',
+        milestone: 'マイルストーン',
       },
       create: {
         success: 'Issueを作成しました',
         successDesc: '**{title}** を作成しました。',
+        modalTitle: 'Issue作成',
       },
     },
     repo: {
@@ -478,6 +491,13 @@ export const ja: TranslationKeys = {
         defaultBranch: 'デフォルトブランチ',
         noDesc: '説明なし',
       },
+    },
+    modal: {
+      titleLabel: 'タイトル',
+      bodyLabel: '説明',
+      bodyPlaceholder: '任意。後からGitHubで詳細を追記できます。',
+      headLabel: 'ヘッドブランチ（マージ元）',
+      baseLabel: 'ベースブランチ（マージ先）',
     },
     errors: {
       tokenNotSet:
