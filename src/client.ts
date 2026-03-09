@@ -14,9 +14,9 @@ export class ExtendedClient extends Client {
     super({
       intents: [
         GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.GuildVoiceStates, // Required for roulette command (voice channel members)
-        // GatewayIntentBits.GuildMembers, // Requires enabling in Developer Portal
+        GatewayIntentBits.GuildVoiceStates,
       ],
     });
   }
