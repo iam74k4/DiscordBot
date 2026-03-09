@@ -49,6 +49,8 @@ export async function executeGitHubCommand(
     return;
   }
 
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
   const group = interaction.options.getSubcommandGroup(false);
 
   try {
@@ -71,10 +73,7 @@ export async function executeGitHubCommand(
         message: 'Unknown subcommand group',
       })
     );
-    await interaction.reply({
-      embeds: [embed],
-      flags: MessageFlags.Ephemeral,
-    });
+    await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : String(error);
@@ -82,10 +81,7 @@ export async function executeGitHubCommand(
       t('common.error', locale),
       t('github.errors.apiError', locale, { message })
     );
-    await interaction.reply({
-      embeds: [embed],
-      flags: MessageFlags.Ephemeral,
-    });
+    await interaction.editReply({ embeds: [embed] });
   }
 }
 

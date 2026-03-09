@@ -17,7 +17,16 @@ interface EmbedOptions {
 }
 
 /**
- * Create a standard embed with consistent styling
+ * Options for status embeds (success/error/warning/info)
+ */
+interface StatusEmbedOptions {
+  footer?: string;
+  timestamp?: boolean;
+}
+
+/**
+ * Create a standard embed with consistent styling.
+ * Timestamps are enabled by default; pass `timestamp: false` to disable.
  */
 export function createEmbed(options: EmbedOptions): EmbedBuilder {
   const embed = new EmbedBuilder().setColor(options.color ?? COLORS.PRIMARY);
@@ -42,7 +51,7 @@ export function createEmbed(options: EmbedOptions): EmbedBuilder {
     embed.setFooter({ text: options.footer });
   }
 
-  if (options.timestamp) {
+  if (options.timestamp !== false) {
     embed.setTimestamp();
   }
 
@@ -62,12 +71,15 @@ export function createEmbed(options: EmbedOptions): EmbedBuilder {
  */
 export function createSuccessEmbed(
   title: string,
-  description?: string
+  description?: string,
+  options?: StatusEmbedOptions
 ): EmbedBuilder {
   return createEmbed({
     title,
     description,
     color: COLORS.SUCCESS,
+    footer: options?.footer,
+    timestamp: options?.timestamp,
   });
 }
 
@@ -76,12 +88,15 @@ export function createSuccessEmbed(
  */
 export function createErrorEmbed(
   title: string,
-  description?: string
+  description?: string,
+  options?: StatusEmbedOptions
 ): EmbedBuilder {
   return createEmbed({
     title,
     description,
     color: COLORS.ERROR,
+    footer: options?.footer,
+    timestamp: options?.timestamp,
   });
 }
 
@@ -90,12 +105,15 @@ export function createErrorEmbed(
  */
 export function createWarningEmbed(
   title: string,
-  description?: string
+  description?: string,
+  options?: StatusEmbedOptions
 ): EmbedBuilder {
   return createEmbed({
     title,
     description,
     color: COLORS.WARNING,
+    footer: options?.footer,
+    timestamp: options?.timestamp,
   });
 }
 
@@ -104,11 +122,14 @@ export function createWarningEmbed(
  */
 export function createInfoEmbed(
   title: string,
-  description?: string
+  description?: string,
+  options?: StatusEmbedOptions
 ): EmbedBuilder {
   return createEmbed({
     title,
     description,
     color: COLORS.INFO,
+    footer: options?.footer,
+    timestamp: options?.timestamp,
   });
 }

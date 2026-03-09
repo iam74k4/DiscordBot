@@ -67,6 +67,16 @@ export interface TranslationKeys {
     noPermission: string;
     status: string;
     noData: string;
+    unexpectedError: string;
+    cooldown: string;
+    commandBlocked: string;
+    permissionsRequired: string;
+    permissionsUnverifiable: string;
+    confirm: string;
+    cancel: string;
+    confirmMessage: string;
+    timeout: string;
+    cancelled: string;
   };
 
   // Units
@@ -177,6 +187,10 @@ export interface TranslationKeys {
       notEnoughOptions: string;
       tooManyOptions: string;
       invalidOption: string;
+      pollEnded: string;
+      pollEndedDesc: string;
+      pollError: string;
+      pollErrorDesc: string;
     };
   };
 
