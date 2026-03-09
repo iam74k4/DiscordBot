@@ -1,17 +1,24 @@
 import {
+  ActionRowBuilder,
   AutocompleteInteraction,
   ChatInputCommandInteraction,
+  ComponentType,
+  MessageFlags,
   PermissionsBitField,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
 } from 'discord.js';
 import { createEmbed } from '../../../utils/embed.js';
 import { COLORS } from '../../../utils/constants/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import {
   getHelpCategories,
+  type CommandCategory,
   type CommandInfo,
   type PermissionLevel,
 } from '../../helpCatalog.js';
 import { isBotOwner } from '../../../config/env.js';
+import { getErrorMessage, logger } from '../../../utils/logger.js';
 
 interface PermissionContext {
   userId: string;
@@ -130,10 +137,7 @@ export async function executeHelpCommand(
   if (commandName) {
     const cmd = findCommand(commandName);
 
-    if (
-      !cmd ||
-      !canUserSeeCommand(cmd, interaction)
-    ) {
+    if (!cmd || !canUserSeeCommand(cmd, interaction)) {
       const embed = createEmbed({
         title: t('help.commandNotFound', locale),
         description: t('help.commandNotFoundDesc', locale, {
@@ -177,7 +181,7 @@ export async function executeHelpCommand(
     }))
     .filter((category) => category.commands.length > 0);
 
-  const fields = filteredCategories.map((category) => {
+  const buildCategoryEmbed = (category: CommandCategory) => {
     const categoryName = locale === 'ja' ? category.name.ja : category.name.en;
     const commandList = category.commands
       .map((cmd) => {
@@ -187,23 +191,134 @@ export async function executeHelpCommand(
       })
       .join('\n');
 
-    return {
-      name: categoryName,
-      value: commandList,
-      inline: false,
-    };
+    return createEmbed({
+      title: categoryName,
+      description: commandList,
+      color: COLORS.PRIMARY,
+      footer: t('help.filteredFooter', locale),
+    });
+  };
+
+  const buildOverviewEmbed = () => {
+    const fields = filteredCategories.map((category) => {
+      const categoryName =
+        locale === 'ja' ? category.name.ja : category.name.en;
+      const commandList = category.commands
+        .map((cmd) => {
+          const desc =
+            locale === 'ja' ? cmd.description.ja : cmd.description.en;
+          const permLabel = formatCommandPermissionLabel(cmd, locale);
+          return `\`/${cmd.name}\` - ${desc}${permLabel}`;
+        })
+        .join('\n');
+
+      return { name: categoryName, value: commandList, inline: false };
+    });
+
+    return createEmbed({
+      title: t('help.title', locale),
+      description: t('help.description', locale),
+      color: COLORS.PRIMARY,
+      fields,
+      footer: t('help.filteredFooter', locale),
+    });
+  };
+
+  if (filteredCategories.length <= 1) {
+    await interaction.reply({ embeds: [buildOverviewEmbed()] });
+    return;
+  }
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId('help_category')
+    .setPlaceholder(
+      locale === 'ja' ? 'カテゴリーを選択...' : 'Select a category...'
+    )
+    .addOptions(
+      new StringSelectMenuOptionBuilder()
+        .setLabel(locale === 'ja' ? 'すべて表示' : 'Show All')
+        .setValue('all')
+        .setDefault(true),
+      ...filteredCategories.map((cat, index) => {
+        const name = locale === 'ja' ? cat.name.ja : cat.name.en;
+        return new StringSelectMenuOptionBuilder()
+          .setLabel(name)
+          .setValue(`cat_${index}`);
+      })
+    );
+
+  const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    selectMenu
+  );
+
+  const reply = await interaction.reply({
+    embeds: [buildOverviewEmbed()],
+    components: [row],
+    fetchReply: true,
   });
 
-  const footer = t('help.filteredFooter', locale);
-
-  const embed = createEmbed({
-    title: t('help.title', locale),
-    description: t('help.description', locale),
-    color: COLORS.PRIMARY,
-    fields,
-    footer,
-    timestamp: true,
+  const collector = reply.createMessageComponentCollector({
+    componentType: ComponentType.StringSelect,
+    time: 120_000,
   });
 
-  await interaction.reply({ embeds: [embed] });
+  collector.on('collect', async (selectInteraction) => {
+    if (selectInteraction.user.id !== interaction.user.id) {
+      await selectInteraction.reply({
+        content:
+          locale === 'ja'
+            ? 'コマンドを実行したユーザーのみ操作できます。'
+            : 'Only the command user can interact.',
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    const value = selectInteraction.values[0];
+
+    let embed;
+    if (value === 'all') {
+      embed = buildOverviewEmbed();
+    } else {
+      const catIndex = parseInt(value.replace('cat_', ''), 10);
+      const category = filteredCategories[catIndex];
+      if (!category) return;
+      embed = buildCategoryEmbed(category);
+    }
+
+    const updatedMenu = StringSelectMenuBuilder.from(
+      selectMenu.toJSON()
+    ).setOptions(
+      selectMenu.options.map((opt) =>
+        StringSelectMenuOptionBuilder.from(opt.toJSON()).setDefault(
+          opt.toJSON().value === value
+        )
+      )
+    );
+    const updatedRow =
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+        updatedMenu
+      );
+    await selectInteraction.update({
+      embeds: [embed],
+      components: [updatedRow],
+    });
+  });
+
+  collector.on('end', async () => {
+    const disabledMenu = StringSelectMenuBuilder.from(
+      selectMenu.toJSON()
+    ).setDisabled(true);
+    const disabledRow =
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+        disabledMenu
+      );
+    await interaction
+      .editReply({ components: [disabledRow] })
+      .catch((e: unknown) => {
+        logger.debug(
+          `Failed to disable help select menu: ${getErrorMessage(e)}`
+        );
+      });
+  });
 }

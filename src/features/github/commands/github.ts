@@ -81,8 +81,12 @@ export const command: Command = {
             .addStringOption((o) =>
               o
                 .setName('body')
-                .setDescription('PR description (summary only, add details on GitHub)')
-                .setDescriptionLocalizations({ ja: 'PR説明（概要のみ、詳細はGitHubで追記）' })
+                .setDescription(
+                  'PR description (summary only, add details on GitHub)'
+                )
+                .setDescriptionLocalizations({
+                  ja: 'PR説明（概要のみ、詳細はGitHubで追記）',
+                })
                 .setMaxLength(300)
             )
             .addStringOption((o) =>
@@ -203,8 +207,12 @@ export const command: Command = {
             .addStringOption((o) =>
               o
                 .setName('body')
-                .setDescription('Issue description (summary only, add details on GitHub)')
-                .setDescriptionLocalizations({ ja: 'Issue説明（概要のみ、詳細はGitHubで追記）' })
+                .setDescription(
+                  'Issue description (summary only, add details on GitHub)'
+                )
+                .setDescriptionLocalizations({
+                  ja: 'Issue説明（概要のみ、詳細はGitHubで追記）',
+                })
                 .setMaxLength(300)
             )
         )

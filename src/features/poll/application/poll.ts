@@ -11,6 +11,7 @@ import {
   findUserPollInChannel,
   pollStore,
 } from '../services/index.js';
+import { awaitConfirmation } from '../../../utils/confirm.js';
 
 async function handleCreatePoll(
   interaction: ChatInputCommandInteraction
@@ -117,9 +118,30 @@ async function handleEndPoll(
     return;
   }
 
+  const pollData = pollStore.get(foundMessageId);
+  const pollQuestion = pollData?.question ?? '';
+  const confirmed = await awaitConfirmation(
+    interaction,
+    pollQuestion ? `**${pollQuestion}**` : t('poll.ended', locale),
+    { ephemeral: true }
+  );
+
+  if (!confirmed) {
+    await interaction.editReply({
+      embeds: [
+        createEmbed({
+          title: t('common.cancelled', locale),
+          color: COLORS.INFO,
+        }),
+      ],
+      components: [],
+    });
+    return;
+  }
+
   await endPoll(foundMessageId, interaction.client);
 
-  await interaction.reply({
+  await interaction.editReply({
     embeds: [
       createEmbed({
         title: t('poll.ended', locale),
@@ -127,7 +149,7 @@ async function handleEndPoll(
         color: COLORS.SUCCESS,
       }),
     ],
-    flags: MessageFlags.Ephemeral,
+    components: [],
   });
 }
 
