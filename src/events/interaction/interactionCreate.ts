@@ -5,6 +5,7 @@ import { runMiddleware } from '../../middleware/index.js';
 import { getErrorMessage, logger } from '../../utils/logger.js';
 import { createErrorEmbed } from '../../utils/embed.js';
 import { metrics } from '../../services/metrics/index.js';
+import { t, mapDiscordLocale } from '../../locales/index.js';
 
 /**
  * InteractionCreate event - handles slash command and autocomplete interactions
@@ -76,10 +77,10 @@ export const event: Event<typeof Events.InteractionCreate> = {
         error
       );
 
-      // Send error message to user
+      const locale = mapDiscordLocale(interaction.locale);
       const errorEmbed = createErrorEmbed(
-        'Error',
-        'An error occurred while executing this command.'
+        t('common.error', locale),
+        t('common.unexpectedError', locale)
       );
 
       if (interaction.deferred || interaction.replied) {

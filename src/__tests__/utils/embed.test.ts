@@ -46,9 +46,14 @@ describe('createEmbed', () => {
     expect(embed.data.footer?.text).toBe('Test Footer');
   });
 
-  it('should set timestamp', () => {
-    const embed = createEmbed({ timestamp: true });
+  it('should set timestamp by default', () => {
+    const embed = createEmbed({});
     expect(embed.data.timestamp).toBeDefined();
+  });
+
+  it('should allow disabling timestamp', () => {
+    const embed = createEmbed({ timestamp: false });
+    expect(embed.data.timestamp).toBeUndefined();
   });
 
   it('should set thumbnail', () => {
@@ -68,12 +73,20 @@ describe('createSuccessEmbed', () => {
     expect(embed.data.color).toBe(COLORS.SUCCESS);
     expect(embed.data.title).toBe('Success');
     expect(embed.data.description).toBe('Operation completed');
+    expect(embed.data.timestamp).toBeDefined();
   });
 
   it('should work without description', () => {
     const embed = createSuccessEmbed('Success');
     expect(embed.data.title).toBe('Success');
     expect(embed.data.description).toBeUndefined();
+  });
+
+  it('should accept footer option', () => {
+    const embed = createSuccessEmbed('Success', 'desc', {
+      footer: '/test command',
+    });
+    expect(embed.data.footer?.text).toBe('/test command');
   });
 });
 

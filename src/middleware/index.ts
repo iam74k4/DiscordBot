@@ -8,6 +8,7 @@ import { permissionsMiddleware } from './permissions.js';
 import { cooldownMiddleware } from './cooldown/index.js';
 import { createErrorEmbed } from '../utils/embed.js';
 import { logger } from '../utils/logger.js';
+import { t, mapDiscordLocale } from '../locales/index.js';
 
 const middlewareRegistry: MiddlewareRegistry = {
   permissions: permissionsMiddleware,
@@ -35,9 +36,10 @@ export async function runMiddleware(
     const result: MiddlewareResult = await middleware(interaction, command);
 
     if (!result.success) {
+      const locale = mapDiscordLocale(interaction.locale);
       const embed = createErrorEmbed(
-        'Command Blocked',
-        result.message || 'You cannot use this command.'
+        t('common.commandBlocked', locale),
+        result.message || t('common.noPermission', locale)
       );
 
       if (interaction.deferred || interaction.replied) {

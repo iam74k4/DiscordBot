@@ -117,6 +117,7 @@ async function handleMemberRoulette(
           title: t('roulette.member.title', locale),
           description: `**${t('roulette.member.countdown', locale, { count: i })}**`,
           color: COLORS.WARNING,
+          timestamp: false,
         }),
       ],
     });
@@ -132,6 +133,7 @@ async function handleMemberRoulette(
           candidates: candidateList,
         }),
         color: COLORS.WARNING,
+        timestamp: false,
       }),
     ],
   });
@@ -225,6 +227,7 @@ async function handleTeamRoulette(
           title: t('roulette.team.title', locale),
           description: `**${t('roulette.member.countdown', locale, { count: i })}**`,
           color: COLORS.WARNING,
+          timestamp: false,
         }),
       ],
     });
@@ -242,6 +245,7 @@ async function handleTeamRoulette(
           candidates: candidateList,
         }),
         color: COLORS.WARNING,
+        timestamp: false,
       }),
     ],
   });

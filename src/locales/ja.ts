@@ -14,6 +14,16 @@ export const ja: TranslationKeys = {
     noPermission: 'このコマンドを使用する権限がありません。',
     status: 'ステータス',
     noData: 'データなし',
+    unexpectedError: 'コマンドの実行中に予期しないエラーが発生しました。',
+    cooldown: '`/{command}` を再使用するには {time} 秒お待ちください。',
+    commandBlocked: 'コマンドがブロックされました',
+    permissionsRequired: '次の権限が必要です: {permissions}',
+    permissionsUnverifiable: '権限を確認できません。',
+    confirm: '確認',
+    cancel: 'キャンセル',
+    confirmMessage: '本当に実行しますか？',
+    timeout: 'この操作はタイムアウトしました。',
+    cancelled: 'キャンセルしました。',
   },
 
   units: {
@@ -122,6 +132,10 @@ export const ja: TranslationKeys = {
       notEnoughOptions: '投票には最低2つの選択肢が必要です。',
       tooManyOptions: '投票の選択肢は最大10個までです。',
       invalidOption: '無効な投票オプションです。',
+      pollEnded: '投票終了',
+      pollEndedDesc: 'この投票は終了したか、存在しません。',
+      pollError: '投票エラー',
+      pollErrorDesc: '投票の処理中にエラーが発生しました。',
     },
   },
 
@@ -466,9 +480,12 @@ export const ja: TranslationKeys = {
       },
     },
     errors: {
-      tokenNotSet: 'GITHUB_TOKEN が設定されていません。Bot管理者に設定を依頼してください。',
-      noPermission: 'このコマンドには「サーバー管理」権限またはBotオーナーである必要があります。',
-      invalidRepo: 'リポジトリ形式が不正です。`owner/name` で指定してください。',
+      tokenNotSet:
+        'GITHUB_TOKEN が設定されていません。Bot管理者に設定を依頼してください。',
+      noPermission:
+        'このコマンドには「サーバー管理」権限またはBotオーナーである必要があります。',
+      invalidRepo:
+        'リポジトリ形式が不正です。`owner/name` で指定してください。',
       notFound: 'リポジトリ、PR、またはIssueが見つかりません。',
       isPullRequest: 'この番号はPRです。`/github pr view` を使用してください。',
       forbidden: '権限が不足しています。トークンのスコープを確認してください。',

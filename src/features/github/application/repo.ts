@@ -1,7 +1,4 @@
-import {
-  ChatInputCommandInteraction,
-  MessageFlags,
-} from 'discord.js';
+import { ChatInputCommandInteraction } from 'discord.js';
 import type { Octokit } from 'octokit';
 import type { Locale } from '../../../locales/types.js';
 import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
@@ -22,10 +19,7 @@ export async function executeRepoCommand(
       t('common.error', locale),
       t('github.errors.invalidRepo', locale)
     );
-    await interaction.reply({
-      embeds: [embed],
-      flags: MessageFlags.Ephemeral,
-    });
+    await interaction.editReply({ embeds: [embed] });
     return;
   }
 
@@ -67,16 +61,10 @@ export async function executeRepoCommand(
       ],
       timestamp: true,
     });
-    await interaction.reply({
-      embeds: [embed],
-      flags: MessageFlags.Ephemeral,
-    });
+    await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     const msg = handleApiError(error, locale);
     const embed = createErrorEmbed(t('common.error', locale), msg);
-    await interaction.reply({
-      embeds: [embed],
-      flags: MessageFlags.Ephemeral,
-    });
+    await interaction.editReply({ embeds: [embed] });
   }
 }

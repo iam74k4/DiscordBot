@@ -1,9 +1,4 @@
-import {
-  ChatInputCommandInteraction,
-  ComponentType,
-  Guild,
-  MessageFlags,
-} from 'discord.js';
+import { ChatInputCommandInteraction, Guild, MessageFlags } from 'discord.js';
 import {
   createEmbed,
   createErrorEmbed,
@@ -13,9 +8,10 @@ import { COLORS } from '../../../utils/constants/index.js';
 import { steamClient, formatPlaytimeWithBar } from '../services/steam/index.js';
 import { steamUserRepository } from '../repositories/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { getErrorMessage, logger } from '../../../utils/logger.js';
-import { USERS_PER_PAGE, buildButtons } from '../lib/shared.js';
+import { logger } from '../../../utils/logger.js';
+import { USERS_PER_PAGE } from '../lib/shared.js';
 import { withTimeout } from '../../../utils/timeout.js';
+import { sendPaginatedMessage } from '../../../utils/pagination.js';
 
 export async function handleRanking(
   interaction: ChatInputCommandInteraction
@@ -64,6 +60,7 @@ export async function handleRanking(
       count: registeredUsers.length,
     }),
     color: COLORS.STEAM,
+    timestamp: false,
   });
   await interaction.editReply({ embeds: [loadingEmbed] });
 
@@ -123,9 +120,7 @@ export async function handleRanking(
 
   rankedUsers.sort((a, b) => b.totalPlaytime - a.totalPlaytime);
 
-  const totalPages = Math.ceil(rankedUsers.length / USERS_PER_PAGE);
   const maxPlaytime = rankedUsers[0].totalPlaytime;
-  let currentPage = 0;
 
   const totalHours = rankedUsers.reduce(
     (sum, u) => sum + Math.floor(u.totalPlaytime / 60),
@@ -133,87 +128,33 @@ export async function handleRanking(
   );
   const avgHours = Math.floor(totalHours / rankedUsers.length);
 
-  const buildRankingEmbed = (page: number) => {
-    const startIndex = page * USERS_PER_PAGE;
-    const pageUsers = rankedUsers.slice(
-      startIndex,
-      startIndex + USERS_PER_PAGE
-    );
+  await sendPaginatedMessage<RankedUser>({
+    items: rankedUsers,
+    itemsPerPage: USERS_PER_PAGE,
+    interaction,
+    onlyOwnerMessage: t('steam.errors.onlyCommandUser', locale),
+    formatPage: (pageUsers, page, totalPages) => {
+      const startIndex = page * USERS_PER_PAGE;
 
-    const rankingList = pageUsers
-      .map((user, index) => {
-        const rank = startIndex + index + 1;
-        const medal =
-          rank <= 3 ? `${rank}.` : `\`${rank.toString().padStart(2, ' ')}\``;
-        const bar = formatPlaytimeWithBar(user.totalPlaytime, maxPlaytime);
-        return `${medal} **${user.steamName}** (<@${user.discordId}>)\n    ${bar}`;
-      })
-      .join('\n\n');
+      const rankingList = pageUsers
+        .map((user, index) => {
+          const rank = startIndex + index + 1;
+          const medal =
+            rank <= 3 ? `${rank}.` : `\`${rank.toString().padStart(2, ' ')}\``;
+          const bar = formatPlaytimeWithBar(user.totalPlaytime, maxPlaytime);
+          return `${medal} **${user.steamName}** (<@${user.discordId}>)\n    ${bar}`;
+        })
+        .join('\n\n');
 
-    return createEmbed({
-      title: `${guild.name} - ${t('steam.ranking.title', locale)}`,
-      description: `**${t('steam.ranking.totalPlayers', locale)}:** ${rankedUsers.length}\n**${t('steam.ranking.combined', locale)}:** ${totalHours.toLocaleString()} ${t('units.hours', locale)}\n**${t('steam.ranking.average', locale)}:** ${avgHours.toLocaleString()} ${t('units.hoursPerPlayer', locale)}\n\n${rankingList}`,
-      color: COLORS.STEAM,
-      footer: t('steam.ranking.page', locale, {
-        current: page + 1,
-        total: totalPages,
-      }),
-      timestamp: true,
-    });
-  };
-
-  const embed = buildRankingEmbed(currentPage);
-  const buttons = buildButtons(currentPage, totalPages);
-
-  const response = await interaction.editReply({
-    embeds: [embed],
-    components: totalPages > 1 ? [buttons] : [],
-  });
-
-  if (totalPages <= 1) return;
-
-  const collector = response.createMessageComponentCollector({
-    componentType: ComponentType.Button,
-    time: 120000,
-  });
-
-  collector.on('collect', async (buttonInteraction) => {
-    if (buttonInteraction.user.id !== interaction.user.id) {
-      await buttonInteraction.reply({
-        content: t('steam.errors.onlyCommandUser', locale),
-        flags: MessageFlags.Ephemeral,
+      return createEmbed({
+        title: `${guild.name} - ${t('steam.ranking.title', locale)}`,
+        description: `**${t('steam.ranking.totalPlayers', locale)}:** ${rankedUsers.length}\n**${t('steam.ranking.combined', locale)}:** ${totalHours.toLocaleString()} ${t('units.hours', locale)}\n**${t('steam.ranking.average', locale)}:** ${avgHours.toLocaleString()} ${t('units.hoursPerPlayer', locale)}\n\n${rankingList}`,
+        color: COLORS.STEAM,
+        footer: t('steam.ranking.page', locale, {
+          current: page + 1,
+          total: totalPages,
+        }),
       });
-      return;
-    }
-
-    switch (buttonInteraction.customId) {
-      case 'first':
-        currentPage = 0;
-        break;
-      case 'prev':
-        currentPage = Math.max(0, currentPage - 1);
-        break;
-      case 'next':
-        currentPage = Math.min(totalPages - 1, currentPage + 1);
-        break;
-      case 'last':
-        currentPage = totalPages - 1;
-        break;
-    }
-
-    await buttonInteraction.update({
-      embeds: [buildRankingEmbed(currentPage)],
-      components: [buildButtons(currentPage, totalPages)],
-    });
-  });
-
-  collector.on('end', async () => {
-    await interaction
-      .editReply({ components: [buildButtons(currentPage, totalPages, true)] })
-      .catch((e: unknown) => {
-        logger.debug(
-          `Failed to disable ranking pagination buttons: ${getErrorMessage(e)}`
-        );
-      });
+    },
   });
 }

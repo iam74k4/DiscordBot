@@ -1,7 +1,4 @@
-import {
-  ChatInputCommandInteraction,
-  MessageFlags,
-} from 'discord.js';
+import { ChatInputCommandInteraction } from 'discord.js';
 import type { Octokit } from 'octokit';
 import type { Locale } from '../../../locales/types.js';
 import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
@@ -24,10 +21,7 @@ export async function executeIssueCommand(
       t('common.error', locale),
       t('github.errors.invalidRepo', locale)
     );
-    await interaction.reply({
-      embeds: [embed],
-      flags: MessageFlags.Ephemeral,
-    });
+    await interaction.editReply({ embeds: [embed] });
     return;
   }
 
@@ -55,10 +49,7 @@ export async function executeIssueCommand(
           color: COLORS.INFO,
           timestamp: true,
         });
-        await interaction.reply({
-          embeds: [embed],
-          flags: MessageFlags.Ephemeral,
-        });
+        await interaction.editReply({ embeds: [embed] });
         return;
       }
 
@@ -76,10 +67,7 @@ export async function executeIssueCommand(
         footer: `${parsed.owner}/${parsed.repo} | ${state}`,
         timestamp: true,
       });
-      await interaction.reply({
-        embeds: [embed],
-        flags: MessageFlags.Ephemeral,
-      });
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
 
@@ -96,15 +84,14 @@ export async function executeIssueCommand(
           t('common.warning', locale),
           t('github.errors.isPullRequest', locale)
         );
-        await interaction.reply({
-          embeds: [embed],
-          flags: MessageFlags.Ephemeral,
-        });
+        await interaction.editReply({ embeds: [embed] });
         return;
       }
 
       const stateLabel =
-        data.state === 'open' ? t('github.pr.list.open', locale) : t('github.pr.list.closed', locale);
+        data.state === 'open'
+          ? t('github.pr.list.open', locale)
+          : t('github.pr.list.closed', locale);
 
       const embed = createEmbed({
         title: t('github.issue.view.title', locale, { number }),
@@ -125,10 +112,7 @@ export async function executeIssueCommand(
         ],
         timestamp: true,
       });
-      await interaction.reply({
-        embeds: [embed],
-        flags: MessageFlags.Ephemeral,
-      });
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
 
@@ -152,18 +136,12 @@ export async function executeIssueCommand(
         color: COLORS.SUCCESS,
         timestamp: true,
       });
-      await interaction.reply({
-        embeds: [embed],
-        flags: MessageFlags.Ephemeral,
-      });
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
   } catch (error) {
     const msg = handleApiError(error, locale);
     const embed = createErrorEmbed(t('common.error', locale), msg);
-    await interaction.reply({
-      embeds: [embed],
-      flags: MessageFlags.Ephemeral,
-    });
+    await interaction.editReply({ embeds: [embed] });
   }
 }
