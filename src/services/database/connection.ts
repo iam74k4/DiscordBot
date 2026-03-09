@@ -4,26 +4,47 @@ import { existsSync, mkdirSync } from 'fs';
 import { logger } from '../../utils/logger.js';
 import { env } from '../../config/index.js';
 
-const DB_PATH = join(process.cwd(), env.DATABASE_PATH);
-const DATA_DIR = dirname(DB_PATH);
+let db: DatabaseType | null = null;
 
-if (!existsSync(DATA_DIR)) {
-  mkdirSync(DATA_DIR, { recursive: true });
+function getDb(): DatabaseType {
+  if (!db) {
+    const dbPath = join(process.cwd(), env.DATABASE_PATH);
+    const dataDir = dirname(dbPath);
+
+    if (!existsSync(dataDir)) {
+      mkdirSync(dataDir, { recursive: true });
+    }
+
+    db = new Database(dbPath);
+    db.pragma('journal_mode = WAL');
+    logger.debug('Database connection opened');
+  }
+  return db;
 }
 
-const db = new Database(DB_PATH);
-db.pragma('journal_mode = WAL');
-
 export function closeDatabase(): void {
-  db.close();
-  logger.debug('Database connection closed');
+  if (db) {
+    db.close();
+    db = null;
+    logger.debug('Database connection closed');
+  }
 }
 
 export function getTableCount(): number {
-  const result = db
+  const result = getDb()
     .prepare("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'")
     .get() as { count: number } | undefined;
   return result?.count ?? 0;
 }
 
-export const database: DatabaseType = db;
+/**
+ * Lazily-initialized database instance.
+ * Access via this proxy; the actual connection is created on first use.
+ */
+export const database: DatabaseType = new Proxy({} as DatabaseType, {
+  get(_target, prop, receiver) {
+    const instance = getDb();
+    const value = Reflect.get(instance, prop, receiver);
+    return typeof value === 'function' ? value.bind(instance) : value;
+  },
+});
