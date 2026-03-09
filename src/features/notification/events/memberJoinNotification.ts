@@ -9,6 +9,7 @@ import { ExtendedClient } from '../../../client.js';
 import { createEmbed } from '../../../utils/embed.js';
 import { COLORS } from '../../../utils/constants/index.js';
 import { logger } from '../../../utils/logger.js';
+import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { notificationChannelRepository } from '../repositories/notificationChannelRepository.js';
 
 export const event: Event<typeof Events.GuildMemberAdd> = {
@@ -21,7 +22,7 @@ export const event: Event<typeof Events.GuildMemberAdd> = {
     const guildId = member.guild.id;
     const notifyChannelId = notificationChannelRepository.getEnabled(
       guildId,
-      'member_join'
+      'member_join',
     );
     if (!notifyChannelId) return;
 
@@ -31,20 +32,24 @@ export const event: Event<typeof Events.GuildMemberAdd> = {
         .catch(() => null);
       if (!textChannel || !textChannel.isTextBased()) return;
 
-      const perms = (textChannel as TextChannel).permissionsFor(
-        member.guild.members.me!
-      );
+      const me = member.guild.members.me;
+      if (!me) return;
+
+      const perms = (textChannel as TextChannel).permissionsFor(me);
       if (!perms?.has(PermissionFlagsBits.SendMessages)) return;
 
+      const locale = mapDiscordLocale(member.guild.preferredLocale);
       const embed = createEmbed({
-        title: 'Welcome!',
-        description: `**${member.displayName}** がサーバーに参加しました！`,
+        title: t('notification.events.memberJoinTitle', locale),
+        description: t('notification.events.memberJoin', locale, {
+          name: member.displayName,
+        }),
         color: COLORS.SUCCESS,
         thumbnail: member.user.displayAvatarURL({ size: 128 }),
         fields: [
           {
-            name: 'メンバー数',
-            value: `${member.guild.memberCount}人`,
+            name: t('notification.events.memberCount', locale),
+            value: `${member.guild.memberCount}`,
             inline: true,
           },
         ],
@@ -53,8 +58,8 @@ export const event: Event<typeof Events.GuildMemberAdd> = {
 
       await (textChannel as TextChannel).send({ embeds: [embed] });
     } catch (error) {
-      logger.debug(
-        `Failed to send member join notification: ${error instanceof Error ? error.message : error}`
+      logger.warn(
+        `Failed to send member join notification: ${error instanceof Error ? error.message : error}`,
       );
     }
   },

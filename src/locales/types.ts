@@ -422,6 +422,13 @@ export interface TranslationKeys {
         all: string;
       };
     };
+    events: {
+      voiceJoin: string;
+      voiceLeave: string;
+      memberJoinTitle: string;
+      memberJoin: string;
+      memberCount: string;
+    };
     errors: {
       textChannelOnly: string;
       notConfigured: string;

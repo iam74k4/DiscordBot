@@ -377,6 +377,13 @@ export const ja: TranslationKeys = {
         all: '全期間',
       },
     },
+    events: {
+      voiceJoin: '**{name}** が <#{channel}> に参加しました',
+      voiceLeave: '**{name}** が <#{channel}> から退出しました',
+      memberJoinTitle: 'ようこそ！',
+      memberJoin: '**{name}** がサーバーに参加しました！',
+      memberCount: 'メンバー数',
+    },
     errors: {
       textChannelOnly: 'テキストチャンネルを選択してください。',
       notConfigured: '削除する通知設定がありません。',

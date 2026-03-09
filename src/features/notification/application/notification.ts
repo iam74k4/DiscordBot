@@ -12,9 +12,20 @@ import {
 } from '../repositories/notificationChannelRepository.js';
 
 export async function handleVoiceSet(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const locale = mapDiscordLocale(interaction.locale);
+
+  if (!interaction.guild || !interaction.guildId) {
+    await interaction.reply({
+      embeds: [
+        createErrorEmbed(t('common.error', locale), t('common.guildOnly', locale)),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
   const channel = interaction.options.getChannel('channel', true);
 
   if (channel.type !== ChannelType.GuildText) {
@@ -30,7 +41,7 @@ export async function handleVoiceSet(
     return;
   }
 
-  notificationChannelRepository.set(interaction.guildId!, 'voice', channel.id);
+  notificationChannelRepository.set(interaction.guildId, 'voice', channel.id);
 
   await interaction.reply({
     embeds: [
@@ -47,12 +58,23 @@ export async function handleVoiceSet(
 }
 
 export async function handleVoiceRemove(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const locale = mapDiscordLocale(interaction.locale);
+
+  if (!interaction.guildId) {
+    await interaction.reply({
+      embeds: [
+        createErrorEmbed(t('common.error', locale), t('common.guildOnly', locale)),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
   const removed = notificationChannelRepository.remove(
-    interaction.guildId!,
-    'voice'
+    interaction.guildId,
+    'voice',
   );
 
   if (!removed) {
@@ -81,9 +103,20 @@ export async function handleVoiceRemove(
 }
 
 export async function handleWelcomeSet(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const locale = mapDiscordLocale(interaction.locale);
+
+  if (!interaction.guild || !interaction.guildId) {
+    await interaction.reply({
+      embeds: [
+        createErrorEmbed(t('common.error', locale), t('common.guildOnly', locale)),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
   const channel = interaction.options.getChannel('channel', true);
 
   if (channel.type !== ChannelType.GuildText) {
@@ -100,9 +133,9 @@ export async function handleWelcomeSet(
   }
 
   notificationChannelRepository.set(
-    interaction.guildId!,
+    interaction.guildId,
     'member_join',
-    channel.id
+    channel.id,
   );
 
   await interaction.reply({
@@ -120,12 +153,23 @@ export async function handleWelcomeSet(
 }
 
 export async function handleWelcomeRemove(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const locale = mapDiscordLocale(interaction.locale);
+
+  if (!interaction.guildId) {
+    await interaction.reply({
+      embeds: [
+        createErrorEmbed(t('common.error', locale), t('common.guildOnly', locale)),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
   const removed = notificationChannelRepository.remove(
-    interaction.guildId!,
-    'member_join'
+    interaction.guildId,
+    'member_join',
   );
 
   if (!removed) {
@@ -154,10 +198,21 @@ export async function handleWelcomeRemove(
 }
 
 export async function handleStatus(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const locale = mapDiscordLocale(interaction.locale);
-  const guildId = interaction.guildId!;
+
+  if (!interaction.guildId) {
+    await interaction.reply({
+      embeds: [
+        createErrorEmbed(t('common.error', locale), t('common.guildOnly', locale)),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const guildId = interaction.guildId;
   const records = notificationChannelRepository.getAllForGuild(guildId);
 
   const typeLabels: Record<NotificationType, string> = {

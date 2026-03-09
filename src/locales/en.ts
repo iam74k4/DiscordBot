@@ -375,6 +375,13 @@ export const en: TranslationKeys = {
         all: 'All time',
       },
     },
+    events: {
+      voiceJoin: '**{name}** joined <#{channel}>',
+      voiceLeave: '**{name}** left <#{channel}>',
+      memberJoinTitle: 'Welcome!',
+      memberJoin: '**{name}** joined the server!',
+      memberCount: 'Member Count',
+    },
     errors: {
       textChannelOnly: 'Please select a text channel.',
       notConfigured: 'No notification settings to remove.',

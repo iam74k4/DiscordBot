@@ -19,6 +19,7 @@ export const command: Command = {
     .setName('notification')
     .setDescription('Notification settings and VC stats')
     .setDescriptionLocalizations({ ja: '通知設定とVC統計' })
+    .setDMPermission(false)
     .addSubcommandGroup((group) =>
       group
         .setName('voice')
@@ -126,19 +127,22 @@ export const command: Command = {
     // All other subcommands require ManageGuild
     const member = interaction.member;
     const perms = member && 'permissions' in member ? member.permissions : null;
-    if (
-      perms &&
-      typeof perms !== 'string' &&
-      !perms.has(PermissionFlagsBits.ManageGuild)
-    ) {
+    const hasManageGuild =
+      perms && typeof perms !== 'string'
+        ? perms.has(PermissionFlagsBits.ManageGuild)
+        : false;
+
+    if (!hasManageGuild) {
       const { createErrorEmbed } = await import('../../../utils/embed.js');
-      const { t, mapDiscordLocale } = await import('../../../locales/index.js');
+      const { t, mapDiscordLocale } = await import(
+        '../../../locales/index.js'
+      );
       const locale = mapDiscordLocale(interaction.locale);
       await interaction.reply({
         embeds: [
           createErrorEmbed(
             t('common.error', locale),
-            t('common.noPermission', locale)
+            t('common.noPermission', locale),
           ),
         ],
         flags: MessageFlags.Ephemeral,

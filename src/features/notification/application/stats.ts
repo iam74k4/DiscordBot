@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
-import { createEmbed } from '../../../utils/embed.js';
+import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
 import { COLORS } from '../../../utils/constants/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { voiceSessionRepository } from '../repositories/voiceSessionRepository.js';
@@ -32,10 +32,21 @@ function formatDuration(ms: number): string {
 }
 
 export async function handleStats(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   const locale = mapDiscordLocale(interaction.locale);
-  const guildId = interaction.guildId!;
+
+  if (!interaction.guildId) {
+    await interaction.reply({
+      embeds: [
+        createErrorEmbed(t('common.error', locale), t('common.guildOnly', locale)),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const guildId = interaction.guildId;
   const userId = interaction.user.id;
   const period = (interaction.options.getString('period') ?? 'all') as Period;
 
