@@ -1,7 +1,11 @@
 import {
+  ActionRowBuilder,
   ChatInputCommandInteraction,
   MessageFlags,
+  ModalBuilder,
   PermissionsBitField,
+  TextInputBuilder,
+  TextInputStyle,
 } from 'discord.js';
 import { createErrorEmbed } from '../../../utils/embed.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
@@ -10,6 +14,7 @@ import { getGitHubClient } from '../services/githubClient.js';
 import { executePrCommand } from './pr.js';
 import { executeIssueCommand } from './issue.js';
 import { executeRepoCommand } from './repo.js';
+import type { Locale } from '../../../locales/types.js';
 
 function checkPermission(interaction: ChatInputCommandInteraction): boolean {
   if (isBotOwner(interaction.user.id)) return true;
@@ -17,6 +22,79 @@ function checkPermission(interaction: ChatInputCommandInteraction): boolean {
   const perms = interaction.member.permissions;
   if (!(perms instanceof PermissionsBitField)) return false;
   return perms.has(PermissionsBitField.Flags.ManageGuild);
+}
+
+function isCreateSubcommand(interaction: ChatInputCommandInteraction): boolean {
+  return interaction.options.getSubcommand(false) === 'create';
+}
+
+async function showCreateModal(
+  interaction: ChatInputCommandInteraction,
+  group: string,
+  locale: Locale
+): Promise<void> {
+  const repo = interaction.options.getString('repo', true);
+  const isPr = group === 'pr';
+
+  const modalId = isPr
+    ? `github_pr_create:${repo}`
+    : `github_issue_create:${repo}`;
+
+  const modal = new ModalBuilder()
+    .setCustomId(modalId)
+    .setTitle(
+      isPr
+        ? t('github.pr.create.modalTitle', locale)
+        : t('github.issue.create.modalTitle', locale)
+    );
+
+  const titleInput = new TextInputBuilder()
+    .setCustomId('title')
+    .setLabel(t('github.modal.titleLabel', locale))
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setMaxLength(256);
+
+  const bodyInput = new TextInputBuilder()
+    .setCustomId('body')
+    .setLabel(t('github.modal.bodyLabel', locale))
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(false)
+    .setMaxLength(4000)
+    .setPlaceholder(t('github.modal.bodyPlaceholder', locale));
+
+  const rows: ActionRowBuilder<TextInputBuilder>[] = [
+    new ActionRowBuilder<TextInputBuilder>().addComponents(titleInput),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(bodyInput),
+  ];
+
+  if (isPr) {
+    const head = interaction.options.getString('head', true);
+    const base = interaction.options.getString('base') ?? '';
+
+    const headInput = new TextInputBuilder()
+      .setCustomId('head')
+      .setLabel(t('github.modal.headLabel', locale))
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setValue(head);
+
+    const baseInput = new TextInputBuilder()
+      .setCustomId('base')
+      .setLabel(t('github.modal.baseLabel', locale))
+      .setStyle(TextInputStyle.Short)
+      .setRequired(false)
+      .setValue(base)
+      .setPlaceholder('main');
+
+    rows.push(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(headInput),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(baseInput)
+    );
+  }
+
+  modal.addComponents(...rows);
+  await interaction.showModal(modal);
 }
 
 export async function executeGitHubCommand(
@@ -49,9 +127,17 @@ export async function executeGitHubCommand(
     return;
   }
 
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
   const group = interaction.options.getSubcommandGroup(false);
+
+  if (
+    isCreateSubcommand(interaction) &&
+    (group === 'pr' || group === 'issue')
+  ) {
+    await showCreateModal(interaction, group, locale);
+    return;
+  }
+
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     if (group === 'pr') {
