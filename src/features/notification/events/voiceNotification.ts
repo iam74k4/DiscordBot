@@ -19,7 +19,7 @@ export const event: Event<typeof Events.VoiceStateUpdate> = {
   async execute(
     client: ExtendedClient,
     oldState: VoiceState,
-    newState: VoiceState,
+    newState: VoiceState
   ) {
     if (!client.isFullyReady) return;
     if (newState.member?.user.bot) return;
@@ -45,10 +45,7 @@ export const event: Event<typeof Events.VoiceStateUpdate> = {
   },
 };
 
-async function handleJoin(
-  guildId: string,
-  state: VoiceState,
-): Promise<void> {
+async function handleJoin(guildId: string, state: VoiceState): Promise<void> {
   if (!state.member || !state.channel) return;
 
   const userId = state.member.user.id;
@@ -58,13 +55,13 @@ async function handleJoin(
     voiceTracker.startSession(guildId, userId, channel.id, channel.name);
   } catch (error) {
     logger.error(
-      `Failed to start voice session: ${error instanceof Error ? error.message : error}`,
+      `Failed to start voice session: ${error instanceof Error ? error.message : error}`
     );
   }
 
   const notifyChannelId = notificationChannelRepository.getEnabled(
     guildId,
-    'voice',
+    'voice'
   );
   if (!notifyChannelId) return;
 
@@ -93,15 +90,12 @@ async function handleJoin(
     await (textChannel as TextChannel).send({ embeds: [embed] });
   } catch (error) {
     logger.warn(
-      `Failed to send voice join notification: ${error instanceof Error ? error.message : error}`,
+      `Failed to send voice join notification: ${error instanceof Error ? error.message : error}`
     );
   }
 }
 
-async function handleLeave(
-  guildId: string,
-  state: VoiceState,
-): Promise<void> {
+async function handleLeave(guildId: string, state: VoiceState): Promise<void> {
   if (!state.member || !state.channel) return;
 
   const userId = state.member.user.id;
@@ -111,13 +105,13 @@ async function handleLeave(
     voiceTracker.endSession(guildId, userId);
   } catch (error) {
     logger.error(
-      `Failed to end voice session: ${error instanceof Error ? error.message : error}`,
+      `Failed to end voice session: ${error instanceof Error ? error.message : error}`
     );
   }
 
   const notifyChannelId = notificationChannelRepository.getEnabled(
     guildId,
-    'voice',
+    'voice'
   );
   if (!notifyChannelId) return;
 
@@ -146,7 +140,7 @@ async function handleLeave(
     await (textChannel as TextChannel).send({ embeds: [embed] });
   } catch (error) {
     logger.warn(
-      `Failed to send voice leave notification: ${error instanceof Error ? error.message : error}`,
+      `Failed to send voice leave notification: ${error instanceof Error ? error.message : error}`
     );
   }
 }

@@ -134,15 +134,13 @@ export const command: Command = {
 
     if (!hasManageGuild) {
       const { createErrorEmbed } = await import('../../../utils/embed.js');
-      const { t, mapDiscordLocale } = await import(
-        '../../../locales/index.js'
-      );
+      const { t, mapDiscordLocale } = await import('../../../locales/index.js');
       const locale = mapDiscordLocale(interaction.locale);
       await interaction.reply({
         embeds: [
           createErrorEmbed(
             t('common.error', locale),
-            t('common.noPermission', locale),
+            t('common.noPermission', locale)
           ),
         ],
         flags: MessageFlags.Ephemeral,

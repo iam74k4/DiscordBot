@@ -32,14 +32,17 @@ function formatDuration(ms: number): string {
 }
 
 export async function handleStats(
-  interaction: ChatInputCommandInteraction,
+  interaction: ChatInputCommandInteraction
 ): Promise<void> {
   const locale = mapDiscordLocale(interaction.locale);
 
   if (!interaction.guildId) {
     await interaction.reply({
       embeds: [
-        createErrorEmbed(t('common.error', locale), t('common.guildOnly', locale)),
+        createErrorEmbed(
+          t('common.error', locale),
+          t('common.guildOnly', locale)
+        ),
       ],
       flags: MessageFlags.Ephemeral,
     });

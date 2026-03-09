@@ -22,7 +22,7 @@ export const event: Event<typeof Events.GuildMemberAdd> = {
     const guildId = member.guild.id;
     const notifyChannelId = notificationChannelRepository.getEnabled(
       guildId,
-      'member_join',
+      'member_join'
     );
     if (!notifyChannelId) return;
 
@@ -59,7 +59,7 @@ export const event: Event<typeof Events.GuildMemberAdd> = {
       await (textChannel as TextChannel).send({ embeds: [embed] });
     } catch (error) {
       logger.warn(
-        `Failed to send member join notification: ${error instanceof Error ? error.message : error}`,
+        `Failed to send member join notification: ${error instanceof Error ? error.message : error}`
       );
     }
   },
