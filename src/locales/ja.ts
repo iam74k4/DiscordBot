@@ -415,6 +415,68 @@ export const ja: TranslationKeys = {
     },
   },
 
+  github: {
+    pr: {
+      list: {
+        title: 'PR一覧',
+        noPrs: 'PRがありません',
+        open: 'オープン',
+        closed: 'クローズ',
+      },
+      view: {
+        title: 'PR #{number}',
+        state: '状態',
+        author: '作成者',
+        base: 'ベース',
+        head: 'ヘッド',
+      },
+      create: {
+        success: 'PRを作成しました',
+        successDesc: '**{title}** を作成しました。',
+      },
+      merge: {
+        success: 'PRをマージしました',
+        successDesc: 'PR #{number} をマージしました。',
+      },
+    },
+    issue: {
+      list: {
+        title: 'Issue一覧',
+        noIssues: 'Issueがありません',
+      },
+      view: {
+        title: 'Issue #{number}',
+        state: '状態',
+        author: '作成者',
+      },
+      create: {
+        success: 'Issueを作成しました',
+        successDesc: '**{title}** を作成しました。',
+      },
+    },
+    repo: {
+      info: {
+        title: 'リポジトリ情報',
+        description: '説明',
+        stars: 'スター',
+        forks: 'フォーク',
+        language: '言語',
+        defaultBranch: 'デフォルトブランチ',
+        noDesc: '説明なし',
+      },
+    },
+    errors: {
+      tokenNotSet: 'GITHUB_TOKEN が設定されていません。Bot管理者に設定を依頼してください。',
+      noPermission: 'このコマンドには「サーバー管理」権限またはBotオーナーである必要があります。',
+      invalidRepo: 'リポジトリ形式が不正です。`owner/name` で指定してください。',
+      notFound: 'リポジトリ、PR、またはIssueが見つかりません。',
+      isPullRequest: 'この番号はPRです。`/github pr view` を使用してください。',
+      forbidden: '権限が不足しています。トークンのスコープを確認してください。',
+      conflict: 'マージできません（コンフリクトまたはブランチ保護の可能性）。',
+      apiError: 'GitHub API エラー: {message}',
+    },
+  },
+
   record: {
     title: '録音',
     recording: '録音中...',
