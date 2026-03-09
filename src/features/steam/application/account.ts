@@ -12,6 +12,7 @@ import {
 } from '../services/steam/index.js';
 import { steamUserRepository } from '../repositories/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { awaitConfirmation } from '../../../utils/confirm.js';
 
 export async function handleRegister(
   interaction: ChatInputCommandInteraction
@@ -78,7 +79,6 @@ export async function handleUnregister(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
   const locale = mapDiscordLocale(interaction.locale);
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const discordId = interaction.user.id;
   const existing = steamUserRepository.getByDiscordId(discordId);
@@ -88,7 +88,32 @@ export async function handleUnregister(
       t('common.notFound', locale),
       t('steam.unregister.notRegistered', locale)
     );
-    await interaction.editReply({ embeds: [warningEmbed] });
+    await interaction.reply({
+      embeds: [warningEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const confirmMessage = t('steam.unregister.confirmDesc', locale, {
+    name: existing.steam_name || 'Unknown',
+    steamId: existing.steam_id,
+  });
+
+  const confirmed = await awaitConfirmation(interaction, confirmMessage, {
+    ephemeral: true,
+  });
+
+  if (!confirmed) {
+    await interaction.editReply({
+      embeds: [
+        createEmbed({
+          title: t('common.cancelled', locale),
+          color: COLORS.INFO,
+        }),
+      ],
+      components: [],
+    });
     return;
   }
 
@@ -105,10 +130,9 @@ export async function handleUnregister(
         inline: false,
       },
     ],
-    timestamp: true,
   });
 
-  await interaction.editReply({ embeds: [embed] });
+  await interaction.editReply({ embeds: [embed], components: [] });
 }
 
 export async function handleWhoami(

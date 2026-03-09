@@ -1,8 +1,12 @@
 import {
+  ActionRowBuilder,
   ChatInputCommandInteraction,
+  ComponentType,
   MessageFlags,
   PermissionFlagsBits,
   PermissionsBitField,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
 } from 'discord.js';
 import {
   createEmbed,
@@ -18,6 +22,7 @@ import {
 import { logAuditAction } from '../../../services/audit/index.js';
 import { formatAuditTarget } from '../../../services/audit/format.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { getErrorMessage, logger } from '../../../utils/logger.js';
 
 async function handleView(
   interaction: ChatInputCommandInteraction
@@ -36,37 +41,157 @@ async function handleView(
     return;
   }
 
-  const guildSettings = settingsRepository.getGuildSettings(
-    interaction.guild.id
+  const guildId = interaction.guild.id;
+
+  const buildOverviewEmbed = () => {
+    const guildSettings = settingsRepository.getGuildSettings(guildId);
+    const language = guildSettings?.language ?? 'ja';
+    const languageDisplay = language === 'ja' ? '日本語' : 'English';
+    const auditChannel = guildSettings?.audit_channel_id
+      ? `<#${guildSettings.audit_channel_id}>`
+      : t('settings.audit.notSet', locale);
+
+    return createEmbed({
+      title: t('settings.title', locale),
+      color: COLORS.INFO,
+      fields: [
+        {
+          name: t('settings.language.name', locale),
+          value: languageDisplay,
+          inline: true,
+        },
+        {
+          name: t('settings.audit.name', locale),
+          value: auditChannel,
+          inline: true,
+        },
+      ],
+      footer: t('settings.view.footer', locale),
+    });
+  };
+
+  const buildLanguageEmbed = () => {
+    const guildSettings = settingsRepository.getGuildSettings(guildId);
+    const language = guildSettings?.language ?? 'ja';
+    const languageDisplay = language === 'ja' ? '日本語' : 'English';
+
+    return createEmbed({
+      title: t('settings.language.name', locale),
+      description: `${t('settings.language.current', locale)}: **${languageDisplay}**`,
+      color: COLORS.INFO,
+      fields: [
+        {
+          name: locale === 'ja' ? '変更方法' : 'How to change',
+          value: '`/admin settings language`',
+          inline: false,
+        },
+      ],
+    });
+  };
+
+  const buildAuditEmbed = () => {
+    const guildSettings = settingsRepository.getGuildSettings(guildId);
+    const auditChannel = guildSettings?.audit_channel_id
+      ? `<#${guildSettings.audit_channel_id}>`
+      : t('settings.audit.notSet', locale);
+
+    return createEmbed({
+      title: t('settings.audit.name', locale),
+      description: auditChannel,
+      color: COLORS.INFO,
+      fields: [
+        {
+          name: locale === 'ja' ? '変更方法' : 'How to change',
+          value: '`/admin settings audit`',
+          inline: false,
+        },
+      ],
+    });
+  };
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId('settings_view')
+    .setPlaceholder(
+      locale === 'ja' ? '設定項目を選択...' : 'Select a setting...'
+    )
+    .addOptions(
+      new StringSelectMenuOptionBuilder()
+        .setLabel(locale === 'ja' ? '概要' : 'Overview')
+        .setValue('overview')
+        .setDefault(true),
+      new StringSelectMenuOptionBuilder()
+        .setLabel(t('settings.language.name', locale))
+        .setValue('language'),
+      new StringSelectMenuOptionBuilder()
+        .setLabel(t('settings.audit.name', locale))
+        .setValue('audit')
+    );
+
+  const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    selectMenu
   );
 
-  const language = guildSettings?.language ?? 'ja';
-  const languageDisplay = language === 'ja' ? '日本語' : 'English';
-
-  const auditChannel = guildSettings?.audit_channel_id
-    ? `<#${guildSettings.audit_channel_id}>`
-    : t('settings.audit.notSet', locale);
-
-  const embed = createEmbed({
-    title: t('settings.title', locale),
-    color: COLORS.INFO,
-    fields: [
-      {
-        name: t('settings.language.name', locale),
-        value: languageDisplay,
-        inline: true,
-      },
-      {
-        name: t('settings.audit.name', locale),
-        value: auditChannel,
-        inline: true,
-      },
-    ],
-    footer: t('settings.view.footer', locale),
-    timestamp: true,
+  const reply = await interaction.reply({
+    embeds: [buildOverviewEmbed()],
+    components: [row],
+    flags: MessageFlags.Ephemeral,
+    fetchReply: true,
   });
 
-  await interaction.reply({ embeds: [embed] });
+  const collector = reply.createMessageComponentCollector({
+    componentType: ComponentType.StringSelect,
+    time: 120_000,
+  });
+
+  collector.on('collect', async (selectInteraction) => {
+    if (selectInteraction.user.id !== interaction.user.id) return;
+
+    const value = selectInteraction.values[0];
+
+    const embedMap: Record<string, () => ReturnType<typeof createEmbed>> = {
+      overview: buildOverviewEmbed,
+      language: buildLanguageEmbed,
+      audit: buildAuditEmbed,
+    };
+
+    const embedFn = embedMap[value] ?? buildOverviewEmbed;
+
+    const updatedMenu = StringSelectMenuBuilder.from(
+      selectMenu.toJSON()
+    ).setOptions(
+      selectMenu.options.map((opt) =>
+        StringSelectMenuOptionBuilder.from(opt.toJSON()).setDefault(
+          opt.toJSON().value === value
+        )
+      )
+    );
+    const updatedRow =
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+        updatedMenu
+      );
+
+    await selectInteraction.update({
+      embeds: [embedFn()],
+      components: [updatedRow],
+    });
+  });
+
+  collector.on('end', async () => {
+    const disabledMenu = StringSelectMenuBuilder.from(
+      selectMenu.toJSON()
+    ).setDisabled(true);
+    const disabledRow =
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+        disabledMenu
+      );
+    await interaction
+      .editReply({ components: [disabledRow] })
+      .catch((e: unknown) => {
+        logger.debug(
+          `Failed to disable settings select menu: ${getErrorMessage(e)}`
+        );
+      });
+  });
 }
 
 async function handleAudit(
@@ -97,10 +222,12 @@ async function handleAudit(
         channel: channel.id,
       }),
       color: COLORS.SUCCESS,
-      timestamp: true,
     });
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.reply({
+      embeds: [embed],
+      flags: MessageFlags.Ephemeral,
+    });
 
     void logAuditAction(
       interaction.client,
@@ -117,10 +244,12 @@ async function handleAudit(
       title: t('settings.audit.name', locale),
       description: t('settings.audit.disabled', locale),
       color: COLORS.WARNING,
-      timestamp: true,
     });
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.reply({
+      embeds: [embed],
+      flags: MessageFlags.Ephemeral,
+    });
   }
 }
 
@@ -149,7 +278,10 @@ async function handleLogs(
       t('common.warning', locale),
       t('settings.logs.noLogs', locale)
     );
-    await interaction.reply({ embeds: [warningEmbed] });
+    await interaction.reply({
+      embeds: [warningEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 
@@ -171,10 +303,12 @@ async function handleLogs(
       count: logs.length,
       total: totalCount,
     }),
-    timestamp: true,
   });
 
-  await interaction.reply({ embeds: [embed] });
+  await interaction.reply({
+    embeds: [embed],
+    flags: MessageFlags.Ephemeral,
+  });
 }
 
 async function handleLanguage(
@@ -206,10 +340,12 @@ async function handleLanguage(
       language: languageDisplay,
     }),
     color: COLORS.SUCCESS,
-    timestamp: true,
   });
 
-  await interaction.reply({ embeds: [embed] });
+  await interaction.reply({
+    embeds: [embed],
+    flags: MessageFlags.Ephemeral,
+  });
 
   void logAuditAction(
     interaction.client,

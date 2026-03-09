@@ -14,6 +14,16 @@ export const en: TranslationKeys = {
     noPermission: 'You do not have permission to use this command.',
     status: 'Status',
     noData: 'No data',
+    unexpectedError: 'An unexpected error occurred while executing this command.',
+    cooldown: 'Please wait {time} seconds before using `/{command}` again.',
+    commandBlocked: 'Command Blocked',
+    permissionsRequired: 'You need the following permissions: {permissions}',
+    permissionsUnverifiable: 'Unable to verify permissions.',
+    confirm: 'Confirm',
+    cancel: 'Cancel',
+    confirmMessage: 'Are you sure you want to proceed?',
+    timeout: 'This interaction has timed out.',
+    cancelled: 'Action cancelled.',
   },
 
   units: {
@@ -121,6 +131,10 @@ export const en: TranslationKeys = {
       notEnoughOptions: 'A poll needs at least 2 options.',
       tooManyOptions: 'A poll can have at most 10 options.',
       invalidOption: 'Invalid vote option.',
+      pollEnded: 'Poll Ended',
+      pollEndedDesc: 'This poll has ended or no longer exists.',
+      pollError: 'Poll Error',
+      pollErrorDesc: 'An error occurred while processing your vote.',
     },
   },
 

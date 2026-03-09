@@ -1,7 +1,4 @@
-import {
-  ChatInputCommandInteraction,
-  MessageFlags,
-} from 'discord.js';
+import { ChatInputCommandInteraction } from 'discord.js';
 import type { Octokit } from 'octokit';
 import type { Locale } from '../../../locales/types.js';
 import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
@@ -24,10 +21,7 @@ export async function executePrCommand(
       t('common.error', locale),
       t('github.errors.invalidRepo', locale)
     );
-    await interaction.reply({
-      embeds: [embed],
-      flags: MessageFlags.Ephemeral,
-    });
+    await interaction.editReply({ embeds: [embed] });
     return;
   }
 
@@ -53,10 +47,7 @@ export async function executePrCommand(
           color: COLORS.INFO,
           timestamp: true,
         });
-        await interaction.reply({
-          embeds: [embed],
-          flags: MessageFlags.Ephemeral,
-        });
+        await interaction.editReply({ embeds: [embed] });
         return;
       }
 
@@ -74,10 +65,7 @@ export async function executePrCommand(
         footer: `${parsed.owner}/${parsed.repo} | ${state}`,
         timestamp: true,
       });
-      await interaction.reply({
-        embeds: [embed],
-        flags: MessageFlags.Ephemeral,
-      });
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
 
@@ -123,10 +111,7 @@ export async function executePrCommand(
         ],
         timestamp: true,
       });
-      await interaction.reply({
-        embeds: [embed],
-        flags: MessageFlags.Ephemeral,
-      });
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
 
@@ -162,10 +147,7 @@ export async function executePrCommand(
         color: COLORS.SUCCESS,
         timestamp: true,
       });
-      await interaction.reply({
-        embeds: [embed],
-        flags: MessageFlags.Ephemeral,
-      });
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
 
@@ -189,18 +171,12 @@ export async function executePrCommand(
         color: COLORS.SUCCESS,
         timestamp: true,
       });
-      await interaction.reply({
-        embeds: [embed],
-        flags: MessageFlags.Ephemeral,
-      });
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
   } catch (error) {
     const msg = handleApiError(error, locale);
     const embed = createErrorEmbed(t('common.error', locale), msg);
-    await interaction.reply({
-      embeds: [embed],
-      flags: MessageFlags.Ephemeral,
-    });
+    await interaction.editReply({ embeds: [embed] });
   }
 }
