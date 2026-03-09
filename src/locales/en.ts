@@ -344,6 +344,50 @@ export const en: TranslationKeys = {
     commandNotFoundDesc: 'Command `{command}` does not exist.',
   },
 
+  notification: {
+    voice: {
+      setTitle: 'VC Notifications Configured',
+      set: 'Voice channel notifications will be sent to <#{channel}>',
+      removedTitle: 'VC Notifications Disabled',
+      removed: 'Voice channel notifications have been disabled.',
+    },
+    welcome: {
+      setTitle: 'Welcome Notifications Configured',
+      set: 'Member join notifications will be sent to <#{channel}>',
+      removedTitle: 'Welcome Notifications Disabled',
+      removed: 'Member join notifications have been disabled.',
+    },
+    status: {
+      title: 'Notification Settings',
+      voiceLabel: 'VC Join/Leave',
+      welcomeLabel: 'Member Join',
+      disabled: 'Not configured',
+    },
+    stats: {
+      title: 'Your VC Statistics',
+      noData: 'No VC session data found.',
+      total: 'Total',
+      period: 'Period',
+      periods: {
+        today: 'Today',
+        week: 'This week',
+        month: 'This month',
+        all: 'All time',
+      },
+    },
+    events: {
+      voiceJoin: '**{name}** joined <#{channel}>',
+      voiceLeave: '**{name}** left <#{channel}>',
+      memberJoinTitle: 'Welcome!',
+      memberJoin: '**{name}** joined the server!',
+      memberCount: 'Member Count',
+    },
+    errors: {
+      textChannelOnly: 'Please select a text channel.',
+      notConfigured: 'No notification settings to remove.',
+    },
+  },
+
   record: {
     title: 'Recording',
     recording: 'Recording...',
