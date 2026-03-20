@@ -116,7 +116,7 @@ export class MemoryMonitor {
     const processMemoryMB = process.memoryUsage().heapUsed / (1024 * 1024);
 
     return {
-      memoryUsageMB: processMemoryMB + totalBufferSizeMB,
+      memoryUsageMB: processMemoryMB,
       activeConnections: connections.size,
       totalBufferSizeMB,
       diskBufferSizeMB,

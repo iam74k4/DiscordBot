@@ -4,18 +4,12 @@ import { join } from 'path';
 import { env, AUDIO, DISCORD_LIMITS } from '../../../config/index.js';
 import { audioBufferManager } from './audioBuffer.js';
 import { RecordingOptions, RecordingResult } from '../../../types/voice.js';
-import { BoundedMap } from '../../../utils/lruCache.js';
-
-// Maximum concurrent recordings to prevent resource exhaustion
-const MAX_CONCURRENT_RECORDINGS = 100;
 
 /**
- * Recording queue per channel (using BoundedMap to prevent memory issues)
- * Note: Entries are automatically deleted after recording completes
+ * Recording queue per channel.
+ * Entries are removed as soon as the recording completes.
  */
-const recordingQueues = new BoundedMap<string, Promise<RecordingResult>>(
-  MAX_CONCURRENT_RECORDINGS
-);
+const recordingQueues = new Map<string, Promise<RecordingResult>>();
 
 /**
  * Create WAV file header

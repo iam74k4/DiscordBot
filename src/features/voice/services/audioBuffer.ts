@@ -5,12 +5,9 @@ import { join } from 'path';
 import { env, AUDIO, MONITORING } from '../../../config/index.js';
 import { logger } from '../../../utils/logger.js';
 import { AudioBufferConfig, AudioChunk } from '../../../types/voice.js';
-import { BoundedMap } from '../../../utils/lruCache.js';
 
 // Maximum number of disk buffer files per channel
 const MAX_DISK_BUFFER_FILES_PER_CHANNEL = 100;
-// Maximum number of active channel buffers
-const MAX_CHANNEL_BUFFERS = 50;
 
 /**
  * Hybrid audio buffer (memory + disk)
@@ -24,10 +21,9 @@ export class HybridAudioBuffer {
   private readonly channels: number;
   private readonly diskBufferDir: string;
   private readonly channelId: string;
-  private diskBufferFiles = new BoundedMap<number, string>(
-    MAX_DISK_BUFFER_FILES_PER_CHANNEL
-  ); // timestamp -> file path
+  private diskBufferFiles = new Map<number, string>(); // timestamp -> file path
   private readonly bytesPerSecond: number;
+  private diskWriteQueue: Promise<void> = Promise.resolve();
 
   constructor(channelId: string, config: AudioBufferConfig) {
     this.channelId = channelId;
@@ -81,32 +77,34 @@ export class HybridAudioBuffer {
   private moveOldestToDisk(): void {
     if (this.memoryBuffer.length === 0) return;
 
-    const now = Date.now();
-    const cutoffTime = now - this.memoryBufferDuration * 1000;
-
     const chunksToMove: AudioChunk[] = [];
-    const chunksToKeep: AudioChunk[] = [];
+    let totalDuration = this.memoryBuffer.reduce(
+      (sum, chunk) => sum + chunk.duration,
+      0
+    );
 
-    for (const chunk of this.memoryBuffer) {
-      if (chunk.timestamp < cutoffTime) {
-        chunksToMove.push(chunk);
-      } else {
-        chunksToKeep.push(chunk);
-      }
+    while (
+      this.memoryBuffer.length > 0 &&
+      totalDuration >= this.memoryBufferDuration * 1000
+    ) {
+      const chunk = this.memoryBuffer.shift();
+      if (!chunk) break;
+      chunksToMove.push(chunk);
+      totalDuration -= chunk.duration;
     }
 
     if (chunksToMove.length === 0) return;
 
-    this.memoryBuffer = chunksToKeep;
-
-    this.writeChunksToDisk(chunksToMove).catch((error) => {
-      logger.error(
-        `Failed to write chunks to disk for channel ${this.channelId}:`,
-        error instanceof Error ? error.message : error
-      );
-      // Restore evicted chunks to memory so audio data is not lost
-      this.memoryBuffer = [...chunksToMove, ...this.memoryBuffer];
-    });
+    this.diskWriteQueue = this.diskWriteQueue
+      .then(() => this.writeChunksToDisk(chunksToMove))
+      .catch((error) => {
+        logger.error(
+          `Failed to write chunks to disk for channel ${this.channelId}:`,
+          error instanceof Error ? error.message : error
+        );
+        // Restore evicted chunks to memory so audio data is not lost.
+        this.memoryBuffer = [...chunksToMove, ...this.memoryBuffer];
+      });
 
     logger.debug(
       `Moved ${chunksToMove.length} chunks to disk for channel ${this.channelId}`
@@ -137,6 +135,22 @@ export class HybridAudioBuffer {
       });
 
       stream.on('finish', () => {
+        while (this.diskBufferFiles.size >= MAX_DISK_BUFFER_FILES_PER_CHANNEL) {
+          const oldestEntry = this.diskBufferFiles.entries().next().value;
+          if (!oldestEntry) {
+            break;
+          }
+
+          const [oldestTimestamp, oldestFilePath] = oldestEntry;
+          this.diskBufferFiles.delete(oldestTimestamp);
+          unlink(oldestFilePath).catch((error) => {
+            logger.warn(
+              `Failed to delete old disk buffer file ${oldestFilePath}:`,
+              error instanceof Error ? error.message : error
+            );
+          });
+        }
+
         this.diskBufferFiles.set(timestamp, filePath);
         logger.debug(
           `Written ${totalSize} bytes to disk buffer file: ${filePath}`
@@ -303,9 +317,7 @@ export class HybridAudioBuffer {
  * Audio buffer manager
  */
 export class AudioBufferManager {
-  private buffers = new BoundedMap<string, HybridAudioBuffer>(
-    MAX_CHANNEL_BUFFERS
-  );
+  private buffers = new Map<string, HybridAudioBuffer>();
   private readonly config: AudioBufferConfig;
   private cleanupInterval: NodeJS.Timeout | null = null;
 
