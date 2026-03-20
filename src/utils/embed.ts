@@ -24,9 +24,41 @@ interface StatusEmbedOptions {
   timestamp?: boolean;
 }
 
+/** Status embed type */
+type StatusType = 'success' | 'error' | 'warning' | 'info';
+
+const STATUS_COLORS: Record<StatusType, ColorResolvable> = {
+  success: COLORS.SUCCESS,
+  error: COLORS.ERROR,
+  warning: COLORS.WARNING,
+  info: COLORS.INFO,
+};
+
+/**
+ * Create a status embed (success/error/warning/info).
+ * @internal
+ */
+function createStatusEmbed(
+  type: StatusType,
+  title: string,
+  description?: string,
+  options?: StatusEmbedOptions
+): EmbedBuilder {
+  return createEmbed({
+    title,
+    description,
+    color: STATUS_COLORS[type],
+    footer: options?.footer,
+    timestamp: options?.timestamp,
+  });
+}
+
 /**
  * Create a standard embed with consistent styling.
  * Timestamps are enabled by default; pass `timestamp: false` to disable.
+ *
+ * @param options - Embed configuration (title, description, color, fields, etc.)
+ * @returns Configured EmbedBuilder instance
  */
 export function createEmbed(options: EmbedOptions): EmbedBuilder {
   const embed = new EmbedBuilder().setColor(options.color ?? COLORS.PRIMARY);
@@ -66,70 +98,38 @@ export function createEmbed(options: EmbedOptions): EmbedBuilder {
   return embed;
 }
 
-/**
- * Create a success embed
- */
+/** Create a success embed */
 export function createSuccessEmbed(
   title: string,
   description?: string,
   options?: StatusEmbedOptions
 ): EmbedBuilder {
-  return createEmbed({
-    title,
-    description,
-    color: COLORS.SUCCESS,
-    footer: options?.footer,
-    timestamp: options?.timestamp,
-  });
+  return createStatusEmbed('success', title, description, options);
 }
 
-/**
- * Create an error embed
- */
+/** Create an error embed */
 export function createErrorEmbed(
   title: string,
   description?: string,
   options?: StatusEmbedOptions
 ): EmbedBuilder {
-  return createEmbed({
-    title,
-    description,
-    color: COLORS.ERROR,
-    footer: options?.footer,
-    timestamp: options?.timestamp,
-  });
+  return createStatusEmbed('error', title, description, options);
 }
 
-/**
- * Create a warning embed
- */
+/** Create a warning embed */
 export function createWarningEmbed(
   title: string,
   description?: string,
   options?: StatusEmbedOptions
 ): EmbedBuilder {
-  return createEmbed({
-    title,
-    description,
-    color: COLORS.WARNING,
-    footer: options?.footer,
-    timestamp: options?.timestamp,
-  });
+  return createStatusEmbed('warning', title, description, options);
 }
 
-/**
- * Create an info embed
- */
+/** Create an info embed */
 export function createInfoEmbed(
   title: string,
   description?: string,
   options?: StatusEmbedOptions
 ): EmbedBuilder {
-  return createEmbed({
-    title,
-    description,
-    color: COLORS.INFO,
-    footer: options?.footer,
-    timestamp: options?.timestamp,
-  });
+  return createStatusEmbed('info', title, description, options);
 }
