@@ -15,7 +15,10 @@ let isInitialized = false;
 async function loadMigrations(): Promise<Array<() => void>> {
   const migrationDir = __dirname;
   const files = readdirSync(migrationDir)
-    .filter((f) => /^\d{3}_.*\.(ts|js)$/.test(f))
+    .filter(
+      (f) =>
+        !f.endsWith('.d.ts') && /^\d{3}_.*\.(ts|js)$/.test(f),
+    )
     .sort();
 
   const fns: Array<() => void> = [];
