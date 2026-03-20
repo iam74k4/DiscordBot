@@ -125,7 +125,14 @@ export const event: Event<typeof Events.InteractionCreate> = {
       logger.error('GitHub modal submit error:', getErrorMessage(error));
       const msg = handleApiError(error, locale);
       const embed = createErrorEmbed(t('common.error', locale), msg);
-      await interaction.editReply({ embeds: [embed] });
+      try {
+        await interaction.editReply({ embeds: [embed] });
+      } catch (editError) {
+        logger.warn(
+          'Failed to edit reply after GitHub error:',
+          getErrorMessage(editError)
+        );
+      }
     }
   },
 };

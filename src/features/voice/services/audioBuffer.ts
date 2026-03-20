@@ -1,6 +1,5 @@
 import { createWriteStream } from 'fs';
 import { readFile, stat, mkdir, unlink } from 'fs/promises';
-import { existsSync } from 'fs';
 import { join } from 'path';
 import { env, AUDIO, MONITORING } from '../../../config/index.js';
 import { logger } from '../../../utils/logger.js';
@@ -34,17 +33,6 @@ export class HybridAudioBuffer {
     this.channels = config.channels;
     this.diskBufferDir = config.diskBufferDir;
     this.bytesPerSecond = (this.sampleRate * this.bitDepth * this.channels) / 8;
-
-    // Ensure disk buffer directory exists
-    const fullPath = join(process.cwd(), this.diskBufferDir, this.channelId);
-    if (!existsSync(fullPath)) {
-      mkdir(fullPath, { recursive: true }).catch((error) => {
-        logger.error(
-          `Failed to create disk buffer directory for channel ${this.channelId}:`,
-          error instanceof Error ? error.message : error
-        );
-      });
-    }
   }
 
   /**
@@ -117,13 +105,11 @@ export class HybridAudioBuffer {
   private async writeChunksToDisk(chunks: AudioChunk[]): Promise<void> {
     if (chunks.length === 0) return;
 
+    const dirPath = join(process.cwd(), this.diskBufferDir, this.channelId);
+    await mkdir(dirPath, { recursive: true });
+
     const timestamp = chunks[0].timestamp;
-    const filePath = join(
-      process.cwd(),
-      this.diskBufferDir,
-      this.channelId,
-      `buffer_${timestamp}.raw`
-    );
+    const filePath = join(dirPath, `buffer_${timestamp}.raw`);
 
     return new Promise((resolve, reject) => {
       const stream = createWriteStream(filePath);

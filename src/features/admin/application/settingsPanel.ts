@@ -32,6 +32,8 @@ const LANGUAGE_DISPLAY_NAMES: Record<string, string> = {
   en: 'English',
 };
 
+const SUPPORTED_LANGUAGES = ['ja', 'en'] as const;
+
 function buildTabRow(
   locale: Locale,
   view: SettingsPanelView,
@@ -422,17 +424,27 @@ export async function showSettingsPanel(
       }
 
       if (componentInteraction.isStringSelectMenu()) {
-        const language = componentInteraction.values[0];
-        settingsRepository.setGuildSettings(interaction.guildId!, { language });
-        await logAuditAction(
-          interaction.client,
-          interaction.guildId!,
-          interaction.user.id,
-          'SETTINGS_CHANGE',
-          undefined,
-          `Language changed to: ${language}`
-        );
-        currentView = 'language';
+        const value = componentInteraction.values[0];
+        if (
+          componentInteraction.customId === 'settings-panel:language-select' &&
+          value &&
+          SUPPORTED_LANGUAGES.includes(
+            value as (typeof SUPPORTED_LANGUAGES)[number]
+          )
+        ) {
+          settingsRepository.setGuildSettings(interaction.guildId!, {
+            language: value,
+          });
+          await logAuditAction(
+            componentInteraction.client,
+            componentInteraction.guildId!,
+            componentInteraction.user.id,
+            'SETTINGS_CHANGE',
+            undefined,
+            `Language changed to: ${value}`
+          );
+          currentView = 'language';
+        }
       }
 
       if (componentInteraction.isChannelSelectMenu()) {
