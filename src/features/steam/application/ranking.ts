@@ -79,20 +79,30 @@ export async function handleRanking(
 
   for (let i = 0; i < validUsers.length; i += BATCH_SIZE) {
     const batch = validUsers.slice(i, i + BATCH_SIZE);
+    const summaries = await withTimeout(
+      steamClient.getPlayerSummaries(batch.map((user) => user.steam_id)),
+      10_000
+    ).catch((e) => {
+      logger.warn(
+        `getPlayerSummaries timed out: ${e instanceof Error ? e.message : e}`
+      );
+      return [];
+    });
+    const summaryBySteamId = new Map(
+      summaries.map((summary) => [summary.steamid, summary])
+    );
 
     const results = await Promise.allSettled(
       batch.map(async (user) => {
-        const [totalPlaytime, playerInfo] = await Promise.all([
-          withTimeout(steamClient.getTotalPlaytime(user.steam_id), 10_000),
-          withTimeout(
-            steamClient.getFormattedPlayerInfo(user.steam_id),
-            10_000
-          ),
-        ]);
+        const totalPlaytime = await withTimeout(
+          steamClient.getTotalPlaytime(user.steam_id),
+          10_000
+        );
+        const playerInfo = summaryBySteamId.get(user.steam_id);
 
         return {
           discordId: user.discord_id,
-          steamName: playerInfo?.name || user.steam_name || 'Unknown',
+          steamName: playerInfo?.personaname || user.steam_name || 'Unknown',
           totalPlaytime,
         };
       })

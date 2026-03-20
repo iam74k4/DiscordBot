@@ -1,4 +1,5 @@
 import { database } from '../../../services/database/connection.js';
+import type { SteamUserRecord } from './steamUserRepository.js';
 
 export interface NotificationSettingsRecord {
   guild_id: string;
@@ -100,11 +101,23 @@ function getAllCachedGameActivity(): GameActivityCacheRecord[] {
   return stmt.all() as GameActivityCacheRecord[];
 }
 
+function getNotifiableUsers(): SteamUserRecord[] {
+  const stmt = database.prepare(`
+    SELECT su.*
+    FROM steam_users su
+    LEFT JOIN user_notification_prefs unp
+      ON unp.discord_id = su.discord_id
+    WHERE unp.notify_enabled IS NULL OR unp.notify_enabled = 1
+  `);
+  return stmt.all() as SteamUserRecord[];
+}
+
 export const steamNotificationRepository = {
   getAllCachedGameActivity,
   getEnabledGuilds,
   getGameActivityCache,
   getGuildSettings,
+  getNotifiableUsers,
   getUserPreference,
   removeGuildSettings,
   setChannel,

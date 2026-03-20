@@ -2,12 +2,30 @@ import { AutocompleteInteraction } from 'discord.js';
 import { steamClient } from '../services/steam/index.js';
 import { steamUserRepository } from '../repositories/index.js';
 import { smartFilter } from '../../../utils/fuzzy.js';
-import {
-  CACHE_TTL,
-  gameCache,
-  userCache,
-  formatHoursShort,
-} from '../lib/shared.js';
+import { CACHE_TTL, gameCache, formatHoursShort } from '../lib/shared.js';
+
+function getGuildScopedUsers(
+  interaction: AutocompleteInteraction
+): { name: string; steamId: string }[] {
+  const guild = interaction.guild;
+
+  if (!interaction.inGuild() || !guild) {
+    const ownSteamId = steamUserRepository.getSteamId(interaction.user.id);
+    return ownSteamId
+      ? [{ name: interaction.user.displayName, steamId: ownSteamId }]
+      : [];
+  }
+
+  const memberIds = [...guild.members.cache.keys()];
+  if (!memberIds.includes(interaction.user.id)) {
+    memberIds.push(interaction.user.id);
+  }
+
+  return steamUserRepository.getByDiscordIds(memberIds).map((user) => ({
+    name: user.steam_name || 'Unknown',
+    steamId: user.steam_id,
+  }));
+}
 
 export async function handleAutocomplete(
   interaction: AutocompleteInteraction
@@ -55,20 +73,7 @@ export async function handleAutocomplete(
 
   if (focusedOption.name === 'steamid') {
     const query = focusedOption.value;
-
-    let users: { name: string; steamId: string }[];
-
-    if (userCache && Date.now() - userCache.timestamp < CACHE_TTL) {
-      users = userCache.users;
-    } else {
-      const allUsers = steamUserRepository.getAll();
-      users = allUsers.map((u) => ({
-        name: u.steam_name || 'Unknown',
-        steamId: u.steam_id,
-      }));
-      userCache.users = users;
-      userCache.timestamp = Date.now();
-    }
+    const users = getGuildScopedUsers(interaction);
 
     const filtered = smartFilter(users, query, (u) => u.name)
       .slice(0, 25)

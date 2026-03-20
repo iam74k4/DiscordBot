@@ -196,6 +196,27 @@ export class SteamClient {
   }
 
   /**
+   * Get player summaries for multiple users.
+   */
+  async getPlayerSummaries(steamIds: string[]): Promise<PlayerSummary[]> {
+    if (steamIds.length === 0) {
+      return [];
+    }
+
+    try {
+      const data = await this.request<GetPlayerSummariesResponse>(
+        '/ISteamUser/GetPlayerSummaries/v2/',
+        { steamids: steamIds.join(',') }
+      );
+      return data.response.players ?? [];
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to get player summaries:', msg);
+      return [];
+    }
+  }
+
+  /**
    * Get owned games (Result variant)
    */
   async getOwnedGamesResult(

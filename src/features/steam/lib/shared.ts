@@ -38,11 +38,6 @@ export const gameCache = new LRUCache<string, GameCacheEntry>(
   MAX_GAME_CACHE_ENTRIES
 );
 
-export const userCache: {
-  users: { name: string; steamId: string }[];
-  timestamp: number;
-} = { users: [], timestamp: 0 };
-
 // ============ Helper Functions ============
 
 /**

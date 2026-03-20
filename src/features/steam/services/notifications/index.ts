@@ -1,12 +1,10 @@
-import { Client, TextChannel, PermissionFlagsBits } from 'discord.js';
+import { Client, TextChannel } from 'discord.js';
 import { logger } from '../../../../utils/logger.js';
 import { createEmbed } from '../../../../utils/embed.js';
 import { COLORS, TITLES } from '../../../../utils/constants/index.js';
 import { steamClient } from '../steam/index.js';
-import {
-  steamNotificationRepository,
-  steamUserRepository,
-} from '../../repositories/index.js';
+import { steamNotificationRepository } from '../../repositories/index.js';
+import { getSendableTextChannel } from '../../../../utils/discord.js';
 
 // Check interval: 5 minutes
 const CHECK_INTERVAL = 5 * 60 * 1000;
@@ -55,7 +53,6 @@ const processingMutex = new AsyncMutex();
  */
 interface GameStartEvent {
   discordId: string;
-  steamId: string;
   steamName: string;
   gameName: string;
   gameIconUrl?: string;
@@ -71,51 +68,53 @@ async function checkGameActivity(): Promise<GameStartEvent[]> {
   }
 
   const events: GameStartEvent[] = [];
-  const users = steamUserRepository.getAll();
+  const users = steamNotificationRepository.getNotifiableUsers();
 
-  for (const user of users) {
+  const BATCH_SIZE = 20;
+
+  for (let i = 0; i < users.length; i += BATCH_SIZE) {
+    const batch = users.slice(i, i + BATCH_SIZE);
+
     try {
-      // Check if user has notifications enabled
-      if (!steamNotificationRepository.getUserPreference(user.discord_id)) {
-        continue;
+      const summaries = await steamClient.getPlayerSummaries(
+        batch.map((user) => user.steam_id)
+      );
+      const summaryBySteamId = new Map(
+        summaries.map((summary) => [summary.steamid, summary])
+      );
+
+      for (const user of batch) {
+        const player = summaryBySteamId.get(user.steam_id);
+        if (!player) continue;
+
+        const currentGame = player.gameextrainfo || null;
+        const cache = steamNotificationRepository.getGameActivityCache(
+          user.discord_id
+        );
+
+        if (currentGame && (!cache || cache.current_game !== currentGame)) {
+          events.push({
+            discordId: user.discord_id,
+            steamName: player.personaname,
+            gameName: currentGame,
+            gameIconUrl: player.avatarfull,
+          });
+        }
+
+        steamNotificationRepository.updateGameActivityCache(
+          user.discord_id,
+          currentGame,
+          currentGame && (!cache || cache.current_game !== currentGame)
+            ? Date.now()
+            : (cache?.game_started_at ?? null)
+        );
       }
-
-      // Get current player info
-      const playerInfo = await steamClient.getFormattedPlayerInfo(
-        user.steam_id
-      );
-      if (!playerInfo) continue;
-
-      const currentGame = playerInfo.currentGame || null;
-      const cache = steamNotificationRepository.getGameActivityCache(
-        user.discord_id
-      );
-
-      // Check if game started (was not playing, now playing)
-      if (currentGame && (!cache || cache.current_game !== currentGame)) {
-        events.push({
-          discordId: user.discord_id,
-          steamId: user.steam_id,
-          steamName: playerInfo.name,
-          gameName: currentGame,
-          gameIconUrl: playerInfo.avatarUrl,
-        });
-      }
-
-      // Update cache
-      steamNotificationRepository.updateGameActivityCache(
-        user.discord_id,
-        currentGame,
-        currentGame && (!cache || cache.current_game !== currentGame)
-          ? Date.now()
-          : (cache?.game_started_at ?? null)
-      );
-
-      // Small delay to avoid rate limiting
-      await new Promise((resolve) => setTimeout(resolve, 300));
     } catch {
-      // Skip users with errors
       continue;
+    }
+
+    if (i + BATCH_SIZE < users.length) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
   }
 
@@ -135,7 +134,6 @@ async function sendNotification(
       `**${event.steamName}** started playing\n\n` + `**${event.gameName}**`,
     color: COLORS.STEAM,
     thumbnail: event.gameIconUrl,
-    footer: `Steam ID: ${event.steamId}`,
     timestamp: true,
   });
 
@@ -176,21 +174,11 @@ async function processNotifications(): Promise<void> {
           const guild = client.guilds.cache.get(guildSettings.guild_id);
           if (!guild) continue;
 
-          const channel = guild.channels.cache.get(
+          const channel = await getSendableTextChannel(
+            guild,
             guildSettings.channel_id
-          ) as TextChannel;
+          );
           if (!channel) continue;
-
-          const botMember = guild.members.me;
-          if (!botMember) continue;
-
-          const permissions = channel.permissionsFor(botMember);
-          if (!permissions?.has(PermissionFlagsBits.SendMessages)) {
-            logger.warn(
-              `Missing SendMessages permission in channel ${channel.id} (guild: ${guild.id})`
-            );
-            continue;
-          }
 
           const relevantIds = events.map((e) => e.discordId);
           const members = await guild.members
