@@ -1,6 +1,7 @@
 import { Client, TextChannel, EmbedBuilder } from 'discord.js';
 import { COLORS } from '../../utils/constants/index.js';
 import { logger } from '../../utils/logger.js';
+import { withRetry } from '../../utils/retry.js';
 import { formatAuditTarget } from './format.js';
 import { auditRepository, type AuditAction } from './repository.js';
 
@@ -94,7 +95,10 @@ export async function logAuditAction(
       embed.addFields({ name: 'Details', value: details, inline: false });
     }
 
-    await channel.send({ embeds: [embed] });
+    await withRetry(
+      () => channel.send({ embeds: [embed] }),
+      { maxRetries: 2, operationName: 'audit channel.send' }
+    );
   } catch (error) {
     logger.error('Failed to send audit log:', error);
   }

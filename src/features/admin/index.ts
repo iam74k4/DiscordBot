@@ -1,6 +1,6 @@
 import type { Client } from 'discord.js';
 import './helpCatalog.js';
-import { auditRepository } from './repositories/index.js';
+import { auditRepository } from '../../services/audit/index.js';
 import { env } from '../../config/index.js';
 import { logger } from '../../utils/logger.js';
 import { startDailyCleanup, stopCleanupInterval } from '../../utils/cleanup.js';

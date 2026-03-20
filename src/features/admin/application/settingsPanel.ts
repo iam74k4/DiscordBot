@@ -12,11 +12,11 @@ import {
 import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
 import { COLORS } from '../../../utils/constants/index.js';
 import { type Locale, t } from '../../../locales/index.js';
+import { settingsRepository } from '../repositories/index.js';
 import {
-  settingsRepository,
   auditRepository,
   type AuditLogRecord,
-} from '../repositories/index.js';
+} from '../../../services/audit/index.js';
 import { logAuditAction } from '../../../services/audit/index.js';
 import { formatAuditTarget } from '../../../services/audit/format.js';
 import { getSendableTextChannel } from '../../../utils/discord.js';
