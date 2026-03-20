@@ -12,7 +12,7 @@ src/features/myfeature/
 ├── commands/         # Slash commands (auto-loaded)
 ├── application/      # Business logic
 ├── repositories/     # Database access
-└── __tests__/        # Tests
+└── __tests__/        # Unit tests (required for new features)
 ```
 
 2. Export the required interface from `index.ts`:
@@ -33,7 +33,9 @@ export function stop(): void {
 
 3. **No manual registration** — features are discovered by scanning subdirectories of `src/features/`. Each feature must export `{ name, start, stop }` from its `index.ts`.
 
-4. Optional subdirectories:
+4. Add unit tests under `__tests__/` (e.g. `__tests__/index.test.ts`, `__tests__/application/myHandler.test.ts`).
+
+5. Optional subdirectories:
    - `commands/` — Slash command files (auto-loaded by the handler)
    - `application/` — Business logic, separate from command definitions
    - `repositories/` — Database access layer

@@ -71,11 +71,12 @@ function defaultShouldRetry(error: unknown): boolean {
 }
 
 /**
- * Execute a function with automatic retry on failure
+ * Execute a function with automatic retry on failure.
+ * Uses exponential backoff with jitter for retry delays.
  *
- * @param fn - The async function to execute
- * @param options - Retry configuration options
- * @returns The result of the function
+ * @param fn - Async function to execute (will be retried on failure)
+ * @param options - maxRetries, baseDelayMs, maxDelayMs, shouldRetry, operationName
+ * @returns The result of the function when it succeeds
  * @throws The last error if all retries fail
  *
  * @example

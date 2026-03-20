@@ -25,9 +25,13 @@ export const THREE_MONTHS = 90 * ONE_DAY;
 export const SIX_MONTHS = 180 * ONE_DAY;
 export const ONE_YEAR = 365 * ONE_DAY;
 
-// Cache configuration
+/**
+ * Cache configuration for Steam game autocomplete.
+ * TTL prevents stale game lists when users browse their library.
+ */
 export const MAX_GAME_CACHE_ENTRIES = 500;
-export const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+/** TTL in ms (5 min). Entries older than this are refetched from the API. */
+export const CACHE_TTL = 5 * 60 * 1000;
 
 // ============ Cache ============
 
@@ -36,6 +40,10 @@ export interface GameCacheEntry {
   timestamp: number;
 }
 
+/**
+ * LRU cache for game lists per Discord user. Max 500 entries.
+ * Callers check CACHE_TTL against entry.timestamp before using cached data.
+ */
 export const gameCache = new LRUCache<string, GameCacheEntry>(
   MAX_GAME_CACHE_ENTRIES
 );

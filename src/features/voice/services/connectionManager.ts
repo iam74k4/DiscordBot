@@ -133,6 +133,8 @@ export class VoiceConnectionManager {
           streams.add(opusStream as unknown as Readable);
           streams.add(pcmStream as unknown as Readable);
         }
+        // Type assertions: prism Decoder and discord/voice produce Node-like streams
+        // but their types don't extend Readable; runtime behavior is compatible.
 
         const cleanup = () => {
           subscribedUsers.delete(userId);
