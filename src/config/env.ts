@@ -1,5 +1,12 @@
+import { join } from 'path';
 import { config as dotenvConfig } from 'dotenv';
 import { logger } from '../utils/logger.js';
+
+/** Normalize directory path to end with / */
+function normalizeDirPath(value: string): string {
+  const trimmed = value.trim().replace(/\\/g, '/');
+  return trimmed.endsWith('/') ? trimmed : trimmed + '/';
+}
 
 // Load environment variables from .env file
 dotenvConfig();
@@ -230,19 +237,25 @@ export const env = {
   // Data directories (environment-dependent paths)
   // -----------------------------------------------------------
   /** Base data directory (default: data/) */
-  DATA_DIR: process.env.DATA_DIR || 'data/',
+  DATA_DIR: normalizeDirPath(process.env.DATA_DIR || 'data/'),
   /** Database file path (default: data/bot.db) */
-  DATABASE_PATH: process.env.DATABASE_PATH || 'data/bot.db',
+  DATABASE_PATH: process.env.DATABASE_PATH || join('data', 'bot.db'),
   /** Recordings directory (default: data/recordings/) */
-  RECORDINGS_DIR: process.env.RECORDINGS_DIR || 'data/recordings/',
+  RECORDINGS_DIR: normalizeDirPath(
+    process.env.RECORDINGS_DIR || 'data/recordings/'
+  ),
   /** Disk buffer directory (default: data/buffers/) */
-  AUDIO_DISK_BUFFER_DIR: process.env.AUDIO_DISK_BUFFER_DIR || 'data/buffers/',
+  AUDIO_DISK_BUFFER_DIR: normalizeDirPath(
+    process.env.AUDIO_DISK_BUFFER_DIR || 'data/buffers/'
+  ),
 
   // -----------------------------------------------------------
   // Backup settings
   // -----------------------------------------------------------
   /** Backup directory (default: data/backups/) */
-  BACKUP_DIR: process.env.BACKUP_DIR || 'data/backups/',
+  BACKUP_DIR: normalizeDirPath(
+    process.env.BACKUP_DIR || 'data/backups/'
+  ),
   /** Backup retention days (default: 7) */
   BACKUP_RETENTION_DAYS: parseNumber(process.env.BACKUP_RETENTION_DAYS, 7),
   /** Backup cron schedule (default: 0 4 * * * = daily at 4am) */
@@ -259,6 +272,12 @@ export const env = {
   // -----------------------------------------------------------
   /** Discord Webhook URL for alerts (optional) */
   ALERT_WEBHOOK_URL: process.env.ALERT_WEBHOOK_URL || '',
+
+  // -----------------------------------------------------------
+  // Logging
+  // -----------------------------------------------------------
+  /** Log level: debug | info | warn | error (default: info in prod, debug in dev) */
+  LOG_LEVEL: process.env.LOG_LEVEL || '',
 } as const;
 
 /**

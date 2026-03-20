@@ -1,6 +1,22 @@
 /**
- * Log levels
+ * Log levels (lower index = more verbose)
  */
+const LOG_LEVEL_PRIORITY: Record<string, number> = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+};
+
+function getMinLogLevel(): number {
+  const level = (process.env.LOG_LEVEL ?? '').toLowerCase();
+  return level in LOG_LEVEL_PRIORITY
+    ? LOG_LEVEL_PRIORITY[level]
+    : process.env.NODE_ENV === 'development'
+      ? LOG_LEVEL_PRIORITY.debug
+      : LOG_LEVEL_PRIORITY.info;
+}
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 /**
@@ -156,10 +172,12 @@ function formatMessage(
 }
 
 /**
- * Check if debug logging is enabled
+ * Check if a log level should be emitted
  */
-function isDebugEnabled(): boolean {
-  return process.env.NODE_ENV === 'development';
+function shouldLog(level: LogLevel): boolean {
+  const minLevel = getMinLogLevel();
+  const levelPriority = LOG_LEVEL_PRIORITY[level] ?? 0;
+  return levelPriority >= minLevel;
 }
 
 /**
@@ -174,10 +192,10 @@ export function getErrorMessage(error: unknown): string {
 
 export const logger = {
   /**
-   * Log debug message (only in development)
+   * Log debug message
    */
   debug(message: string, ...args: unknown[]): void {
-    if (isDebugEnabled()) {
+    if (shouldLog('debug')) {
       console.log(formatMessage('debug', message, ...args));
     }
   },
@@ -186,20 +204,26 @@ export const logger = {
    * Log info message
    */
   info(message: string, ...args: unknown[]): void {
-    console.log(formatMessage('info', message, ...args));
+    if (shouldLog('info')) {
+      console.log(formatMessage('info', message, ...args));
+    }
   },
 
   /**
    * Log warning message
    */
   warn(message: string, ...args: unknown[]): void {
-    console.warn(formatMessage('warn', message, ...args));
+    if (shouldLog('warn')) {
+      console.warn(formatMessage('warn', message, ...args));
+    }
   },
 
   /**
    * Log error message
    */
   error(message: string, ...args: unknown[]): void {
-    console.error(formatMessage('error', message, ...args));
+    if (shouldLog('error')) {
+      console.error(formatMessage('error', message, ...args));
+    }
   },
 };
