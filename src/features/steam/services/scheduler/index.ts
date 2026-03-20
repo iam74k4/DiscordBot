@@ -14,6 +14,11 @@ const scheduledTasks: cron.ScheduledTask[] = [];
 
 let isRecording = false;
 let isSchedulerStarted = false;
+const PLAYTIME_CONCURRENCY = 5;
+
+async function wait(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 /**
  * Record playtime for all registered users
@@ -38,25 +43,35 @@ async function recordAllUsersPlaytime(): Promise<void> {
     let successCount = 0;
     let errorCount = 0;
 
-    for (const user of users) {
-      try {
-        const totalPlaytime = await steamClient.getTotalPlaytime(user.steam_id);
+    for (let i = 0; i < users.length; i += PLAYTIME_CONCURRENCY) {
+      const batch = users.slice(i, i + PLAYTIME_CONCURRENCY);
 
-        playtimeRepository.record(
-          user.discord_id,
-          user.steam_id,
-          totalPlaytime
-        );
-        successCount++;
-      } catch (error) {
-        errorCount++;
-        logger.warn(
-          `Playtime recording failed for ${user.discord_id}:`,
-          error instanceof Error ? error.message : error
-        );
+      await Promise.all(
+        batch.map(async (user) => {
+          try {
+            const totalPlaytime = await steamClient.getTotalPlaytime(
+              user.steam_id
+            );
+
+            playtimeRepository.record(
+              user.discord_id,
+              user.steam_id,
+              totalPlaytime
+            );
+            successCount++;
+          } catch (error) {
+            errorCount++;
+            logger.warn(
+              `Playtime recording failed for ${user.discord_id}:`,
+              error instanceof Error ? error.message : error
+            );
+          }
+        })
+      );
+
+      if (i + PLAYTIME_CONCURRENCY < users.length) {
+        await wait(300);
       }
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     logger.info(

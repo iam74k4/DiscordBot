@@ -55,13 +55,13 @@ interface GameStartEvent {
   discordId: string;
   steamName: string;
   gameName: string;
-  gameIconUrl?: string;
+  avatarUrl?: string;
 }
 
 /**
  * Check for game activity changes
  */
-async function checkGameActivity(): Promise<GameStartEvent[]> {
+async function checkGameActivity(signal?: AbortSignal): Promise<GameStartEvent[]> {
   if (!steamClient.isConfigured()) {
     logger.debug('Steam API key not configured, skipping game activity check');
     return [];
@@ -77,7 +77,8 @@ async function checkGameActivity(): Promise<GameStartEvent[]> {
 
     try {
       const summaries = await steamClient.getPlayerSummaries(
-        batch.map((user) => user.steam_id)
+        batch.map((user) => user.steam_id),
+        signal
       );
       const summaryBySteamId = new Map(
         summaries.map((summary) => [summary.steamid, summary])
@@ -97,7 +98,7 @@ async function checkGameActivity(): Promise<GameStartEvent[]> {
             discordId: user.discord_id,
             steamName: player.personaname,
             gameName: currentGame,
-            gameIconUrl: player.avatarfull,
+            avatarUrl: player.avatarfull,
           });
         }
 
@@ -109,8 +110,18 @@ async function checkGameActivity(): Promise<GameStartEvent[]> {
             : (cache?.game_started_at ?? null)
         );
       }
-    } catch {
-      continue;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw error;
+      }
+      logger.warn(
+        `Failed to fetch Steam activity batch ${i / BATCH_SIZE + 1}:`,
+        error instanceof Error ? error.message : error
+      );
+    }
+
+    if (signal?.aborted) {
+      break;
     }
 
     if (i + BATCH_SIZE < users.length) {
@@ -133,7 +144,7 @@ async function sendNotification(
     description:
       `**${event.steamName}** started playing\n\n` + `**${event.gameName}**`,
     color: COLORS.STEAM,
-    thumbnail: event.gameIconUrl,
+    thumbnail: event.avatarUrl,
     timestamp: true,
   });
 
@@ -159,7 +170,7 @@ async function processNotifications(): Promise<void> {
     }, PROCESSING_TIMEOUT);
 
     try {
-      const events = await checkGameActivity();
+      const events = await checkGameActivity(ac.signal);
 
       if (events.length === 0) return;
 
@@ -199,7 +210,11 @@ async function processNotifications(): Promise<void> {
         }
       }
     } catch (error) {
-      logger.error('Failed to process notifications:', error);
+      if (error instanceof Error && error.name === 'AbortError') {
+        logger.warn('Notification processing aborted due to timeout');
+      } else {
+        logger.error('Failed to process notifications:', error);
+      }
     } finally {
       clearTimeout(timeout);
     }

@@ -39,7 +39,7 @@ class SteamApiError extends Error {
   }
 
   get isRetryable(): boolean {
-    return this.statusCode >= 500;
+    return this.statusCode === 429 || this.statusCode >= 500;
   }
 }
 
@@ -65,7 +65,8 @@ export class SteamClient {
    */
   private async request<T>(
     endpoint: string,
-    params: Record<string, string> = {}
+    params: Record<string, string> = {},
+    signal?: AbortSignal
   ): Promise<T> {
     if (!this.isConfigured()) {
       throw new Error('STEAM_API_KEY is not configured');
@@ -86,7 +87,7 @@ export class SteamClient {
       async () => {
         metrics.incrementSteamCall();
 
-        const response = await fetch(url.toString());
+        const response = await fetch(url.toString(), { signal });
 
         if (!response.ok) {
           if (response.status >= 500) {
@@ -198,7 +199,10 @@ export class SteamClient {
   /**
    * Get player summaries for multiple users.
    */
-  async getPlayerSummaries(steamIds: string[]): Promise<PlayerSummary[]> {
+  async getPlayerSummaries(
+    steamIds: string[],
+    signal?: AbortSignal
+  ): Promise<PlayerSummary[]> {
     if (steamIds.length === 0) {
       return [];
     }
@@ -206,10 +210,14 @@ export class SteamClient {
     try {
       const data = await this.request<GetPlayerSummariesResponse>(
         '/ISteamUser/GetPlayerSummaries/v2/',
-        { steamids: steamIds.join(',') }
+        { steamids: steamIds.join(',') },
+        signal
       );
       return data.response.players ?? [];
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw error;
+      }
       const msg = error instanceof Error ? error.message : 'Unknown error';
       logger.error('Failed to get player summaries:', msg);
       return [];

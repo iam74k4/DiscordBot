@@ -139,7 +139,7 @@ export async function handleWhoami(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
   const locale = mapDiscordLocale(interaction.locale);
-  await interaction.deferReply();
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const discordId = interaction.user.id;
   const steamUser = steamUserRepository.getByDiscordId(discordId);

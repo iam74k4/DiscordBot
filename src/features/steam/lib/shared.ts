@@ -6,11 +6,13 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  PermissionFlagsBits,
 } from 'discord.js';
 import { Locale, t } from '../../../locales/index.js';
 import { steamClient } from '../services/steam/index.js';
 import { steamUserRepository } from '../repositories/index.js';
 import { LRUCache } from '../../../utils/lruCache.js';
+import { interactionHasGuildPermission } from '../../../utils/discord.js';
 
 // ============ Constants ============
 
@@ -71,6 +73,19 @@ export async function resolveSteamId(
   }
 
   if (targetUser) {
+    if (
+      targetUser.id !== interaction.user.id &&
+      !interactionHasGuildPermission(
+        interaction,
+        PermissionFlagsBits.ManageGuild
+      )
+    ) {
+      return {
+        steamId: null,
+        error: t('common.noPermission', locale),
+      };
+    }
+
     const steamId = steamUserRepository.getSteamId(targetUser.id);
     if (!steamId) {
       return {

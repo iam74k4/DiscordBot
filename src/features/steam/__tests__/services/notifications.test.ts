@@ -97,7 +97,10 @@ describe('steam notifications', () => {
     stopNotificationSystem();
 
     expect(getNotifiableUsers).toHaveBeenCalledTimes(1);
-    expect(getPlayerSummaries).toHaveBeenCalledWith(['steam-1']);
+    expect(getPlayerSummaries).toHaveBeenCalledWith(
+      ['steam-1'],
+      expect.any(AbortSignal)
+    );
     expect(updateGameActivityCache).toHaveBeenCalledWith(
       'user-1',
       'Portal 2',
