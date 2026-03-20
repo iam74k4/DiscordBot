@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import { Command } from '../../../types/index.js';
 import { executeRecordCommand } from '../application/index.js';
 
@@ -29,9 +29,10 @@ export const command: Command = {
         )
     ),
 
-  middleware: ['cooldown'],
+  middleware: ['permissions', 'cooldown'],
 
   options: {
+    permissions: [PermissionFlagsBits.ManageGuild],
     cooldown: 10000, // 10 seconds cooldown
   },
 

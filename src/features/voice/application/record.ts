@@ -3,6 +3,7 @@ import {
   ChannelType,
   ChatInputCommandInteraction,
   GuildMember,
+  MessageFlags,
   PermissionFlagsBits,
 } from 'discord.js';
 import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
@@ -30,6 +31,7 @@ export async function executeRecordCommand(
           t('common.guildOnly', locale)
         ),
       ],
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -49,11 +51,12 @@ export async function executeRecordCommand(
           t('record.errors.notInVoiceDesc', locale)
         ),
       ],
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
 
-  await interaction.deferReply();
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const connection = connectionManager.getConnection(voiceChannel.id);
   if (!connection) {
@@ -189,6 +192,7 @@ export async function executeRecordCommand(
             }),
           ],
           files: [mainFile],
+          flags: MessageFlags.Ephemeral,
         });
         success = true;
       } catch (error) {
@@ -214,6 +218,7 @@ export async function executeRecordCommand(
           await interaction.followUp({
             content: `Part ${i + 2}/${totalFiles}`,
             files: [additionalFiles[i]],
+            flags: MessageFlags.Ephemeral,
           });
           success = true;
         } catch {
