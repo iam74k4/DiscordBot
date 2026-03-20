@@ -190,13 +190,13 @@ export async function endPoll(
   const poll = pollStore.get(messageId);
   if (!poll) return;
 
-  // Remove from store (clears timeout)
-  pollStore.delete(messageId);
+  if (poll.timeout) {
+    clearTimeout(poll.timeout);
+    poll.timeout = undefined;
+  }
 
-  // Use provided client or stored client
   const discordClient = client ?? poll.client;
 
-  // Try to update the original message
   try {
     const channel = discordClient?.channels.cache.get(poll.channelId);
     if (channel && channel.isTextBased() && 'messages' in channel) {
@@ -211,8 +211,10 @@ export async function endPoll(
         logger.info(`Poll ended: ${poll.question} (${poll.votes.size} votes)`);
       }
     }
+    pollStore.delete(messageId);
   } catch (error) {
     logger.error('Error ending poll:', error);
+    pollStore.delete(messageId);
   }
 }
 
