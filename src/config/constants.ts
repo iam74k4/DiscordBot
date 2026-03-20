@@ -1,3 +1,8 @@
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const pkg = require('../../package.json') as { version?: string };
+
 /**
  * Internal constants that should NOT be changed via environment variables.
  * These are technical defaults tightly coupled to the audio pipeline,
@@ -45,7 +50,7 @@ export const RETRY = {
  */
 export const BOT_INFO = {
   NAME: 'Discord Bot',
-  VERSION: '1.0.0',
+  VERSION: pkg?.version ?? '1.0.0',
 } as const;
 
 export const MONITORING = {
