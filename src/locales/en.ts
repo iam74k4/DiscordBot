@@ -134,6 +134,9 @@ export const en: TranslationKeys = {
     errors: {
       notEnoughOptions: 'A poll needs at least 2 options.',
       tooManyOptions: 'A poll can have at most 10 options.',
+      maxActivePolls: 'Poll Limit Reached',
+      maxActivePollsDesc:
+        'There are already {count} active polls. Please end an existing poll before creating a new one.',
       invalidOption: 'Invalid vote option.',
       pollEnded: 'Poll Ended',
       pollEndedDesc: 'This poll has ended or no longer exists.',

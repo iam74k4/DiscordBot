@@ -134,6 +134,9 @@ export const ja: TranslationKeys = {
     errors: {
       notEnoughOptions: '投票には最低2つの選択肢が必要です。',
       tooManyOptions: '投票の選択肢は最大10個までです。',
+      maxActivePolls: '投票数上限',
+      maxActivePollsDesc:
+        '有効な投票が既に{count}件あります。新しい投票を作成する前に既存の投票を終了してください。',
       invalidOption: '無効な投票オプションです。',
       pollEnded: '投票終了',
       pollEndedDesc: 'この投票は終了したか、存在しません。',

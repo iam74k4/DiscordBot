@@ -5,6 +5,7 @@ import { logger } from '../../../utils/logger.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import {
   PollData,
+  MAX_ACTIVE_POLLS,
   buildPollButtons,
   buildPollResultEmbed,
   endPoll,
@@ -35,6 +36,21 @@ async function handleCreatePoll(
         createErrorEmbed(
           t('common.error', locale),
           t('poll.errors.notEnoughOptions', locale)
+        ),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  if (!pollStore.canCreate()) {
+    await interaction.reply({
+      embeds: [
+        createErrorEmbed(
+          t('poll.errors.maxActivePolls', locale),
+          t('poll.errors.maxActivePollsDesc', locale, {
+            count: MAX_ACTIVE_POLLS,
+          })
         ),
       ],
       flags: MessageFlags.Ephemeral,

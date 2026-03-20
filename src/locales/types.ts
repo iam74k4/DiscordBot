@@ -189,6 +189,8 @@ export interface TranslationKeys {
     errors: {
       notEnoughOptions: string;
       tooManyOptions: string;
+      maxActivePolls: string;
+      maxActivePollsDesc: string;
       invalidOption: string;
       pollEnded: string;
       pollEndedDesc: string;

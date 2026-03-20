@@ -1,9 +1,8 @@
 import { Client } from 'discord.js';
-import { BoundedMap } from '../../../utils/lruCache.js';
 import { Locale } from '../../../locales/index.js';
 
 // Maximum number of active polls to prevent memory issues
-const MAX_ACTIVE_POLLS = 1000;
+export const MAX_ACTIVE_POLLS = 1000;
 
 /**
  * Poll data structure
@@ -36,7 +35,7 @@ export interface PollData {
  * Using BoundedMap to prevent memory leaks from abandoned polls
  */
 class PollStore {
-  private store = new BoundedMap<string, PollData>(MAX_ACTIVE_POLLS);
+  private store = new Map<string, PollData>();
 
   /**
    * Get a poll by message ID
@@ -56,7 +55,17 @@ class PollStore {
    * Store a poll
    */
   set(messageId: string, poll: PollData): void {
+    if (!this.store.has(messageId) && !this.canCreate()) {
+      throw new Error(`Active poll limit reached (${MAX_ACTIVE_POLLS})`);
+    }
     this.store.set(messageId, poll);
+  }
+
+  /**
+   * Check whether a new poll can be created safely.
+   */
+  canCreate(): boolean {
+    return this.store.size < MAX_ACTIVE_POLLS;
   }
 
   /**

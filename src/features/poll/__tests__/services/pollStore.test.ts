@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { pollStore, type PollData } from '../../services/pollStore.js';
+import {
+  MAX_ACTIVE_POLLS,
+  pollStore,
+  type PollData,
+} from '../../services/pollStore.js';
 
 describe('PollStore', () => {
   const createMockPoll = (id: string): PollData => ({
@@ -103,6 +107,27 @@ describe('PollStore', () => {
 
       pollStore.delete('msg1');
       expect(pollStore.size).toBe(1);
+    });
+  });
+
+  describe('capacity', () => {
+    it('should report when new polls can still be created', () => {
+      expect(pollStore.canCreate()).toBe(true);
+      pollStore.set('msg1', createMockPoll('1'));
+      expect(pollStore.canCreate()).toBe(true);
+    });
+
+    it('should reject new polls when capacity is reached', () => {
+      for (let i = 0; i < MAX_ACTIVE_POLLS; i++) {
+        pollStore.set(`msg${i}`, createMockPoll(String(i)));
+      }
+
+      expect(pollStore.canCreate()).toBe(false);
+      expect(() =>
+        pollStore.set('overflow', createMockPoll('overflow'))
+      ).toThrow(`Active poll limit reached (${MAX_ACTIVE_POLLS})`);
+      expect(pollStore.has('msg0')).toBe(true);
+      expect(pollStore.size).toBe(MAX_ACTIVE_POLLS);
     });
   });
 

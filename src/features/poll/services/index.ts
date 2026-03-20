@@ -1,5 +1,5 @@
 // Poll service exports
-export { pollStore, type PollData } from './pollStore.js';
+export { pollStore, MAX_ACTIVE_POLLS, type PollData } from './pollStore.js';
 export {
   handlePollVote,
   endPoll,
