@@ -1,5 +1,6 @@
 import * as cron from 'node-cron';
 import { logger } from '../../../../utils/logger.js';
+import { env } from '../../../../config/index.js';
 import { steamClient } from '../steam/index.js';
 import {
   playtimeRepository,
@@ -71,7 +72,9 @@ async function recordAllUsersPlaytime(): Promise<void> {
  */
 function runCleanup(): void {
   try {
-    const deleted = playtimeRepository.cleanupOldRecords(365);
+    const deleted = playtimeRepository.cleanupOldRecords(
+      env.PLAYTIME_HISTORY_RETENTION_DAYS
+    );
     if (deleted > 0) {
       logger.info(`Cleaned up ${deleted} old playtime records`);
     }

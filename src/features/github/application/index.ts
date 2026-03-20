@@ -15,13 +15,14 @@ import { executePrCommand } from './pr.js';
 import { executeIssueCommand } from './issue.js';
 import { executeRepoCommand } from './repo.js';
 import type { Locale } from '../../../locales/types.js';
+import { interactionHasGuildPermission } from '../../../utils/discord.js';
 
 function checkPermission(interaction: ChatInputCommandInteraction): boolean {
   if (isBotOwner(interaction.user.id)) return true;
-  if (!interaction.guild || !interaction.member) return false;
-  const perms = interaction.member.permissions;
-  if (!(perms instanceof PermissionsBitField)) return false;
-  return perms.has(PermissionsBitField.Flags.ManageGuild);
+  return interactionHasGuildPermission(
+    interaction,
+    PermissionsBitField.Flags.ManageGuild
+  );
 }
 
 function isCreateSubcommand(interaction: ChatInputCommandInteraction): boolean {

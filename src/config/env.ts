@@ -74,6 +74,18 @@ function validateNumericalConfig(): void {
   const maxVc = parseNumber(process.env.MAX_CONCURRENT_VC_CONNECTIONS, 5);
   const retentionHrs = parseNumber(process.env.RECORDING_RETENTION_HOURS, 24);
   const backupDays = parseNumber(process.env.BACKUP_RETENTION_DAYS, 7);
+  const playtimeRetentionDays = parseNumber(
+    process.env.PLAYTIME_HISTORY_RETENTION_DAYS,
+    365
+  );
+  const voiceSessionRetentionDays = parseNumber(
+    process.env.VOICE_SESSION_RETENTION_DAYS,
+    30
+  );
+  const auditLogRetentionDays = parseNumber(
+    process.env.AUDIT_LOG_RETENTION_DAYS,
+    90
+  );
 
   if (maxRec <= 0) {
     errors.push('MAX_RECORDING_DURATION must be > 0');
@@ -99,6 +111,15 @@ function validateNumericalConfig(): void {
   }
   if (backupDays <= 0) {
     errors.push('BACKUP_RETENTION_DAYS must be > 0');
+  }
+  if (playtimeRetentionDays <= 0) {
+    errors.push('PLAYTIME_HISTORY_RETENTION_DAYS must be > 0');
+  }
+  if (voiceSessionRetentionDays <= 0) {
+    errors.push('VOICE_SESSION_RETENTION_DAYS must be > 0');
+  }
+  if (auditLogRetentionDays <= 0) {
+    errors.push('AUDIT_LOG_RETENTION_DAYS must be > 0');
   }
 
   for (const w of warnings) {
@@ -188,6 +209,21 @@ export const env = {
   RECORDING_RETENTION_HOURS: parseNumber(
     process.env.RECORDING_RETENTION_HOURS,
     24
+  ),
+  /** Steam playtime history retention days (default: 365) */
+  PLAYTIME_HISTORY_RETENTION_DAYS: parseNumber(
+    process.env.PLAYTIME_HISTORY_RETENTION_DAYS,
+    365
+  ),
+  /** Voice session retention days (default: 30) */
+  VOICE_SESSION_RETENTION_DAYS: parseNumber(
+    process.env.VOICE_SESSION_RETENTION_DAYS,
+    30
+  ),
+  /** Audit log retention days (default: 90) */
+  AUDIT_LOG_RETENTION_DAYS: parseNumber(
+    process.env.AUDIT_LOG_RETENTION_DAYS,
+    90
   ),
 
   // -----------------------------------------------------------

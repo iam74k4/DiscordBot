@@ -4,7 +4,6 @@ import {
   ComponentType,
   MessageFlags,
   PermissionFlagsBits,
-  PermissionsBitField,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } from 'discord.js';
@@ -23,6 +22,7 @@ import { logAuditAction } from '../../../services/audit/index.js';
 import { formatAuditTarget } from '../../../services/audit/format.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { getErrorMessage, logger } from '../../../utils/logger.js';
+import { interactionHasGuildPermission } from '../../../utils/discord.js';
 
 const LANGUAGE_DISPLAY_NAMES: Record<string, string> = {
   ja: '日本語',
@@ -364,12 +364,11 @@ export async function executeSettingsCommand(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
   const locale = mapDiscordLocale(interaction.locale);
-  const memberPermissions = interaction.member?.permissions;
-  const hasManageGuild =
-    memberPermissions instanceof PermissionsBitField &&
-    memberPermissions.has(PermissionFlagsBits.ManageGuild);
 
-  if (!interaction.guild || !hasManageGuild) {
+  if (
+    !interaction.guild ||
+    !interactionHasGuildPermission(interaction, PermissionFlagsBits.ManageGuild)
+  ) {
     const errorEmbed = createErrorEmbed(
       t('common.error', locale),
       t('common.noPermission', locale)

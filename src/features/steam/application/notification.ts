@@ -2,7 +2,6 @@ import {
   ChatInputCommandInteraction,
   MessageFlags,
   PermissionFlagsBits,
-  PermissionsBitField,
 } from 'discord.js';
 import {
   createEmbed,
@@ -15,6 +14,7 @@ import {
   steamUserRepository,
 } from '../repositories/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { interactionHasGuildPermission } from '../../../utils/discord.js';
 
 async function handleSetup(
   interaction: ChatInputCommandInteraction
@@ -319,12 +319,13 @@ export async function executeNotificationCommand(
   const subcommand = interaction.options.getSubcommand();
 
   if (subcommand !== 'me') {
-    const memberPermissions = interaction.member?.permissions;
-    const hasManageGuild =
-      memberPermissions instanceof PermissionsBitField &&
-      memberPermissions.has(PermissionFlagsBits.ManageGuild);
-
-    if (!interaction.guild || !hasManageGuild) {
+    if (
+      !interaction.guild ||
+      !interactionHasGuildPermission(
+        interaction,
+        PermissionFlagsBits.ManageGuild
+      )
+    ) {
       const errorEmbed = createErrorEmbed(
         t('common.error', locale),
         t('common.noPermission', locale)

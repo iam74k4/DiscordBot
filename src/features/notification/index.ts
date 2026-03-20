@@ -1,15 +1,32 @@
 import type { Client } from 'discord.js';
 import './helpCatalog.js';
 import { voiceTracker } from './services/voiceTracker.js';
+import { voiceSessionRepository } from './repositories/voiceSessionRepository.js';
+import { env } from '../../config/index.js';
 import { logger } from '../../utils/logger.js';
+import { startDailyCleanup, stopCleanupInterval } from '../../utils/cleanup.js';
 
 export const name = 'notification';
+let cleanupInterval: NodeJS.Timeout | null = null;
+
+function cleanupOldVoiceSessions(): void {
+  const deleted = voiceSessionRepository.cleanupOldSessions(
+    env.VOICE_SESSION_RETENTION_DAYS
+  );
+  if (deleted > 0) {
+    logger.info(`Cleaned up ${deleted} old voice session record(s)`);
+  }
+}
 
 export function start(_client: Client): void {
+  if (cleanupInterval) {
+    return;
+  }
   voiceTracker.closeAllStaleSessions();
+  cleanupInterval = startDailyCleanup(cleanupOldVoiceSessions);
   logger.info('Notification feature started');
 }
 
 export function stop(): void {
-  // No background services to stop
+  cleanupInterval = stopCleanupInterval(cleanupInterval);
 }

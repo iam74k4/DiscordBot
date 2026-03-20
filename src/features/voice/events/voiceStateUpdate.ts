@@ -2,7 +2,6 @@ import { Events, VoiceState } from 'discord.js';
 import { Event } from '../../../types/index.js';
 import { ExtendedClient } from '../../../client.js';
 import { connectionManager } from '../services/connectionManager.js';
-import { audioBufferManager } from '../services/audioBuffer.js';
 import { logger } from '../../../utils/logger.js';
 
 /**
@@ -106,7 +105,6 @@ async function handleUserLeft(
       `No users left in channel ${channel.name} (${channel.id}). Disconnecting...`
     );
     await connectionManager.disconnect(channel.id);
-    audioBufferManager.removeBuffer(channel.id);
   }
 }
 

@@ -1,9 +1,4 @@
-import {
-  Events,
-  PermissionFlagsBits,
-  TextChannel,
-  VoiceState,
-} from 'discord.js';
+import { Events, VoiceState } from 'discord.js';
 import { Event } from '../../../types/index.js';
 import { ExtendedClient } from '../../../client.js';
 import { createEmbed } from '../../../utils/embed.js';
@@ -12,6 +7,7 @@ import { logger } from '../../../utils/logger.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { notificationChannelRepository } from '../repositories/notificationChannelRepository.js';
 import { voiceTracker } from '../services/voiceTracker.js';
+import { getSendableTextChannel } from '../../../utils/discord.js';
 
 export const event: Event<typeof Events.VoiceStateUpdate> = {
   name: Events.VoiceStateUpdate,
@@ -66,16 +62,11 @@ async function handleJoin(guildId: string, state: VoiceState): Promise<void> {
   if (!notifyChannelId) return;
 
   try {
-    const textChannel = await state.guild.channels
-      .fetch(notifyChannelId)
-      .catch(() => null);
-    if (!textChannel || !textChannel.isTextBased()) return;
-
-    const me = state.guild.members.me;
-    if (!me) return;
-
-    const perms = (textChannel as TextChannel).permissionsFor(me);
-    if (!perms?.has(PermissionFlagsBits.SendMessages)) return;
+    const textChannel = await getSendableTextChannel(
+      state.guild,
+      notifyChannelId
+    );
+    if (!textChannel) return;
 
     const locale = mapDiscordLocale(state.guild.preferredLocale);
     const embed = createEmbed({
@@ -87,7 +78,7 @@ async function handleJoin(guildId: string, state: VoiceState): Promise<void> {
       timestamp: true,
     });
 
-    await (textChannel as TextChannel).send({ embeds: [embed] });
+    await textChannel.send({ embeds: [embed] });
   } catch (error) {
     logger.warn(
       `Failed to send voice join notification: ${error instanceof Error ? error.message : error}`
@@ -116,16 +107,11 @@ async function handleLeave(guildId: string, state: VoiceState): Promise<void> {
   if (!notifyChannelId) return;
 
   try {
-    const textChannel = await state.guild.channels
-      .fetch(notifyChannelId)
-      .catch(() => null);
-    if (!textChannel || !textChannel.isTextBased()) return;
-
-    const me = state.guild.members.me;
-    if (!me) return;
-
-    const perms = (textChannel as TextChannel).permissionsFor(me);
-    if (!perms?.has(PermissionFlagsBits.SendMessages)) return;
+    const textChannel = await getSendableTextChannel(
+      state.guild,
+      notifyChannelId
+    );
+    if (!textChannel) return;
 
     const locale = mapDiscordLocale(state.guild.preferredLocale);
     const embed = createEmbed({
@@ -137,7 +123,7 @@ async function handleLeave(guildId: string, state: VoiceState): Promise<void> {
       timestamp: true,
     });
 
-    await (textChannel as TextChannel).send({ embeds: [embed] });
+    await textChannel.send({ embeds: [embed] });
   } catch (error) {
     logger.warn(
       `Failed to send voice leave notification: ${error instanceof Error ? error.message : error}`

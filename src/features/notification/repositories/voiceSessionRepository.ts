@@ -59,6 +59,15 @@ function closeAllStaleSessions(): number {
   return result.changes;
 }
 
+function cleanupOldSessions(daysToKeep: number): number {
+  const cutoffTime = Date.now() - daysToKeep * 24 * 60 * 60 * 1000;
+  const stmt = database.prepare(
+    'DELETE FROM voice_sessions WHERE left_at IS NOT NULL AND left_at < ?'
+  );
+  const result = stmt.run(cutoffTime);
+  return result.changes;
+}
+
 function getUserChannelStats(
   guildId: string,
   userId: string,
@@ -113,6 +122,7 @@ function getUserTotalDuration(
 }
 
 export const voiceSessionRepository = {
+  cleanupOldSessions,
   startSession,
   endSession,
   closeStaleSessionsForGuild,

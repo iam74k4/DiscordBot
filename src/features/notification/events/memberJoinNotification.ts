@@ -1,9 +1,4 @@
-import {
-  Events,
-  GuildMember,
-  PermissionFlagsBits,
-  TextChannel,
-} from 'discord.js';
+import { Events, GuildMember } from 'discord.js';
 import { Event } from '../../../types/index.js';
 import { ExtendedClient } from '../../../client.js';
 import { createEmbed } from '../../../utils/embed.js';
@@ -11,6 +6,7 @@ import { COLORS } from '../../../utils/constants/index.js';
 import { logger } from '../../../utils/logger.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { notificationChannelRepository } from '../repositories/notificationChannelRepository.js';
+import { getSendableTextChannel } from '../../../utils/discord.js';
 
 export const event: Event<typeof Events.GuildMemberAdd> = {
   name: Events.GuildMemberAdd,
@@ -27,16 +23,11 @@ export const event: Event<typeof Events.GuildMemberAdd> = {
     if (!notifyChannelId) return;
 
     try {
-      const textChannel = await member.guild.channels
-        .fetch(notifyChannelId)
-        .catch(() => null);
-      if (!textChannel || !textChannel.isTextBased()) return;
-
-      const me = member.guild.members.me;
-      if (!me) return;
-
-      const perms = (textChannel as TextChannel).permissionsFor(me);
-      if (!perms?.has(PermissionFlagsBits.SendMessages)) return;
+      const textChannel = await getSendableTextChannel(
+        member.guild,
+        notifyChannelId
+      );
+      if (!textChannel) return;
 
       const locale = mapDiscordLocale(member.guild.preferredLocale);
       const embed = createEmbed({
@@ -56,7 +47,7 @@ export const event: Event<typeof Events.GuildMemberAdd> = {
         timestamp: true,
       });
 
-      await (textChannel as TextChannel).send({ embeds: [embed] });
+      await textChannel.send({ embeds: [embed] });
     } catch (error) {
       logger.warn(
         `Failed to send member join notification: ${error instanceof Error ? error.message : error}`

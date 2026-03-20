@@ -13,6 +13,7 @@ import {
   handleStatus,
   handleStats,
 } from '../application/index.js';
+import { interactionHasGuildPermission } from '../../../utils/discord.js';
 
 export const command: Command = {
   data: new SlashCommandBuilder()
@@ -125,14 +126,12 @@ export const command: Command = {
     if (subcommand === 'stats') return handleStats(interaction);
 
     // All other subcommands require ManageGuild
-    const member = interaction.member;
-    const perms = member && 'permissions' in member ? member.permissions : null;
-    const hasManageGuild =
-      perms && typeof perms !== 'string'
-        ? perms.has(PermissionFlagsBits.ManageGuild)
-        : false;
-
-    if (!hasManageGuild) {
+    if (
+      !interactionHasGuildPermission(
+        interaction,
+        PermissionFlagsBits.ManageGuild
+      )
+    ) {
       const { createErrorEmbed } = await import('../../../utils/embed.js');
       const { t, mapDiscordLocale } = await import('../../../locales/index.js');
       const locale = mapDiscordLocale(interaction.locale);

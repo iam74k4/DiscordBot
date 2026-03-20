@@ -8,6 +8,7 @@ import { handleApiError } from '../application/githubUtils.js';
 import { getErrorMessage, logger } from '../../../utils/logger.js';
 import { trackRepo } from '../application/autocomplete.js';
 import { isBotOwner } from '../../../config/env.js';
+import { hasPermission } from '../../../utils/discord.js';
 
 export const event: Event<typeof Events.InteractionCreate> = {
   name: Events.InteractionCreate,
@@ -25,13 +26,12 @@ export const event: Event<typeof Events.InteractionCreate> = {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     if (!isBotOwner(interaction.user.id)) {
-      const member = interaction.member;
-      const perms = member?.permissions;
       if (
         !interaction.guild ||
-        !member ||
-        !(perms instanceof PermissionsBitField) ||
-        !perms.has(PermissionsBitField.Flags.ManageGuild)
+        !hasPermission(
+          interaction.member,
+          PermissionsBitField.Flags.ManageGuild
+        )
       ) {
         const embed = createErrorEmbed(
           t('common.error', locale),
