@@ -13,7 +13,7 @@
 - `fix/<name>` or `bugfix/<name>` — bug fixes
 - `docs/<name>` — documentation changes
 
-Branch from `develop`, merge back to `develop` when ready.
+Branch from `main`, merge back to `main` when ready.
 
 ## Commit Messages
 
@@ -28,6 +28,7 @@ type(scope): subject
 - **subject**: lowercase, imperative, no period, max 50 chars
 
 Examples:
+
 - `feat(steam): add profile comparison command`
 - `fix(voice): handle disconnect during recording`
 - `docs: update database schema documentation`
