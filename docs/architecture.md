@@ -46,11 +46,28 @@ src/
 │   │   ├── commands/
 │   │   ├── application/
 │   │   ├── repositories/    # Settings, audit, DB stats (real SQL)
+│   │   ├── __tests__/
 │   │   └── helpCatalog.ts
 │   ├── general/
 │   │   ├── index.ts
 │   │   ├── commands/
 │   │   ├── application/
+│   │   └── helpCatalog.ts
+│   ├── github/
+│   │   ├── index.ts
+│   │   ├── commands/
+│   │   ├── application/
+│   │   ├── events/
+│   │   ├── services/
+│   │   └── helpCatalog.ts
+│   ├── notification/
+│   │   ├── index.ts
+│   │   ├── commands/
+│   │   ├── application/
+│   │   ├── events/
+│   │   ├── repositories/
+│   │   ├── services/
+│   │   ├── __tests__/
 │   │   └── helpCatalog.ts
 │   └── community/
 │       ├── index.ts
@@ -77,7 +94,8 @@ src/
 │   │       ├── index.ts     # initializeDatabase()
 │   │       ├── 001_steam.ts
 │   │       ├── 002_notifications.ts
-│   │       └── 003_settings.ts
+│   │       ├── 003_settings.ts
+│   │       └── 004_notification.ts
 │   ├── audit/               # Audit logging + channel notifications
 │   │   ├── index.ts
 │   │   ├── format.ts
@@ -145,7 +163,7 @@ flowchart LR
 
 - `services/database/` is **pure infrastructure**: connection management, `runTransaction()`, and migrations.
 - No business logic or feature-specific queries live here. All SQL lives in feature `repositories/`.
-- Migrations are numbered DDL files (`001_steam.ts`, `002_notifications.ts`, `003_settings.ts`) applied by `initializeDatabase()`.
+- Migrations are numbered DDL files (`001_steam.ts`, `002_notifications.ts`, `003_settings.ts`, `004_notification.ts`) applied by `initializeDatabase()`.
 
 ## Middleware
 

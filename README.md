@@ -3,7 +3,7 @@
 ![Build Status](https://img.shields.io/github/actions/workflow/status/iam74k4/DiscordBot/.github/workflows/ci.yml?style=flat-square)
 ![Version](https://img.shields.io/github/v/release/iam74k4/DiscordBot?style=flat-square)
 ![License](https://img.shields.io/github/license/iam74k4/DiscordBot?style=flat-square)
-![Node.js Version](https://img.shields.io/node/v/discord.js?style=flat-square)
+![Node.js Version](https://img.shields.io/badge/node-22.12%2B-339933?style=flat-square&logo=node.js&logoColor=white)
 
 A modular Discord bot built with TypeScript and discord.js v14.
 
@@ -26,7 +26,8 @@ A modular Discord bot built with TypeScript and discord.js v14.
 - Steam integration (profile, playtime, game library, ranking)
 - Game start notifications
 - Playtime history tracking
-- **Voice channel recording** (record past audio with `/record` command)
+- GitHub integration (PR, issue, and repository actions)
+- **Voice channel recording** (restricted past-audio recording with `/record`)
 - Community features (polls, roulette)
 - Admin system (bot owner commands, server settings)
 - Audit logging for admin actions
@@ -90,7 +91,13 @@ Optional (for Steam features):
 STEAM_API_KEY=your_steam_api_key
 ```
 
-See `.env.example` for all available configuration options including voice recording settings.
+Optional (for GitHub features):
+
+```env
+GITHUB_TOKEN=your_github_token
+```
+
+See `.env.example` for all available configuration options including retention and voice recording settings.
 
 ### 3. Get Discord Credentials
 
@@ -179,6 +186,24 @@ npm start
 | `/admin backup list`                | List database backups             |
 | `/admin backup run`                 | Run a manual database backup      |
 
+### GitHub (`/github`)
+
+| Command                | Description                           |
+| ---------------------- | ------------------------------------- |
+| `/github pr list`      | List pull requests for a repository   |
+| `/github pr view`      | View a pull request                   |
+| `/github pr create`    | Open a modal to create a pull request |
+| `/github pr merge`     | Merge a pull request                  |
+| `/github issue list`   | List issues for a repository          |
+| `/github issue view`   | View an issue                         |
+| `/github issue create` | Open a modal to create an issue       |
+| `/github repo info`    | Show repository information           |
+
+**Notes:**
+
+- Requires `Manage Server` or bot owner access
+- `GITHUB_TOKEN` must be configured for the feature to work
+
 ### Poll (`/poll`)
 
 | Subcommand                                              | Description                  |
@@ -207,9 +232,9 @@ npm start
 
 ### Voice Recording (`/record`)
 
-| Command              | Description                          |
-| -------------------- | ------------------------------------ |
-| `/record <duration>` | Record past audio from voice channel |
+| Command              | Description                               |
+| -------------------- | ----------------------------------------- |
+| `/record <duration>` | Record past audio from your voice channel |
 
 **Options:**
 
@@ -220,13 +245,27 @@ npm start
 - Auto-join: Bot automatically joins voice channels when users enter
 - Hybrid buffering: Stores 10 minutes of audio (2 min in memory, 8 min on disk)
 - WAV format output at 32kHz/16bit/mono (~18.3MB for 5 minutes)
-- Automatic file cleanup after 24 hours
+- Private delivery: Recording responses and files are sent ephemerally
+- Automatic file cleanup after `RECORDING_RETENTION_HOURS` (default: 24 hours)
 - Memory monitoring with automatic disconnection when threshold exceeded
 
 **Notes:**
 
+- Requires `Manage Server`
 - Bot must be in the same voice channel
 - Maximum concurrent VC connections: 5 (configurable)
+
+### Data Retention
+
+The bot keeps operational data for limited periods and cleans it up automatically.
+
+- `RECORDING_RETENTION_HOURS`: recording files in `data/recordings/` (default: 24 hours)
+- `PLAYTIME_HISTORY_RETENTION_DAYS`: Steam playtime history rows (default: 365 days)
+- `VOICE_SESSION_RETENTION_DAYS`: completed VC session rows (default: 30 days)
+- `AUDIT_LOG_RETENTION_DAYS`: audit log rows (default: 90 days)
+- `BACKUP_RETENTION_DAYS`: database backup files (default: 7 days)
+
+See [`docs/database.md`](docs/database.md) for schema details and retention behavior.
 
 ## Available Scripts
 

@@ -22,7 +22,8 @@ src/services/database/
 │   ├── index.ts    # Runs all migrations in order at startup
 │   ├── 001_steam.ts
 │   ├── 002_notifications.ts
-│   └── 003_settings.ts
+│   ├── 003_settings.ts
+│   └── 004_notification.ts
 └── index.ts        # Public exports
 ```
 
@@ -76,6 +77,49 @@ Per-guild notification configuration.
 | channel_id | TEXT    | NOT NULL           |
 | enabled    | INTEGER | NOT NULL DEFAULT 1 |
 | created_at | INTEGER | NOT NULL           |
+
+---
+
+### notification_channels
+
+Per-guild notification channels by type.
+
+| Column     | Type    | Constraints        |
+| ---------- | ------- | ------------------ |
+| guild_id   | TEXT    | NOT NULL           |
+| type       | TEXT    | NOT NULL           |
+| channel_id | TEXT    | NOT NULL           |
+| enabled    | INTEGER | NOT NULL DEFAULT 1 |
+| created_at | INTEGER | NOT NULL           |
+| updated_at | INTEGER | NOT NULL           |
+
+**Primary key:**
+
+- `(guild_id, type)`
+
+---
+
+### voice_sessions
+
+Per-user VC session history for statistics.
+
+| Column       | Type    | Constraints               |
+| ------------ | ------- | ------------------------- |
+| id           | INTEGER | PRIMARY KEY AUTOINCREMENT |
+| guild_id     | TEXT    | NOT NULL                  |
+| user_id      | TEXT    | NOT NULL                  |
+| channel_id   | TEXT    | NOT NULL                  |
+| channel_name | TEXT    | NOT NULL                  |
+| joined_at    | INTEGER | NOT NULL                  |
+| left_at      | INTEGER |                           |
+| duration_ms  | INTEGER |                           |
+| created_at   | INTEGER | NOT NULL                  |
+
+**Indices:**
+
+- `idx_voice_sessions_guild_user` ON `guild_id, user_id`
+- `idx_voice_sessions_guild_channel` ON `guild_id, channel_id`
+- `idx_voice_sessions_joined_at` ON `joined_at`
 
 ---
 
@@ -159,11 +203,12 @@ Defined in `src/features/admin/repositories/auditRepository.ts` and re-exported 
 
 ## Repository Ownership
 
-| Tables                                                              | Feature | Repositories                                      |
-| ------------------------------------------------------------------- | ------- | ------------------------------------------------- |
-| steam_users, playtime_history                                       | steam   | `steamUserRepository.ts`, `playtimeRepository.ts` |
-| notification_settings, user_notification_prefs, game_activity_cache | steam   | `notificationRepository.ts`                       |
-| guild_settings, audit_logs                                          | admin   | `settingsRepository.ts`, `auditRepository.ts`     |
+| Tables                                                              | Feature      | Repositories                                                    |
+| ------------------------------------------------------------------- | ------------ | --------------------------------------------------------------- |
+| steam_users, playtime_history                                       | steam        | `steamUserRepository.ts`, `playtimeRepository.ts`               |
+| notification_settings, user_notification_prefs, game_activity_cache | steam        | `notificationRepository.ts`                                     |
+| notification_channels, voice_sessions                               | notification | `notificationChannelRepository.ts`, `voiceSessionRepository.ts` |
+| guild_settings, audit_logs                                          | admin        | `settingsRepository.ts`, `auditRepository.ts`                   |
 
 All repositories live under `src/features/<feature>/repositories/`.
 
@@ -176,6 +221,7 @@ Migrations live in `src/services/database/migrations/` and are run in order at s
 1. `001_steam.ts` — steam_users, playtime_history
 2. `002_notifications.ts` — notification_settings, user_notification_prefs, game_activity_cache
 3. `003_settings.ts` — guild_settings, audit_logs
+4. `004_notification.ts` — notification_channels, voice_sessions
 
 `initializeDatabase()` runs all migrations inside a single transaction. It is safe to call multiple times; migrations use `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS`. Initialization is performed once per process.
 
@@ -210,6 +256,27 @@ erDiagram
         integer created_at
     }
 
+    notification_channels {
+        text guild_id PK
+        text type PK
+        text channel_id
+        integer enabled
+        integer created_at
+        integer updated_at
+    }
+
+    voice_sessions {
+        integer id PK
+        text guild_id
+        text user_id
+        text channel_id
+        text channel_name
+        integer joined_at
+        integer left_at
+        integer duration_ms
+        integer created_at
+    }
+
     user_notification_prefs {
         text discord_id PK
         integer notify_enabled
@@ -240,6 +307,20 @@ erDiagram
         integer created_at
     }
 ```
+
+---
+
+## Retention Policy
+
+Runtime retention is configured with environment variables and enforced by feature cleanup jobs.
+
+- `RECORDING_RETENTION_HOURS` (default: `24`): deletes `.wav` recording files from `data/recordings/`
+- `PLAYTIME_HISTORY_RETENTION_DAYS` (default: `365`): deletes old `playtime_history` rows during Steam scheduler cleanup
+- `VOICE_SESSION_RETENTION_DAYS` (default: `30`): deletes completed `voice_sessions` rows older than the cutoff
+- `AUDIT_LOG_RETENTION_DAYS` (default: `90`): deletes old `audit_logs` rows
+- `BACKUP_RETENTION_DAYS` (default: `7`): deletes old backup files
+
+Active or incomplete voice sessions are not deleted by retention cleanup; they are first closed on startup if they were left open by a previous run.
 
 ---
 
