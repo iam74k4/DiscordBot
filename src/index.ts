@@ -5,6 +5,7 @@ import { env } from './config/index.js';
 import { loadCommands } from './handlers/commandHandler.js';
 import { loadEvents } from './handlers/eventHandler.js';
 import { logger } from './utils/logger.js';
+import { sendAlert } from './utils/alert.js';
 import {
   loadFeatures,
   startAllFeatures,
@@ -75,15 +76,35 @@ async function main(): Promise<void> {
 
   process.on('unhandledRejection', (reason, promise) => {
     logger.error('Unhandled Promise Rejection at:', promise, 'reason:', reason);
+    const message =
+      reason instanceof Error ? reason.message : String(reason ?? 'Unknown');
+    const stack =
+      reason instanceof Error && reason.stack
+        ? reason.stack.slice(0, 1000)
+        : 'N/A';
+    sendAlert('Unhandled Promise Rejection', message, [
+      { name: 'Stack', value: stack },
+    ]).catch(() => undefined);
   });
 
   process.on('uncaughtException', (error) => {
     logger.error('Uncaught Exception:', error);
+    sendAlert(
+      'Uncaught Exception',
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error && error.stack
+        ? [{ name: 'Stack', value: error.stack.slice(0, 1000) }]
+        : undefined
+    ).catch(() => undefined);
     gracefulShutdown(client, 'uncaughtException');
   });
 
   client.on('error', (error) => {
     logger.error('Discord client error:', error);
+    sendAlert(
+      'Discord Client Error',
+      error instanceof Error ? error.message : String(error)
+    ).catch(() => undefined);
   });
 
   await loadFeatures();

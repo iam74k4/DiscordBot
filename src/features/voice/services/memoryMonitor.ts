@@ -2,6 +2,7 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { env, MONITORING } from '../../../config/index.js';
 import { logger } from '../../../utils/logger.js';
+import { sendAlert } from '../../../utils/alert.js';
 import { connectionManager } from './connectionManager.js';
 import { audioBufferManager } from './audioBuffer.js';
 import { MemoryMonitorStats } from '../../../types/voice.js';
@@ -59,6 +60,21 @@ export class MemoryMonitor {
       logger.error(
         `Critical memory threshold exceeded: ${stats.memoryUsageMB.toFixed(2)}MB >= ${this.criticalThreshold}MB`
       );
+      sendAlert(
+        'Critical Memory Threshold Exceeded',
+        `${stats.memoryUsageMB.toFixed(1)}MB >= ${this.criticalThreshold}MB`,
+        [
+          { name: 'Active Connections', value: String(stats.activeConnections) },
+          {
+            name: 'Buffer Size (MB)',
+            value: stats.totalBufferSizeMB.toFixed(1),
+          },
+          {
+            name: 'Disk Buffer (MB)',
+            value: stats.diskBufferSizeMB.toFixed(1),
+          },
+        ]
+      ).catch(() => undefined);
       this.handleCriticalMemory();
     } else if (stats.memoryUsageMB >= this.warningThreshold) {
       logger.warn(
