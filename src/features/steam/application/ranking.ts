@@ -8,6 +8,7 @@ import { COLORS } from '../../../utils/constants/index.js';
 import { steamClient, formatPlaytimeWithBar } from '../services/steam/index.js';
 import { steamUserRepository } from '../repositories/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { env } from '../../../config/index.js';
 import { logger } from '../../../utils/logger.js';
 import { USERS_PER_PAGE } from '../lib/shared.js';
 import { withTimeout } from '../../../utils/timeout.js';
@@ -74,7 +75,7 @@ export async function handleRanking(
     guild.members.cache.has(user.discord_id)
   );
 
-  const BATCH_SIZE = 5;
+  const BATCH_SIZE = env.STEAM_RANKING_BATCH_SIZE;
   const rankedUsers: RankedUser[] = [];
 
   for (let i = 0; i < validUsers.length; i += BATCH_SIZE) {

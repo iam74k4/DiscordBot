@@ -93,6 +93,10 @@ function validateNumericalConfig(): void {
     process.env.AUDIT_LOG_RETENTION_DAYS,
     90
   );
+  const steamRankingBatch = parseNumber(
+    process.env.STEAM_RANKING_BATCH_SIZE,
+    8
+  );
 
   if (maxRec <= 0) {
     errors.push('MAX_RECORDING_DURATION must be > 0');
@@ -127,6 +131,9 @@ function validateNumericalConfig(): void {
   }
   if (auditLogRetentionDays <= 0) {
     errors.push('AUDIT_LOG_RETENTION_DAYS must be > 0');
+  }
+  if (steamRankingBatch <= 0 || steamRankingBatch > 20) {
+    errors.push('STEAM_RANKING_BATCH_SIZE must be between 1 and 20');
   }
 
   for (const w of warnings) {
@@ -177,6 +184,12 @@ export const env = {
 
   /** Steam Web API key (optional — Steam commands require this) */
   STEAM_API_KEY: process.env.STEAM_API_KEY || '',
+
+  /** Steam ranking API batch size (default: 8) */
+  STEAM_RANKING_BATCH_SIZE: parseNumber(
+    process.env.STEAM_RANKING_BATCH_SIZE,
+    8
+  ),
 
   /** GitHub Personal Access Token (optional — GitHub commands require this) */
   GITHUB_TOKEN: process.env.GITHUB_TOKEN || '',

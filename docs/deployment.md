@@ -30,6 +30,7 @@ In Railway dashboard, add the following variables:
 | `DISCORD_TOKEN`                   | Discord bot token                                       | Yes                           |
 | `DISCORD_CLIENT_ID`               | Discord application client ID                           | Yes                           |
 | `STEAM_API_KEY`                   | Steam Web API key                                       | No (Steam commands need this) |
+| `STEAM_RANKING_BATCH_SIZE`       | Steam ranking API batch size (1–20, default: 8)          | No                            |
 | `GITHUB_TOKEN`                    | GitHub Personal Access Token for `/github` commands     | No                            |
 | `BOT_OWNER_IDS`                   | Bot owner Discord IDs (comma-separated)                 | No                            |
 | `DISCORD_GUILD_ID`                | Development guild for faster slash command updates      | No                            |
