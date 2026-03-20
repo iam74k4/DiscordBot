@@ -1,5 +1,5 @@
 import type { Client } from 'discord.js';
-import { readdirSync } from 'fs';
+import { readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { logger } from '../utils/logger.js';
@@ -39,7 +39,9 @@ export async function loadFeatures(): Promise<void> {
   const loaded: FeatureModule[] = [];
 
   for (const dir of dirs) {
-    const indexPath = join(featuresPath, dir, 'index.js');
+    const indexJs = join(featuresPath, dir, 'index.js');
+    const indexTs = join(featuresPath, dir, 'index.ts');
+    const indexPath = existsSync(indexJs) ? indexJs : indexTs;
     try {
       const mod = await import(`file://${indexPath.replace(/\\/g, '/')}`);
       if (isFeatureModule(mod)) {
