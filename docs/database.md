@@ -225,6 +225,14 @@ Migrations live in `src/services/database/migrations/` and are run in order at s
 
 `initializeDatabase()` runs all migrations inside a single transaction. It is safe to call multiple times; migrations use `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS`. Initialization is performed once per process.
 
+### Rollback Policy
+
+Migrations do not define `down()` functions. To roll back schema changes:
+
+1. Create a new migration that reverses the change (e.g. `DROP TABLE` or `DROP COLUMN`).
+2. Or restore from a backup taken before the migration.
+3. For development, deleting the database file and re-running the bot will re-apply all migrations from scratch.
+
 ---
 
 ## ER Diagram

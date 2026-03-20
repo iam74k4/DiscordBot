@@ -97,7 +97,7 @@ Optional (for GitHub features):
 GITHUB_TOKEN=your_github_token
 ```
 
-See `.env.example` for all available configuration options including retention and voice recording settings.
+See [.env.example](.env.example) for all configuration options and [docs/deployment.md](docs/deployment.md) for the full environment variable reference.
 
 ### 3. Get Discord Credentials
 

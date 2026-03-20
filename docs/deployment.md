@@ -46,6 +46,7 @@ In Railway dashboard, add the following variables:
 | `BACKUP_RETENTION_DAYS`           | Days to keep backups (default: 7)                       | No                            |
 | `BACKUP_CRON`                     | Backup schedule cron expression (default: `0 4 * * *`)  | No                            |
 | `ALERT_WEBHOOK_URL`               | Discord webhook URL for alerts                          | No                            |
+| `LOG_LEVEL`                       | Log level: debug, info, warn, error                     | No                            |
 | `DATA_DIR`                        | Base directory for persisted runtime data               | No                            |
 | `DATABASE_PATH`                   | SQLite database path                                    | No                            |
 | `RECORDINGS_DIR`                  | Generated recording files directory                     | No                            |
