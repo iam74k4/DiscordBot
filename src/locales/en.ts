@@ -246,6 +246,18 @@ export const en: TranslationKeys = {
       noRecent: 'No recent activity.',
       dailyAverage: 'Daily Average',
     },
+    ui: {
+      profileTab: 'Profile',
+      playtimeTab: 'Playtime',
+      recentTab: 'Recent',
+      gamesTab: 'Games',
+      sortPlaceholder: 'Choose library sort',
+      sortPlaytime: 'Playtime',
+      sortRecent: 'Recently played',
+      sortAlphabetical: 'Alphabetical',
+      showingTop: 'Showing top {count}',
+      sortedBy: 'Sorted by: {sort}',
+    },
     notify: {
       title: 'Notifications',
       enabled: 'Notifications enabled.',

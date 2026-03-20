@@ -247,6 +247,18 @@ export const ja: TranslationKeys = {
       noRecent: '最近のアクティビティはありません。',
       dailyAverage: '1日平均',
     },
+    ui: {
+      profileTab: 'プロフィール',
+      playtimeTab: 'プレイ時間',
+      recentTab: '最近の活動',
+      gamesTab: 'ゲーム一覧',
+      sortPlaceholder: '並び順を選択',
+      sortPlaytime: 'プレイ時間順',
+      sortRecent: '最近プレイ順',
+      sortAlphabetical: '名前順',
+      showingTop: '上位 {count} 件を表示',
+      sortedBy: '並び順: {sort}',
+    },
     notify: {
       title: '通知設定',
       enabled: '通知を有効にしました。',

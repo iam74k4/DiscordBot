@@ -298,6 +298,18 @@ export interface TranslationKeys {
       noRecent: string;
       dailyAverage: string;
     };
+    ui: {
+      profileTab: string;
+      playtimeTab: string;
+      recentTab: string;
+      gamesTab: string;
+      sortPlaceholder: string;
+      sortPlaytime: string;
+      sortRecent: string;
+      sortAlphabetical: string;
+      showingTop: string;
+      sortedBy: string;
+    };
     notify: {
       title: string;
       enabled: string;
