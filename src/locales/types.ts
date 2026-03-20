@@ -114,6 +114,14 @@ export interface TranslationKeys {
     howToChange: string;
     selectSetting: string;
     overview: string;
+    panel: {
+      languagePlaceholder: string;
+      auditPlaceholder: string;
+      clearAudit: string;
+      overviewFooter: string;
+      languageFooter: string;
+      auditFooter: string;
+    };
   };
 
   // Server command
@@ -433,6 +441,33 @@ export interface TranslationKeys {
         failed: string;
       };
     };
+    panel: {
+      statsTab: string;
+      dbTab: string;
+      guildsTab: string;
+      healthTab: string;
+      metricsTab: string;
+      backupsTab: string;
+      refresh: string;
+      runBackup: string;
+      statsTitle: string;
+      dbTitle: string;
+      guildsTitle: string;
+      healthTitle: string;
+      metricsTitle: string;
+      backupsTitle: string;
+      backupsFooter: string;
+      serversLabel: string;
+      usersLabel: string;
+      channelsLabel: string;
+      uptimeLabel: string;
+      memoryLabel: string;
+      nodeLabel: string;
+      registeredUsersLabel: string;
+      tablesLabel: string;
+      backupSuccess: string;
+      backupFailure: string;
+    };
   };
 
   // Help command
@@ -474,6 +509,16 @@ export interface TranslationKeys {
       voiceLabel: string;
       welcomeLabel: string;
       disabled: string;
+    };
+    panel: {
+      statusTab: string;
+      statsTab: string;
+      periodPlaceholder: string;
+      voicePlaceholder: string;
+      welcomePlaceholder: string;
+      removeVoice: string;
+      removeWelcome: string;
+      statusDescription: string;
     };
     stats: {
       title: string;

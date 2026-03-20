@@ -8,9 +8,9 @@ import { COLORS } from '../../../utils/constants/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import {
   notificationChannelRepository,
-  type NotificationType,
 } from '../repositories/notificationChannelRepository.js';
 import { getSendableTextChannel } from '../../../utils/discord.js';
+import { showNotificationPanel } from './panel.js';
 
 async function validateNotificationChannel(
   interaction: ChatInputCommandInteraction
@@ -262,46 +262,5 @@ export async function handleStatus(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
   const locale = mapDiscordLocale(interaction.locale);
-
-  if (!interaction.guildId) {
-    await interaction.reply({
-      embeds: [
-        createErrorEmbed(
-          t('common.error', locale),
-          t('common.guildOnly', locale)
-        ),
-      ],
-      flags: MessageFlags.Ephemeral,
-    });
-    return;
-  }
-
-  const guildId = interaction.guildId;
-  const records = notificationChannelRepository.getAllForGuild(guildId);
-
-  const typeLabels: Record<NotificationType, string> = {
-    voice: t('notification.status.voiceLabel', locale),
-    member_join: t('notification.status.welcomeLabel', locale),
-  };
-
-  const fields = (['voice', 'member_join'] as NotificationType[]).map(
-    (type) => {
-      const record = records.find((r) => r.type === type);
-      const value = record?.enabled
-        ? `<#${record.channel_id}>`
-        : t('notification.status.disabled', locale);
-      return { name: typeLabels[type], value, inline: true };
-    }
-  );
-
-  await interaction.reply({
-    embeds: [
-      createEmbed({
-        title: t('notification.status.title', locale),
-        color: COLORS.INFO,
-        fields,
-      }),
-    ],
-    flags: MessageFlags.Ephemeral,
-  });
+  await showNotificationPanel(interaction, locale, { initialView: 'status' });
 }

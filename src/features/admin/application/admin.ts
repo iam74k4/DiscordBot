@@ -9,125 +9,32 @@ import { isBotOwner } from '../../../config/env.js';
 import { logger } from '../../../utils/logger.js';
 import { withTimeout } from '../../../utils/timeout.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { databaseStatsRepository } from '../repositories/index.js';
-import {
-  getHealthStatus,
-  formatHealthStatus,
-} from '../../../services/health/index.js';
 import { backupService } from '../../../services/backup/index.js';
-import { metrics } from '../../../services/metrics/index.js';
+import { showAdminSystemPanel } from './systemPanel.js';
 
 function checkOwner(interaction: ChatInputCommandInteraction): boolean {
   return isBotOwner(interaction.user.id);
 }
 
 async function handleStats(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
+  locale: ReturnType<typeof mapDiscordLocale>
 ): Promise<void> {
-  const client = interaction.client;
-
-  const guildCount = client.guilds.cache.size;
-  const userCount = client.guilds.cache.reduce(
-    (acc, guild) => acc + guild.memberCount,
-    0
-  );
-  const channelCount = client.channels.cache.size;
-
-  const uptime = process.uptime();
-  const days = Math.floor(uptime / 86400);
-  const hours = Math.floor((uptime % 86400) / 3600);
-  const minutes = Math.floor((uptime % 3600) / 60);
-  const uptimeStr = `${days}d ${hours}h ${minutes}m`;
-
-  const memoryUsage = process.memoryUsage();
-  const memoryMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
-
-  const embed = createEmbed({
-    title: 'Bot Statistics',
-    color: COLORS.INFO,
-    fields: [
-      { name: 'Servers', value: guildCount.toLocaleString(), inline: true },
-      { name: 'Users', value: userCount.toLocaleString(), inline: true },
-      { name: 'Channels', value: channelCount.toLocaleString(), inline: true },
-      { name: 'Uptime', value: uptimeStr, inline: true },
-      { name: 'Memory', value: `${memoryMB} MB`, inline: true },
-      { name: 'Node.js', value: process.version, inline: true },
-    ],
-    timestamp: true,
-  });
-
-  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+  await showAdminSystemPanel(interaction, locale, 'stats');
 }
 
-const DB_STATS_TABLES = [
-  'steam_users',
-  'playtime_history',
-  'notification_settings',
-  'user_notification_prefs',
-  'game_activity_cache',
-  'guild_settings',
-  'audit_logs',
-];
-
 async function handleDb(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
+  locale: ReturnType<typeof mapDiscordLocale>
 ): Promise<void> {
-  const registeredUsers = databaseStatsRepository.getRegisteredUsersCount();
-
-  const tableCounts: { name: string; count: number }[] = [];
-
-  for (const table of DB_STATS_TABLES) {
-    const count = databaseStatsRepository.getTableRowCount(table);
-    if (count !== null) {
-      tableCounts.push({ name: table, count });
-    }
-  }
-
-  const tableList =
-    tableCounts.length > 0
-      ? tableCounts.map((t) => `\`${t.name}\`: ${t.count}`).join('\n')
-      : 'No tables found';
-
-  const embed = createEmbed({
-    title: 'Database Statistics',
-    color: COLORS.INFO,
-    fields: [
-      {
-        name: 'Registered Users',
-        value: registeredUsers.toLocaleString(),
-        inline: true,
-      },
-      { name: 'Tables', value: tableList, inline: false },
-    ],
-    timestamp: true,
-  });
-
-  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+  await showAdminSystemPanel(interaction, locale, 'db');
 }
 
 async function handleGuilds(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
+  locale: ReturnType<typeof mapDiscordLocale>
 ): Promise<void> {
-  const client = interaction.client;
-  const guilds = client.guilds.cache
-    .sort((a, b) => b.memberCount - a.memberCount)
-    .first(20);
-
-  const guildList = guilds
-    .map(
-      (guild, index) =>
-        `${index + 1}. **${guild.name}** (${guild.memberCount.toLocaleString()} members)`
-    )
-    .join('\n');
-
-  const embed = createEmbed({
-    title: `Server List (Top 20 of ${client.guilds.cache.size})`,
-    description: guildList || 'No servers',
-    color: COLORS.INFO,
-    timestamp: true,
-  });
-
-  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+  await showAdminSystemPanel(interaction, locale, 'guilds');
 }
 
 async function handleBroadcast(
@@ -174,43 +81,17 @@ async function handleBroadcast(
 }
 
 async function handleHealth(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
+  locale: ReturnType<typeof mapDiscordLocale>
 ): Promise<void> {
-  const health = getHealthStatus(interaction.client);
-  const formatted = formatHealthStatus(health);
-
-  const statusColor =
-    health.status === 'healthy'
-      ? COLORS.SUCCESS
-      : health.status === 'degraded'
-        ? COLORS.WARNING
-        : COLORS.ERROR;
-
-  const embed = createEmbed({
-    title: 'System Health Check',
-    description: formatted,
-    color: statusColor,
-    timestamp: true,
-  });
-
-  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+  await showAdminSystemPanel(interaction, locale, 'health');
 }
 
 async function handleBackupList(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
+  locale: ReturnType<typeof mapDiscordLocale>
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
-  const backupList = await backupService.formatBackupList();
-
-  const embed = createEmbed({
-    title: 'Database Backups',
-    description: backupList,
-    color: COLORS.INFO,
-    timestamp: true,
-  });
-
-  await interaction.editReply({ embeds: [embed] });
+  await showAdminSystemPanel(interaction, locale, 'backups');
 }
 
 async function handleBackupRun(
@@ -238,18 +119,10 @@ async function handleBackupRun(
 }
 
 async function handleMetrics(
-  interaction: ChatInputCommandInteraction
+  interaction: ChatInputCommandInteraction,
+  locale: ReturnType<typeof mapDiscordLocale>
 ): Promise<void> {
-  const formatted = metrics.formatForDisplay();
-
-  const embed = createEmbed({
-    title: 'Bot Metrics',
-    description: formatted,
-    color: COLORS.INFO,
-    timestamp: true,
-  });
-
-  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+  await showAdminSystemPanel(interaction, locale, 'metrics');
 }
 
 export async function executeAdminCommand(
@@ -275,7 +148,7 @@ export async function executeAdminCommand(
   if (group === 'backup') {
     switch (subcommand) {
       case 'list':
-        await handleBackupList(interaction);
+        await handleBackupList(interaction, locale);
         break;
       case 'run':
         await handleBackupRun(interaction);
@@ -286,22 +159,22 @@ export async function executeAdminCommand(
 
   switch (subcommand) {
     case 'stats':
-      await handleStats(interaction);
+      await handleStats(interaction, locale);
       break;
     case 'db':
-      await handleDb(interaction);
+      await handleDb(interaction, locale);
       break;
     case 'guilds':
-      await handleGuilds(interaction);
+      await handleGuilds(interaction, locale);
       break;
     case 'broadcast':
       await handleBroadcast(interaction);
       break;
     case 'health':
-      await handleHealth(interaction);
+      await handleHealth(interaction, locale);
       break;
     case 'metrics':
-      await handleMetrics(interaction);
+      await handleMetrics(interaction, locale);
       break;
   }
 }

@@ -139,9 +139,9 @@ describe('Admin Command', () => {
         await import('../../../features/admin/commands/admin.js');
       await command.execute(interaction);
 
-      expect(interaction.deferReply).toHaveBeenCalled();
-      expect(interaction.editReply).toHaveBeenCalledWith(
+      expect(interaction.reply).toHaveBeenCalledWith(
         expect.objectContaining({
+          flags: MessageFlags.Ephemeral,
           embeds: expect.arrayContaining([
             expect.objectContaining({
               data: expect.objectContaining({

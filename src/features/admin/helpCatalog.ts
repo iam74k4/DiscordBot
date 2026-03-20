@@ -10,7 +10,7 @@ export const adminHelpCategory: CommandCategory = {
         ja: 'サーバー設定とBot管理コマンド',
       },
       usage:
-        '/admin settings view, /admin settings language, /admin settings audit, /admin settings logs, /admin role add, /admin role remove, /admin system stats, /admin system db, /admin system guilds, /admin system broadcast, /admin system health, /admin system metrics, /admin backup list, /admin backup run',
+        '/admin settings view, /admin settings language, /admin settings audit, /admin settings logs, /admin role add, /admin role remove, /admin system stats, /admin system db, /admin system guilds, /admin system broadcast, /admin system health, /admin system metrics, /admin backup list, /admin backup run\nInteractive panels: `/admin settings view`, `/admin settings logs`, `/admin system stats`, `/admin backup list`',
       requiredPermission: ['manageGuild', 'manageRoles', 'owner'],
     },
   ],
