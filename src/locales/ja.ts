@@ -453,6 +453,8 @@ export const ja: TranslationKeys = {
     errors: {
       textChannelOnly: 'テキストチャンネルを選択してください。',
       notConfigured: '削除する通知設定がありません。',
+      channelNotSendable:
+        'Bot がそのチャンネルに送信できません。別のテキストチャンネルを選択してください。',
     },
   },
 

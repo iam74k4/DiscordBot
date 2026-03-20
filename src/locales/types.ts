@@ -497,6 +497,7 @@ export interface TranslationKeys {
     errors: {
       textChannelOnly: string;
       notConfigured: string;
+      channelNotSendable: string;
     };
   };
 

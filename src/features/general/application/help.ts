@@ -277,7 +277,15 @@ export async function executeHelpCommand(
     } else {
       const catIndex = parseInt(value.replace('cat_', ''), 10);
       const category = filteredCategories[catIndex];
-      if (!category) return;
+      if (!category) {
+        await selectInteraction.reply({
+          content: t('help.commandNotFoundDesc', locale, {
+            command: value,
+          }),
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
       embed = buildCategoryEmbed(category);
     }
 

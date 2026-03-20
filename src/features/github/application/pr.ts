@@ -206,12 +206,19 @@ export async function executePrCommand(
             components: [],
           });
 
-          await octokit.rest.pulls.merge({
-            owner: parsed.owner,
-            repo: parsed.repo,
-            pull_number: number,
-            merge_method: method,
-          });
+          try {
+            await octokit.rest.pulls.merge({
+              owner: parsed.owner,
+              repo: parsed.repo,
+              pull_number: number,
+              merge_method: method,
+            });
+          } catch (error) {
+            const msg = handleApiError(error, locale);
+            const embed = createErrorEmbed(t('common.error', locale), msg);
+            await interaction.editReply({ embeds: [embed], components: [] });
+            return;
+          }
 
           const embed = createEmbed({
             title: t('github.pr.merge.success', locale),

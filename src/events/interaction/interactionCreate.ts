@@ -1,7 +1,7 @@
 import { Events, MessageFlags } from 'discord.js';
 import { Event } from '../../types/index.js';
 import { ExtendedClient } from '../../client.js';
-import { runMiddleware } from '../../middleware/index.js';
+import { clearCooldown, runMiddleware } from '../../middleware/index.js';
 import { getErrorMessage, logger } from '../../utils/logger.js';
 import { createErrorEmbed } from '../../utils/embed.js';
 import { metrics } from '../../services/metrics/index.js';
@@ -69,6 +69,10 @@ export const event: Event<typeof Events.InteractionCreate> = {
         `Command executed: ${interaction.commandName} by ${interaction.user.tag}`
       );
     } catch (error) {
+      if (command.middleware?.includes('cooldown')) {
+        clearCooldown(command.data.name, interaction.user.id);
+      }
+
       // Track command error
       metrics.incrementError(interaction.commandName);
 

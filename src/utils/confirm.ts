@@ -1,6 +1,7 @@
 import {
   ActionRowBuilder,
   ButtonBuilder,
+  ButtonInteraction,
   ButtonStyle,
   ChatInputCommandInteraction,
   ComponentType,
@@ -22,7 +23,7 @@ interface ConfirmationOptions {
  * The interaction must not have been replied to or deferred yet.
  */
 export async function awaitConfirmation(
-  interaction: ChatInputCommandInteraction,
+  interaction: ChatInputCommandInteraction | ButtonInteraction,
   message: string,
   options?: ConfirmationOptions
 ): Promise<boolean> {

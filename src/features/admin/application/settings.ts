@@ -22,12 +22,17 @@ import { logAuditAction } from '../../../services/audit/index.js';
 import { formatAuditTarget } from '../../../services/audit/format.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { getErrorMessage, logger } from '../../../utils/logger.js';
-import { interactionHasGuildPermission } from '../../../utils/discord.js';
+import {
+  getSendableTextChannel,
+  interactionHasGuildPermission,
+} from '../../../utils/discord.js';
+import { sendPaginatedMessage } from '../../../utils/pagination.js';
 
 const LANGUAGE_DISPLAY_NAMES: Record<string, string> = {
   ja: '日本語',
   en: 'English',
 };
+const LOGS_PER_PAGE = 10;
 
 async function handleView(
   interaction: ChatInputCommandInteraction
@@ -217,6 +222,22 @@ async function handleAudit(
   const channel = interaction.options.getChannel('channel');
 
   if (channel) {
+    const sendableChannel = await getSendableTextChannel(
+      interaction.guild,
+      channel.id
+    );
+    if (!sendableChannel) {
+      const embed = createErrorEmbed(
+        t('common.error', locale),
+        t('notification.errors.channelNotSendable', locale)
+      );
+      await interaction.reply({
+        embeds: [embed],
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
     settingsRepository.setAuditChannel(interaction.guild.id, channel.id);
 
     const embed = createEmbed({
@@ -273,7 +294,7 @@ async function handleLogs(
     return;
   }
 
-  const logs = auditRepository.getLogs(interaction.guild.id, 20);
+  const logs = auditRepository.getLogs(interaction.guild.id, 50);
   const totalCount = auditRepository.getLogsCount(interaction.guild.id);
 
   if (logs.length === 0) {
@@ -296,21 +317,22 @@ async function handleLogs(
     return `<t:${timestamp}:R> <@${log.user_id}> **${action}**${target}`;
   };
 
-  const logList = logs.map(formatLog).join('\n');
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-  const embed = createEmbed({
-    title: t('settings.logs.title', locale),
-    description: logList,
-    color: COLORS.INFO,
-    footer: t('settings.logs.showing', locale, {
-      count: logs.length,
-      total: totalCount,
-    }),
-  });
-
-  await interaction.reply({
-    embeds: [embed],
-    flags: MessageFlags.Ephemeral,
+  await sendPaginatedMessage({
+    items: logs,
+    itemsPerPage: LOGS_PER_PAGE,
+    interaction,
+    formatPage: (pageLogs, page, totalPages) =>
+      createEmbed({
+        title: t('settings.logs.title', locale),
+        description: pageLogs.map(formatLog).join('\n'),
+        color: COLORS.INFO,
+        footer: `${t('settings.logs.showing', locale, {
+          count: logs.length,
+          total: totalCount,
+        })} | ${page + 1}/${totalPages}`,
+      }),
   });
 }
 

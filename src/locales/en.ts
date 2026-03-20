@@ -454,6 +454,8 @@ export const en: TranslationKeys = {
     errors: {
       textChannelOnly: 'Please select a text channel.',
       notConfigured: 'No notification settings to remove.',
+      channelNotSendable:
+        'The bot cannot send messages to that channel. Please choose another text channel.',
     },
   },
 

@@ -10,6 +10,33 @@ import {
   notificationChannelRepository,
   type NotificationType,
 } from '../repositories/notificationChannelRepository.js';
+import { getSendableTextChannel } from '../../../utils/discord.js';
+
+async function validateNotificationChannel(
+  interaction: ChatInputCommandInteraction
+): Promise<string | null> {
+  if (!interaction.guild) {
+    return null;
+  }
+
+  const channel = interaction.options.getChannel('channel', true);
+  if (channel.type !== ChannelType.GuildText) {
+    return null;
+  }
+
+  const sendableChannel = await getSendableTextChannel(
+    interaction.guild,
+    channel.id
+  );
+  if (!sendableChannel) {
+    return t(
+      'notification.errors.channelNotSendable',
+      mapDiscordLocale(interaction.locale)
+    );
+  }
+
+  return null;
+}
 
 export async function handleVoiceSet(
   interaction: ChatInputCommandInteraction
@@ -38,6 +65,17 @@ export async function handleVoiceSet(
           t('common.error', locale),
           t('notification.errors.textChannelOnly', locale)
         ),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const channelValidationError = await validateNotificationChannel(interaction);
+  if (channelValidationError) {
+    await interaction.reply({
+      embeds: [
+        createErrorEmbed(t('common.error', locale), channelValidationError),
       ],
       flags: MessageFlags.Ephemeral,
     });
@@ -135,6 +173,17 @@ export async function handleWelcomeSet(
           t('common.error', locale),
           t('notification.errors.textChannelOnly', locale)
         ),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const channelValidationError = await validateNotificationChannel(interaction);
+  if (channelValidationError) {
+    await interaction.reply({
+      embeds: [
+        createErrorEmbed(t('common.error', locale), channelValidationError),
       ],
       flags: MessageFlags.Ephemeral,
     });

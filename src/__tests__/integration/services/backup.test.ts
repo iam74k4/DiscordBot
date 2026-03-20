@@ -232,6 +232,8 @@ describe('BackupService', () => {
     });
 
     it('should show "... and N more" for more than 10 backups', async () => {
+      fs.mkdirSync(testBackupDir, { recursive: true });
+
       for (let i = 0; i < 12; i++) {
         const day = String(i + 1).padStart(2, '0');
         fs.writeFileSync(

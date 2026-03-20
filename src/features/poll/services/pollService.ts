@@ -56,6 +56,13 @@ export function buildPollResultEmbed(
   if (poll.anonymous) {
     footerParts.push(t('poll.anonymous', locale));
   }
+  if (!ended && poll.endsAt) {
+    const remainingMinutes = Math.max(
+      1,
+      Math.ceil((poll.endsAt - Date.now()) / 60_000)
+    );
+    footerParts.push(t('poll.endsIn', locale, { duration: remainingMinutes }));
+  }
   footerParts.push(t('poll.total', locale, { count: totalVotes }));
 
   return createEmbed({
@@ -110,8 +117,12 @@ export async function handlePollVote(
   const messageId = interaction.message.id;
   const poll = pollStore.get(messageId);
 
-  // Safety check (should not happen if caller verified)
   if (!poll) {
+    const locale = mapDiscordLocale(interaction.locale);
+    await interaction.reply({
+      content: t('poll.errors.pollEndedDesc', locale),
+      ephemeral: true,
+    });
     return;
   }
 

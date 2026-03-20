@@ -64,6 +64,7 @@ async function handleCreatePoll(
     votes: new Map(),
     creatorId: interaction.user.id,
     anonymous,
+    endsAt: duration ? Date.now() + duration * 60 * 1000 : undefined,
     channelId: interaction.channelId,
     guildId: interaction.guildId ?? '',
     client: interaction.client,
@@ -72,16 +73,6 @@ async function handleCreatePoll(
 
   const embed = buildPollResultEmbed(pollData);
   const buttons = buildPollButtons(pollData);
-
-  if (duration) {
-    const footerParts: string[] = [];
-    if (anonymous) {
-      footerParts.push(t('poll.anonymous', locale));
-    }
-    footerParts.push(t('poll.endsIn', locale, { duration }));
-    footerParts.push(t('poll.total', locale, { count: 0 }));
-    embed.setFooter({ text: footerParts.join(' | ') });
-  }
 
   const message = await interaction.reply({
     embeds: [embed],

@@ -1,9 +1,19 @@
-import { AutocompleteInteraction } from 'discord.js';
+import { AutocompleteInteraction, PermissionFlagsBits } from 'discord.js';
 import { getGitHubClient } from '../services/githubClient.js';
 import { getErrorMessage, logger } from '../../../utils/logger.js';
+import { isBotOwner } from '../../../config/env.js';
+import { hasPermission } from '../../../utils/discord.js';
 
 const recentRepos: string[] = [];
 const MAX_RECENT = 10;
+
+function canUseGitHubCommands(interaction: AutocompleteInteraction): boolean {
+  if (isBotOwner(interaction.user.id)) {
+    return true;
+  }
+
+  return hasPermission(interaction.member, PermissionFlagsBits.ManageGuild);
+}
 
 export function trackRepo(repo: string): void {
   const idx = recentRepos.indexOf(repo);
@@ -24,6 +34,11 @@ export async function handleGitHubAutocomplete(
   const query = focused.value.trim();
 
   try {
+    if (!canUseGitHubCommands(interaction)) {
+      await interaction.respond([]);
+      return;
+    }
+
     if (!query) {
       const choices = recentRepos.slice(0, 25).map((r) => ({
         name: r,

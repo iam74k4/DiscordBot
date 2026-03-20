@@ -7,6 +7,7 @@ import {
 import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
 import { COLORS } from '../../../utils/constants/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { logger } from '../../../utils/logger.js';
 
 function checkManageRoles(interaction: ChatInputCommandInteraction): boolean {
   if (!interaction.guild || !interaction.member) return false;
@@ -25,6 +26,20 @@ function checkBotCanManageRole(
   const role = guild.roles.cache.get(roleId);
   if (!role) return false;
   return botHighestRole.position > role.position;
+}
+
+async function checkActorCanManageRole(
+  interaction: ChatInputCommandInteraction,
+  roleId: string
+): Promise<boolean> {
+  const guild = interaction.guild;
+  if (!guild) return false;
+
+  const executor = await guild.members.fetch(interaction.user.id).catch(() => null);
+  const role = guild.roles.cache.get(roleId);
+  if (!executor || !role) return false;
+
+  return executor.roles.highest.position > role.position;
 }
 
 export async function executeRoleCommand(
@@ -75,6 +90,18 @@ export async function executeRoleCommand(
   }
 
   if (!checkBotCanManageRole(interaction, role.id)) {
+    const embed = createErrorEmbed(
+      t('common.error', locale),
+      t('admin.role.errors.roleHierarchy', locale)
+    );
+    await interaction.reply({
+      embeds: [embed],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  if (!(await checkActorCanManageRole(interaction, role.id))) {
     const embed = createErrorEmbed(
       t('common.error', locale),
       t('admin.role.errors.roleHierarchy', locale)
@@ -143,11 +170,13 @@ export async function executeRoleCommand(
       });
     }
   } catch (error) {
+    logger.error(
+      `Failed to ${subcommand} role ${role.id} for ${user.id}:`,
+      error instanceof Error ? error.message : error
+    );
     const embed = createErrorEmbed(
       t('common.error', locale),
-      error instanceof Error
-        ? error.message
-        : t('admin.role.errors.failed', locale)
+      t('admin.role.errors.failed', locale)
     );
     await interaction.reply({
       embeds: [embed],

@@ -18,6 +18,8 @@ export interface PollData {
   creatorId: string;
   /** Whether the poll is anonymous */
   anonymous: boolean;
+  /** When the poll auto-ends */
+  endsAt?: number;
   /** Auto-end timeout */
   timeout?: NodeJS.Timeout;
   /** Channel ID */
