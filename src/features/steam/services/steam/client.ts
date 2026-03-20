@@ -26,8 +26,15 @@ import {
   getStoreUrl,
   getCountryFlag,
 } from './utils.js';
+import { LRUCache } from '../../../../utils/lruCache.js';
 
 const STEAM_API_BASE = 'https://api.steampowered.com';
+
+/** Cache for getTotalPlaytime (steamId -> { total, timestamp }) */
+const PLAYTIME_CACHE_TTL_MS = 5 * 60 * 1000;
+const playtimeCache = new LRUCache<string, { total: number; timestamp: number }>(
+  200
+);
 
 class SteamApiError extends Error {
   constructor(
@@ -377,11 +384,18 @@ export class SteamClient {
   }
 
   /**
-   * Get total playtime across all games
+   * Get total playtime across all games.
+   * Results are cached for 5 minutes to reduce API calls during ranking.
    */
   async getTotalPlaytime(steamId: string): Promise<number> {
+    const cached = playtimeCache.get(steamId);
+    if (cached && Date.now() - cached.timestamp < PLAYTIME_CACHE_TTL_MS) {
+      return cached.total;
+    }
     const games = await this.getOwnedGames(steamId, false);
-    return games.reduce((total, game) => total + game.playtime_forever, 0);
+    const total = games.reduce((sum, g) => sum + g.playtime_forever, 0);
+    playtimeCache.set(steamId, { total, timestamp: Date.now() });
+    return total;
   }
 
   /**
