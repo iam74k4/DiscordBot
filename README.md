@@ -254,6 +254,7 @@ npm start
 - Requires `Manage Server`
 - Bot must be in the same voice channel
 - Maximum concurrent VC connections: 5 (configurable)
+- Opus decoding uses **`opusscript`** (pure JS) instead of `@discordjs/opus` so installs stay free of vulnerable native prebuild chains; CPU use can be higher than a native Opus build under heavy voice load. See [`docs/quality.md`](docs/quality.md) for dependency overrides.
 
 ### Data Retention
 

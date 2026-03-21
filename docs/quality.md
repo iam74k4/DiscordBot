@@ -41,6 +41,12 @@ This document describes the quality standards and practices for this Discord bot
 - Validate backup filenames and paths to prevent traversal.
 - Require HTTPS for `ALERT_WEBHOOK_URL`.
 
+## Dependencies and `npm audit`
+
+- Run `npm audit` (full tree) and `npm audit --omit=dev --audit-level=high` (matches CI) regularly or before releases.
+- **`package.json` overrides**: Some patched versions are pinned via `overrides` (e.g. `undici`, `flatted`) when upstream packages have not yet adopted a fixed release. Revisit after dependency upgrades: try removing an override and run `npm install` + audit; restore the override if advisories return.
+- **Voice / Opus**: The bot depends on `opusscript` for Opus decode used by `prism-media` in voice recording. This avoids native `@discordjs/opus` / `node-pre-gyp` / `tar` install paths that previously tripped high-severity audits. Trade-off: higher CPU than native bindings when many users speak simultaneously; acceptable for typical bot workloads.
+
 ## Testing
 
 - Colocate tests with features in `__tests__/`.

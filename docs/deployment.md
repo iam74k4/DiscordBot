@@ -84,9 +84,10 @@ Railway will automatically deploy when you push to the `main` branch.
 
 ## CI/CD
 
-- **GitHub Actions**: Lint, format-check, type-check, test, build on PR/push to `main`
+- **GitHub Actions**: Lint, format-check, type-check, test, production dependency audit, and build on PR/push to `main` and `develop`
 - **Release**: Push tag `v*` to create GitHub Release with build artifacts
-- **Branch strategy**: `feature/*` or `fix/*` → `main`
+- **Branch strategy**: `feature/*` or `fix/*` → `main` (or merge via `develop` if your team uses it; either way CI runs on both default integration branches above)
 - **Runtime**: CI and release workflows run on Node.js `22.12.0`
+- **Local parity**: Run `./scripts/validate.sh` before push — it mirrors CI checks including `npm audit --omit=dev --audit-level=high`
 
 [← Back to README](../README.md)
