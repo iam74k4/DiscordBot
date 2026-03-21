@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MessageFlags } from 'discord.js';
 import { createMockInteraction } from '../setup.js';
 
-// Mock dependencies
 vi.mock('../../../infrastructure/database/connection.js', () => ({
   database: {
     prepare: vi.fn().mockReturnValue({
@@ -56,7 +55,7 @@ vi.mock('../../../config/env.js', () => ({
   isBotOwner: vi.fn((id: string) => id === '987654321098765432'),
 }));
 
-describe('Admin Command', () => {
+describe('Owner Command', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -64,15 +63,14 @@ describe('Admin Command', () => {
   describe('Permission Check', () => {
     it('should reject non-owner users', async () => {
       const interaction = createMockInteraction({
-        commandName: 'admin',
+        commandName: 'owner',
         subcommandGroup: 'system',
         subcommand: 'stats',
         user: { id: 'not-owner-id' },
       });
 
-      // Import command after mocks
       const { command } =
-        await import('../../../features/admin/commands/admin.js');
+        await import('../../../features/admin/commands/owner.js');
       await command.execute(interaction);
 
       expect(interaction.reply).toHaveBeenCalledWith(
@@ -84,17 +82,16 @@ describe('Admin Command', () => {
 
     it('should allow bot owner', async () => {
       const interaction = createMockInteraction({
-        commandName: 'admin',
+        commandName: 'owner',
         subcommandGroup: 'system',
         subcommand: 'stats',
         user: { id: '987654321098765432' },
       });
 
       const { command } =
-        await import('../../../features/admin/commands/admin.js');
+        await import('../../../features/admin/commands/owner.js');
       await command.execute(interaction);
 
-      // Should have called reply with stats embed
       expect(interaction.reply).toHaveBeenCalled();
     });
   });
@@ -102,14 +99,14 @@ describe('Admin Command', () => {
   describe('Health Subcommand', () => {
     it('should display health status', async () => {
       const interaction = createMockInteraction({
-        commandName: 'admin',
+        commandName: 'owner',
         subcommandGroup: 'system',
         subcommand: 'health',
         user: { id: '987654321098765432' },
       });
 
       const { command } =
-        await import('../../../features/admin/commands/admin.js');
+        await import('../../../features/admin/commands/owner.js');
       await command.execute(interaction);
 
       expect(interaction.reply).toHaveBeenCalledWith(
@@ -129,14 +126,14 @@ describe('Admin Command', () => {
   describe('Backup Subcommands', () => {
     it('should list backups', async () => {
       const interaction = createMockInteraction({
-        commandName: 'admin',
+        commandName: 'owner',
         subcommandGroup: 'backup',
         subcommand: 'list',
         user: { id: '987654321098765432' },
       });
 
       const { command } =
-        await import('../../../features/admin/commands/admin.js');
+        await import('../../../features/admin/commands/owner.js');
       await command.execute(interaction);
 
       expect(interaction.reply).toHaveBeenCalledWith(
@@ -155,14 +152,14 @@ describe('Admin Command', () => {
 
     it('should run manual backup', async () => {
       const interaction = createMockInteraction({
-        commandName: 'admin',
+        commandName: 'owner',
         subcommandGroup: 'backup',
         subcommand: 'run',
         user: { id: '987654321098765432' },
       });
 
       const { command } =
-        await import('../../../features/admin/commands/admin.js');
+        await import('../../../features/admin/commands/owner.js');
       await command.execute(interaction);
 
       expect(interaction.deferReply).toHaveBeenCalled();
@@ -183,14 +180,14 @@ describe('Admin Command', () => {
   describe('Metrics Subcommand', () => {
     it('should display metrics', async () => {
       const interaction = createMockInteraction({
-        commandName: 'admin',
+        commandName: 'owner',
         subcommandGroup: 'system',
         subcommand: 'metrics',
         user: { id: '987654321098765432' },
       });
 
       const { command } =
-        await import('../../../features/admin/commands/admin.js');
+        await import('../../../features/admin/commands/owner.js');
       await command.execute(interaction);
 
       expect(interaction.reply).toHaveBeenCalledWith(

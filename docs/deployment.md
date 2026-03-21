@@ -32,7 +32,7 @@ In Railway dashboard, add the following variables:
 | `STEAM_API_KEY`                   | Steam Web API key                                           | No (Steam commands need this) |
 | `STEAM_RANKING_BATCH_SIZE`        | Steam ranking API batch size (1–20, default: 8)             | No                            |
 | `GITHUB_TOKEN`                    | GitHub Personal Access Token for `/github` commands         | No                            |
-| `BOT_OWNER_IDS`                   | Bot owner Discord IDs (comma-separated)                     | No                            |
+| `BOT_OWNER_IDS`                   | Bot owner Discord IDs (comma-separated); **required when `NODE_ENV=production`** | Yes in production             |
 | `DISCORD_GUILD_ID`                | Development guild for faster slash command updates          | No                            |
 | `NODE_ENV`                        | Set to `production`                                         | No                            |
 | `TZ`                              | Timezone used by cron jobs and timestamps                   | No                            |

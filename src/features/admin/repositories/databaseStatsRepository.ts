@@ -1,5 +1,6 @@
 import { database } from '../../../infrastructure/database/connection.js';
 import { steamUserRepository } from '../../steam/repositories/steamUserRepository.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 
 const ALLOWED_TABLES = new Set([
   'steam_users',
@@ -24,7 +25,10 @@ function getTableRowCount(tableName: string): number | null {
     const stmt = database.prepare(`SELECT COUNT(*) as count FROM ${tableName}`);
     const result = stmt.get() as { count: number } | undefined;
     return result?.count ?? null;
-  } catch {
+  } catch (error) {
+    logger.warn(
+      `getTableRowCount failed for ${tableName}: ${getErrorMessage(error)}`
+    );
     return null;
   }
 }

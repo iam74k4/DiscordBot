@@ -12,6 +12,11 @@ import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { backupService } from '../../../infrastructure/backup/index.js';
 import { showAdminSystemPanel } from './systemPanel.js';
 
+/** Limit broadcast fan-out per invocation (rate limits / UX). */
+const BROADCAST_MAX_GUILDS = 250;
+/** Update ephemeral progress text every N guilds. */
+const BROADCAST_PROGRESS_EVERY = 12;
+
 function checkOwner(interaction: ChatInputCommandInteraction): boolean {
   return isBotOwner(interaction.user.id);
 }
@@ -56,7 +61,13 @@ async function handleBroadcast(
 
   const BROADCAST_TIMEOUT = 5_000;
 
-  for (const guild of client.guilds.cache.values()) {
+  const allGuilds = [...client.guilds.cache.values()];
+  const totalGuilds = allGuilds.length;
+  const guilds = allGuilds.slice(0, BROADCAST_MAX_GUILDS);
+  const capped = totalGuilds > BROADCAST_MAX_GUILDS;
+
+  let processed = 0;
+  for (const guild of guilds) {
     try {
       const owner = await withTimeout(guild.fetchOwner(), BROADCAST_TIMEOUT);
       await withTimeout(owner.send({ embeds: [embed] }), BROADCAST_TIMEOUT);
@@ -68,16 +79,42 @@ async function handleBroadcast(
         getErrorMessage(error)
       );
     }
+    processed++;
+    if (
+      processed % BROADCAST_PROGRESS_EVERY === 0 ||
+      processed === guilds.length
+    ) {
+      const capNote = capped
+        ? ` (cap ${BROADCAST_MAX_GUILDS}/${totalGuilds} guilds)`
+        : '';
+      await interaction
+        .editReply({
+          content: `Broadcast in progress… ${processed}/${guilds.length}${capNote} (sent ${sent}, failed ${failed})`,
+          embeds: [],
+        })
+        .catch((e: unknown) => {
+          logger.debug(
+            `Failed to edit broadcast progress: ${getErrorMessage(e)}`
+          );
+        });
+    }
   }
+
+  const capLine = capped
+    ? `\n\n**Note:** Only the first ${BROADCAST_MAX_GUILDS} of ${totalGuilds} guilds were processed.`
+    : '';
 
   const resultEmbed = createEmbed({
     title: 'Broadcast Complete',
-    description: `Sent: ${sent}\nFailed: ${failed}`,
+    description: `Sent: ${sent}\nFailed: ${failed}${capLine}`,
     color: COLORS.SUCCESS,
     timestamp: true,
   });
 
-  await interaction.editReply({ embeds: [resultEmbed] });
+  await interaction.editReply({
+    content: '',
+    embeds: [resultEmbed],
+  });
 }
 
 async function handleHealth(
@@ -125,7 +162,7 @@ async function handleMetrics(
   await showAdminSystemPanel(interaction, locale, 'metrics');
 }
 
-export async function executeAdminCommand(
+export async function executeOwnerCommand(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
   const locale = mapDiscordLocale(interaction.locale);

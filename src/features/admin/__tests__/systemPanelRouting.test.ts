@@ -16,13 +16,13 @@ vi.mock('../../../infrastructure/backup/index.js', () => ({
   },
 }));
 
-describe('admin system panel routing', () => {
+describe('owner system panel routing', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('opens the system panel for stats', async () => {
-    const { executeAdminCommand } = await import('../application/admin.js');
+    const { executeOwnerCommand } = await import('../application/owner.js');
 
     const interaction = {
       locale: 'en-US',
@@ -34,7 +34,7 @@ describe('admin system panel routing', () => {
       reply: vi.fn(),
     } as never;
 
-    await executeAdminCommand(interaction);
+    await executeOwnerCommand(interaction);
 
     expect(showAdminSystemPanel).toHaveBeenCalledWith(
       interaction,
@@ -44,7 +44,7 @@ describe('admin system panel routing', () => {
   });
 
   it('opens the backups panel for backup list', async () => {
-    const { executeAdminCommand } = await import('../application/admin.js');
+    const { executeOwnerCommand } = await import('../application/owner.js');
 
     const interaction = {
       locale: 'ja',
@@ -56,7 +56,7 @@ describe('admin system panel routing', () => {
       reply: vi.fn(),
     } as never;
 
-    await executeAdminCommand(interaction);
+    await executeOwnerCommand(interaction);
 
     expect(showAdminSystemPanel).toHaveBeenCalledWith(
       interaction,

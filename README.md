@@ -29,7 +29,7 @@ A modular Discord bot built with TypeScript and discord.js v14.
 - GitHub integration (PR, issue, and repository actions)
 - **Voice channel recording** (restricted past-audio recording with `/record`)
 - Community features (polls, roulette)
-- Admin system (bot owner commands, server settings)
+- Admin system (`/admin` server settings, `/owner` bot-owner tools)
 - Audit logging for admin actions
 - Middleware system (permissions, cooldown)
 - SQLite database for user data persistence
@@ -83,6 +83,12 @@ Required variables:
 ```env
 DISCORD_TOKEN=your_discord_bot_token
 DISCORD_CLIENT_ID=your_discord_client_id
+```
+
+For **production** (`NODE_ENV=production`), also set at least one bot owner ID (needed for `/owner` and operational control):
+
+```env
+BOT_OWNER_IDS=your_discord_user_id
 ```
 
 Optional (for Steam features):
@@ -171,20 +177,31 @@ npm start
 
 ### Admin (`/admin`)
 
+Requires **Manage Server** in the guild (slash command default permission).
+
 | Command                             | Description                       |
 | ----------------------------------- | --------------------------------- |
 | `/admin settings view`              | View current settings             |
 | `/admin settings language <lang>`   | Set server language (ja/en)       |
 | `/admin settings audit [channel]`   | Set audit log channel             |
 | `/admin settings logs`              | View recent audit logs            |
-| `/admin system stats`               | View bot statistics               |
-| `/admin system db`                  | View database statistics          |
-| `/admin system guilds`              | List servers the bot is in        |
-| `/admin system broadcast <message>` | Send message to all server owners |
-| `/admin system health`              | View system health status         |
-| `/admin system metrics`             | View bot metrics                  |
-| `/admin backup list`                | List database backups             |
-| `/admin backup run`                 | Run a manual database backup      |
+| `/admin role add`                   | Add a role to a member            |
+| `/admin role remove`                | Remove a role from a member       |
+
+### Bot owner (`/owner`)
+
+Only users listed in `BOT_OWNER_IDS` can run these commands (can be used in DMs with the bot).
+
+| Command                             | Description                       |
+| ----------------------------------- | --------------------------------- |
+| `/owner system stats`               | View bot statistics               |
+| `/owner system db`                  | View database statistics          |
+| `/owner system guilds`              | List servers the bot is in        |
+| `/owner system broadcast <message>` | Send message to server owners (capped batch) |
+| `/owner system health`              | View system health status         |
+| `/owner system metrics`             | View bot metrics                  |
+| `/owner backup list`                | List database backups             |
+| `/owner backup run`                 | Run a manual database backup      |
 
 ### GitHub (`/github`)
 

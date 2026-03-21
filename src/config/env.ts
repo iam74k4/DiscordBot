@@ -12,6 +12,38 @@ function normalizeDirPath(value: string): string {
 dotenvConfig();
 
 /**
+ * Parse comma-separated IDs
+ */
+function parseOwnerIds(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Parse integer from environment variable with default.
+ * If the variable is set to a non-empty value, it must be a valid integer.
+ */
+function parseNumber(
+  value: string | undefined,
+  defaultValue: number,
+  envKey: string
+): number {
+  if (value === undefined || value.trim() === '') {
+    return defaultValue;
+  }
+  const parsed = Number.parseInt(value.trim(), 10);
+  if (Number.isNaN(parsed)) {
+    throw new Error(
+      `Invalid integer for environment variable ${envKey}: "${value}"`
+    );
+  }
+  return parsed;
+}
+
+/**
  * Required environment variables (must be set for the bot to start)
  */
 const requiredEnvVars = ['DISCORD_TOKEN', 'DISCORD_CLIENT_ID'] as const;
@@ -75,29 +107,49 @@ function validateNumericalConfig(): void {
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  const maxRec = parseNumber(process.env.MAX_RECORDING_DURATION, 300);
-  const bufferDur = parseNumber(process.env.AUDIO_BUFFER_DURATION, 600);
-  const memBuf = parseNumber(process.env.AUDIO_MEMORY_BUFFER_DURATION, 120);
-  const maxVc = parseNumber(process.env.MAX_CONCURRENT_VC_CONNECTIONS, 5);
-  const retentionHrs = parseNumber(process.env.RECORDING_RETENTION_HOURS, 24);
-  const backupDays = parseNumber(process.env.BACKUP_RETENTION_DAYS, 7);
+  const maxRec = parseNumber(process.env.MAX_RECORDING_DURATION, 300, 'MAX_RECORDING_DURATION');
+  const bufferDur = parseNumber(process.env.AUDIO_BUFFER_DURATION, 600, 'AUDIO_BUFFER_DURATION');
+  const memBuf = parseNumber(
+    process.env.AUDIO_MEMORY_BUFFER_DURATION,
+    120,
+    'AUDIO_MEMORY_BUFFER_DURATION'
+  );
+  const maxVc = parseNumber(
+    process.env.MAX_CONCURRENT_VC_CONNECTIONS,
+    5,
+    'MAX_CONCURRENT_VC_CONNECTIONS'
+  );
+  const retentionHrs = parseNumber(
+    process.env.RECORDING_RETENTION_HOURS,
+    24,
+    'RECORDING_RETENTION_HOURS'
+  );
+  const backupDays = parseNumber(process.env.BACKUP_RETENTION_DAYS, 7, 'BACKUP_RETENTION_DAYS');
   const playtimeRetentionDays = parseNumber(
     process.env.PLAYTIME_HISTORY_RETENTION_DAYS,
-    365
+    365,
+    'PLAYTIME_HISTORY_RETENTION_DAYS'
   );
   const voiceSessionRetentionDays = parseNumber(
     process.env.VOICE_SESSION_RETENTION_DAYS,
-    30
+    30,
+    'VOICE_SESSION_RETENTION_DAYS'
   );
   const auditLogRetentionDays = parseNumber(
     process.env.AUDIT_LOG_RETENTION_DAYS,
-    90
+    90,
+    'AUDIT_LOG_RETENTION_DAYS'
   );
   const steamRankingBatch = parseNumber(
     process.env.STEAM_RANKING_BATCH_SIZE,
-    8
+    8,
+    'STEAM_RANKING_BATCH_SIZE'
   );
-  const shutdownTimeout = parseNumber(process.env.SHUTDOWN_TIMEOUT_MS, 10_000);
+  const shutdownTimeout = parseNumber(
+    process.env.SHUTDOWN_TIMEOUT_MS,
+    10_000,
+    'SHUTDOWN_TIMEOUT_MS'
+  );
 
   if (maxRec <= 0) {
     errors.push('MAX_RECORDING_DURATION must be > 0');
@@ -149,29 +201,28 @@ function validateNumericalConfig(): void {
   }
 }
 
+/**
+ * Bot owner IDs are required in production so /owner and alerts remain operable.
+ */
+function validateBotOwnerIds(): void {
+  const ids = parseOwnerIds(process.env.BOT_OWNER_IDS);
+  if (ids.length > 0) {
+    return;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'BOT_OWNER_IDS must be set in production with at least one Discord user ID (comma-separated).'
+    );
+  }
+  logger.warn(
+    'BOT_OWNER_IDS is not set. The /owner command will reject everyone until you add at least one ID.'
+  );
+}
+
 // Validate on import
 validateEnv();
 validateNumericalConfig();
-
-/**
- * Parse comma-separated IDs
- */
-function parseOwnerIds(value: string | undefined): string[] {
-  if (!value) return [];
-  return value
-    .split(',')
-    .map((id) => id.trim())
-    .filter(Boolean);
-}
-
-/**
- * Parse number from environment variable with default
- */
-function parseNumber(value: string | undefined, defaultValue: number): number {
-  if (!value) return defaultValue;
-  const parsed = Number.parseInt(value, 10);
-  return Number.isNaN(parsed) ? defaultValue : parsed;
-}
+validateBotOwnerIds();
 
 /**
  * Environment configuration
@@ -192,7 +243,8 @@ export const env = {
   /** Steam ranking API batch size (default: 8) */
   STEAM_RANKING_BATCH_SIZE: parseNumber(
     process.env.STEAM_RANKING_BATCH_SIZE,
-    8
+    8,
+    'STEAM_RANKING_BATCH_SIZE'
   ),
 
   /** GitHub Personal Access Token (optional — GitHub commands require this) */
@@ -216,38 +268,52 @@ export const env = {
   // Voice recording (operational tuning)
   // -----------------------------------------------------------
   /** Maximum recording duration in seconds (default: 300 = 5 minutes) */
-  MAX_RECORDING_DURATION: parseNumber(process.env.MAX_RECORDING_DURATION, 300),
+  MAX_RECORDING_DURATION: parseNumber(
+    process.env.MAX_RECORDING_DURATION,
+    300,
+    'MAX_RECORDING_DURATION'
+  ),
   /** Audio buffer duration in seconds (default: 600 = 10 minutes) */
-  AUDIO_BUFFER_DURATION: parseNumber(process.env.AUDIO_BUFFER_DURATION, 600),
+  AUDIO_BUFFER_DURATION: parseNumber(
+    process.env.AUDIO_BUFFER_DURATION,
+    600,
+    'AUDIO_BUFFER_DURATION'
+  ),
   /** Memory buffer duration in seconds (default: 120 = 2 minutes) */
   AUDIO_MEMORY_BUFFER_DURATION: parseNumber(
     process.env.AUDIO_MEMORY_BUFFER_DURATION,
-    120
+    120,
+    'AUDIO_MEMORY_BUFFER_DURATION'
   ),
   /** Maximum concurrent VC connections (default: 5) */
   MAX_CONCURRENT_VC_CONNECTIONS: parseNumber(
     process.env.MAX_CONCURRENT_VC_CONNECTIONS,
-    5
+    5,
+    'MAX_CONCURRENT_VC_CONNECTIONS'
   ),
   /** Recording file retention hours (default: 24) */
   RECORDING_RETENTION_HOURS: parseNumber(
     process.env.RECORDING_RETENTION_HOURS,
-    24
+    24,
+    'RECORDING_RETENTION_HOURS'
   ),
   /** Steam playtime history retention days (default: 365) */
   PLAYTIME_HISTORY_RETENTION_DAYS: parseNumber(
     process.env.PLAYTIME_HISTORY_RETENTION_DAYS,
-    365
+    365,
+    'PLAYTIME_HISTORY_RETENTION_DAYS'
   ),
   /** Voice session retention days (default: 30) */
   VOICE_SESSION_RETENTION_DAYS: parseNumber(
     process.env.VOICE_SESSION_RETENTION_DAYS,
-    30
+    30,
+    'VOICE_SESSION_RETENTION_DAYS'
   ),
   /** Audit log retention days (default: 90) */
   AUDIT_LOG_RETENTION_DAYS: parseNumber(
     process.env.AUDIT_LOG_RETENTION_DAYS,
-    90
+    90,
+    'AUDIT_LOG_RETENTION_DAYS'
   ),
 
   // -----------------------------------------------------------
@@ -272,7 +338,11 @@ export const env = {
   /** Backup directory (default: data/backups/) */
   BACKUP_DIR: normalizeDirPath(process.env.BACKUP_DIR || 'data/backups/'),
   /** Backup retention days (default: 7) */
-  BACKUP_RETENTION_DAYS: parseNumber(process.env.BACKUP_RETENTION_DAYS, 7),
+  BACKUP_RETENTION_DAYS: parseNumber(
+    process.env.BACKUP_RETENTION_DAYS,
+    7,
+    'BACKUP_RETENTION_DAYS'
+  ),
   /** Backup cron schedule (default: 0 4 * * * = daily at 4am) */
   BACKUP_CRON: process.env.BACKUP_CRON || '0 4 * * *',
 
@@ -280,7 +350,11 @@ export const env = {
   SHUTDOWN_FINAL_BACKUP: process.env.SHUTDOWN_FINAL_BACKUP !== 'false',
 
   /** Shutdown timeout in ms (default: 10000, range: 5000–120000) */
-  SHUTDOWN_TIMEOUT_MS: parseNumber(process.env.SHUTDOWN_TIMEOUT_MS, 10_000),
+  SHUTDOWN_TIMEOUT_MS: parseNumber(
+    process.env.SHUTDOWN_TIMEOUT_MS,
+    10_000,
+    'SHUTDOWN_TIMEOUT_MS'
+  ),
 
   // -----------------------------------------------------------
   // Timezone

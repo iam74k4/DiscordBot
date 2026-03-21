@@ -58,7 +58,9 @@ async function registerEvent(
 }
 
 /**
- * Load all events from the events directory
+ * Load all events from the events directory.
+ * Order: core src/events first, then each feature's events/ under src/features (folder name order).
+ * Multiple listeners for the same event name are all invoked; do not rely on feature order for InteractionCreate.
  */
 export async function loadEvents(client: ExtendedClient): Promise<void> {
   let eventCount = 0;

@@ -95,7 +95,12 @@ async function main(): Promise<void> {
         : 'N/A';
     sendAlert('Unhandled Promise Rejection', message, [
       { name: 'Stack', value: stack },
-    ]).catch(() => undefined);
+    ]).catch((err) => {
+      logger.error(
+        'Failed to send alert for unhandledRejection:',
+        getErrorMessage(err)
+      );
+    });
   });
 
   process.on('uncaughtException', (error) => {
@@ -106,7 +111,12 @@ async function main(): Promise<void> {
       error instanceof Error && error.stack
         ? [{ name: 'Stack', value: error.stack.slice(0, 1000) }]
         : undefined
-    ).catch(() => undefined);
+    ).catch((err) => {
+      logger.error(
+        'Failed to send alert for uncaughtException:',
+        getErrorMessage(err)
+      );
+    });
     void gracefulShutdown(client, 'uncaughtException').catch((e) => {
       logger.error('Shutdown failed after uncaughtException:', e);
       process.exit(1);
@@ -115,9 +125,12 @@ async function main(): Promise<void> {
 
   client.on('error', (error) => {
     logger.error('Discord client error:', error);
-    sendAlert('Discord Client Error', getErrorMessage(error)).catch(
-      () => undefined
-    );
+    sendAlert('Discord Client Error', getErrorMessage(error)).catch((err) => {
+      logger.error(
+        'Failed to send alert for Discord client error:',
+        getErrorMessage(err)
+      );
+    });
   });
 
   await loadFeatures();

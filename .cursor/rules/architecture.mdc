@@ -13,7 +13,7 @@ Feature-based architecture with auto-discovery. Each feature is self-contained u
   - `src/features/steam/` — Steam integration (profile, games, playtime, notifications)
   - `src/features/voice/` — Voice recording
   - `src/features/poll/` — Poll system
-  - `src/features/admin/` — Admin commands (admin, settings)
+  - `src/features/admin/` — Admin commands (`/admin` server settings, `/owner` bot owner tools)
   - `src/features/general/` — General commands (ping, help)
   - `src/features/github/` — GitHub integration
   - `src/features/notification/` — Join/voice notifications
@@ -30,6 +30,10 @@ Feature-based architecture with auto-discovery. Each feature is self-contained u
   - `src/shared/types/` — TypeScript type definitions
   - `src/shared/help/catalog.ts` — Shared help catalog types/state
 - `src/handlers/` — Auto-loaders for commands and events
+
+### Discord event registration order
+
+`loadEvents` registers handlers from `src/events/<category>/` first, then `src/features/*/events/` in **filesystem order** (feature folder name order). For `Events.InteractionCreate`, the core handler in `src/events/interaction/interactionCreate.ts` runs as the primary router for slash commands; feature-level `interactionCreate` modules must not assume they run first. Prefer extending behavior via the core handler or document ordering if a feature must register the same event name.
 - `src/middleware/` — Pre-execution checks
   - `src/middleware/cooldown/` — Cooldown middleware + store
   - `src/middleware/permissions.ts` — Permission checks

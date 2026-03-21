@@ -1,3 +1,3 @@
-export { executeAdminCommand } from './admin.js';
+export { executeOwnerCommand } from './owner.js';
 export { executeRoleCommand } from './role.js';
 export { executeSettingsCommand } from './settings.js';

@@ -1,20 +1,15 @@
-import { ChannelType, SlashCommandBuilder } from 'discord.js';
+import { ChannelType, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import { Command } from '../../../shared/types/index.js';
-import {
-  executeAdminCommand,
-  executeRoleCommand,
-  executeSettingsCommand,
-} from '../application/index.js';
-
-// ============ Command Definition ============
+import { executeRoleCommand, executeSettingsCommand } from '../application/index.js';
 
 export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('admin')
-    .setDescription('Server settings and bot administration commands')
+    .setDescription('Server settings and moderation (requires Manage Server)')
     .setDescriptionLocalizations({
-      ja: 'サーバー設定とBot管理コマンド',
+      ja: 'サーバー設定とモデレーション（サーバー管理権限が必要）',
     })
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addSubcommandGroup((group) =>
       group
         .setName('settings')
@@ -77,96 +72,6 @@ export const command: Command = {
                   { name: '日本語', value: 'ja' }
                 )
             )
-        )
-    )
-    .addSubcommandGroup((group) =>
-      group
-        .setName('system')
-        .setDescription('Bot owner system tools')
-        .setDescriptionLocalizations({
-          ja: 'Botオーナー向けシステム機能',
-        })
-        .addSubcommand((sub) =>
-          sub
-            .setName('stats')
-            .setDescription('View bot statistics')
-            .setDescriptionLocalizations({
-              ja: 'Bot統計を表示',
-            })
-        )
-        .addSubcommand((sub) =>
-          sub
-            .setName('db')
-            .setDescription('View database statistics')
-            .setDescriptionLocalizations({
-              ja: 'データベース統計を表示',
-            })
-        )
-        .addSubcommand((sub) =>
-          sub
-            .setName('guilds')
-            .setDescription('List servers the bot is in')
-            .setDescriptionLocalizations({
-              ja: 'Botが参加しているサーバー一覧',
-            })
-        )
-        .addSubcommand((sub) =>
-          sub
-            .setName('broadcast')
-            .setDescription('Send a message to all server owners')
-            .setDescriptionLocalizations({
-              ja: '全サーバーオーナーにメッセージを送信',
-            })
-            .addStringOption((opt) =>
-              opt
-                .setName('message')
-                .setDescription('Message to broadcast')
-                .setDescriptionLocalizations({
-                  ja: '送信するメッセージ',
-                })
-                .setRequired(true)
-                .setMaxLength(2000)
-            )
-        )
-        .addSubcommand((sub) =>
-          sub
-            .setName('health')
-            .setDescription('View system health status')
-            .setDescriptionLocalizations({
-              ja: 'システムヘルスステータスを表示',
-            })
-        )
-        .addSubcommand((sub) =>
-          sub
-            .setName('metrics')
-            .setDescription('View bot usage metrics')
-            .setDescriptionLocalizations({
-              ja: 'Bot使用メトリクスを表示',
-            })
-        )
-    )
-    .addSubcommandGroup((group) =>
-      group
-        .setName('backup')
-        .setDescription('Backup management tools')
-        .setDescriptionLocalizations({
-          ja: 'バックアップ管理',
-        })
-        .addSubcommand((sub) =>
-          sub
-            .setName('list')
-            .setDescription('List database backups')
-            .setDescriptionLocalizations({
-              ja: 'データベースバックアップ一覧',
-            })
-        )
-        .addSubcommand((sub) =>
-          sub
-            .setName('run')
-            .setDescription('Run a manual database backup')
-            .setDescriptionLocalizations({
-              ja: '手動でデータベースバックアップを実行',
-            })
         )
     )
     .addSubcommandGroup((group) =>
@@ -242,8 +147,6 @@ export const command: Command = {
       await executeRoleCommand(interaction);
       return;
     }
-
-    await executeAdminCommand(interaction);
   },
 };
 
