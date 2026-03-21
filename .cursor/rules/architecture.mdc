@@ -15,23 +15,28 @@ Feature-based architecture with auto-discovery. Each feature is self-contained u
   - `src/features/poll/` — Poll system
   - `src/features/admin/` — Admin commands (admin, settings)
   - `src/features/general/` — General commands (ping, help)
+  - `src/features/github/` — GitHub integration
+  - `src/features/notification/` — Join/voice notifications
   - `src/features/community/` — Community commands (roulette)
 - `src/events/` — Core event handlers (ready, interactionCreate)
-- `src/services/` — Shared infrastructure only
-  - `src/services/database/` — Connection, transactions, migrations (NO business logic)
-  - `src/services/backup/` — Scheduled database backups
-  - `src/services/health/` — Health check service
-  - `src/services/metrics/` — In-memory metrics
-  - `src/services/audit/` — Audit logging orchestration
+- `src/infrastructure/` — Shared runtime infrastructure only
+  - `src/infrastructure/database/` — Connection, transactions, migrations (NO business logic)
+  - `src/infrastructure/backup/` — Scheduled database backups
+  - `src/infrastructure/health/` — Health check service
+  - `src/infrastructure/metrics/` — In-memory metrics
+  - `src/infrastructure/audit/` — Audit log delivery/orchestration
+- `src/shared/` — Cross-feature shared code
+  - `src/shared/utils/` — Pure utilities (logger, embed, chart, retry, etc.)
+  - `src/shared/types/` — TypeScript type definitions
+  - `src/shared/help/catalog.ts` — Shared help catalog types/state
 - `src/handlers/` — Auto-loaders for commands and events
 - `src/middleware/` — Pre-execution checks
   - `src/middleware/cooldown/` — Cooldown middleware + store
   - `src/middleware/permissions.ts` — Permission checks
-- `src/utils/` — Pure utilities (logger, embed, chart, retry, etc.)
 - `src/config/` — Environment config, validation, and constants
-- `src/types/` — TypeScript type definitions
 - `src/locales/` — i18n translations (en, ja)
-- `src/scripts/` — Utility scripts
+- `src/app-scripts/` — Utility scripts
+- `scripts/` — Repository workflow shell scripts
 
 ## Layer Architecture
 
@@ -39,9 +44,9 @@ Each feature follows a layered structure:
 - `commands/` — Slash command definitions (presentation layer, auto-loaded)
 - `application/` — Business logic handlers (application layer)
 - `repositories/` — Database access with real SQL queries (persistence layer)
-- `services/` — External service integration, background jobs
+- supporting runtime folders — Prefer explicit names such as `integrations/`, `jobs/`, `recording/`, or `tracking/`; use `services/` only when no clearer boundary exists
 
-`services/database/` is pure infrastructure: connection, transactions, and migrations only. All SQL queries live in feature repositories.
+`infrastructure/database/` is pure infrastructure: connection, transactions, and migrations only. All SQL queries live in feature repositories.
 
 ## Coding Standards
 
@@ -58,8 +63,8 @@ Each feature follows a layered structure:
 - Use prepared statements for all queries (enforced by better-sqlite3)
 - Use `runTransaction()` for operations that modify multiple tables
 - Table names in dynamic queries must be validated against allowlists
-- All table creation goes in `services/database/migrations/`
-- SQL queries belong in feature `repositories/`, NOT in `services/database/`
+- All table creation goes in `infrastructure/database/migrations/`
+- SQL queries belong in feature `repositories/`, NOT in `infrastructure/database/`
 
 ### Voice
 
@@ -85,6 +90,8 @@ Each feature follows a layered structure:
 
 - Colocate tests with features: `features/<name>/__tests__/`
 - Shared test helpers in `src/__tests__/helpers/`
+- Shared utility tests may live under `src/shared/**/__tests__/`
+- Infrastructure tests may live under `src/infrastructure/**/__tests__/`
 - Integration tests in `src/__tests__/integration/`
 - Use vitest with `vi.mock()` for module mocking
 - Import mock Discord objects from `__tests__/helpers/discord.ts`

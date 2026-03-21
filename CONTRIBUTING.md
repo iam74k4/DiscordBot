@@ -50,8 +50,8 @@ src/features/<name>/
 ├── commands/         # Slash command definitions (auto-loaded)
 ├── application/      # Business logic handlers
 ├── repositories/     # Database access (real SQL queries)
-├── services/         # Background services
-└── __tests__/        # Colocated tests
+├── __tests__/        # Colocated tests
+└── ...               # Optional: integrations/, jobs/, tracking/, recording/, or services/
 ```
 
 No manual registration in `features/index.ts` is needed.
@@ -60,6 +60,8 @@ No manual registration in `features/index.ts` is needed.
 
 - Colocate tests with features: `features/<name>/__tests__/`
 - Use shared helpers from `src/__tests__/helpers/discord.ts`
+- Shared utility tests may live under `src/shared/**/__tests__/`
+- Infrastructure tests may live under `src/infrastructure/**/__tests__/`
 - Run tests: `npm test`
 - Run with coverage: `npm run test:coverage`
 

@@ -8,14 +8,14 @@ The bot uses **SQLite** via [`better-sqlite3`](https://github.com/JoshuaWise/bet
 - **Path**: Configurable via `DATABASE_PATH` env var; defaults to `data/bot.db` (relative to `process.cwd()`)
 - **Location**: On Railway, the database lives under `/app/data` when `DATABASE_PATH` is `data/bot.db` and the project root is `/app`
 
-Feature code should prefer feature-local repositories under `src/features/<feature>/repositories/` instead of importing shared database modules directly. `src/services/database/` is reserved for DB bootstrap and shared primitives.
+Feature code should prefer feature-local repositories under `src/features/<feature>/repositories/` instead of importing shared database modules directly. `src/infrastructure/database/` is reserved for DB bootstrap and shared primitives.
 
 ---
 
 ## Architecture
 
 ```
-src/services/database/
+src/infrastructure/database/
 ├── connection.ts    # Singleton DB connection, WAL mode, path resolution
 ├── transaction.ts  # runTransaction(fn) — synchronous transaction wrapper
 ├── migrations/
@@ -197,7 +197,7 @@ The `action` column in `audit_logs` stores one of these values:
 | `SETTINGS_CHANGE`  | Guild settings changed        |
 | `AUDIT_SETUP`      | Audit log channel configured  |
 
-Defined in `src/features/admin/repositories/auditRepository.ts` and re-exported from `src/services/audit/index.ts`.
+Defined in `src/features/admin/repositories/auditRepository.ts`.
 
 ---
 
@@ -216,7 +216,7 @@ All repositories live under `src/features/<feature>/repositories/`.
 
 ## Migration System
 
-Migrations live in `src/services/database/migrations/` and are run in order at startup:
+Migrations live in `src/infrastructure/database/migrations/` and are run in order at startup:
 
 1. `001_steam.ts` — steam_users, playtime_history
 2. `002_notifications.ts` — notification_settings, user_notification_prefs, game_activity_cache

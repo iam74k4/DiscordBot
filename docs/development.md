@@ -12,7 +12,8 @@ src/features/myfeature/
 ├── commands/         # Slash commands (auto-loaded)
 ├── application/      # Business logic
 ├── repositories/     # Database access
-└── __tests__/        # Unit tests (required for new features)
+├── __tests__/        # Unit tests (required for new features)
+└── ...               # Optional: integrations/, jobs/, tracking/, recording/, or services/
 ```
 
 2. Export the required interface from `index.ts`:
@@ -39,6 +40,8 @@ export function stop(): void {
    - `commands/` — Slash command files (auto-loaded by the handler)
    - `application/` — Business logic, separate from command definitions
    - `repositories/` — Database access layer
+   - `integrations/`, `jobs/`, `tracking/`, `recording/` — Prefer explicit runtime boundaries when the responsibility is clear
+   - `services/` — Allowed only when a smaller stateful boundary is clearer than splitting further
    - `__tests__/` — Feature-specific tests
 
 ## Adding New Commands
@@ -47,7 +50,7 @@ export function stop(): void {
 
 ```typescript
 import { SlashCommandBuilder } from 'discord.js';
-import { Command } from '../../../types/index.js';
+import { Command } from '../../../shared/types/index.js';
 
 export const command: Command = {
   data: new SlashCommandBuilder()
@@ -82,7 +85,7 @@ export default command;
 
 ```typescript
 import { ChatInputCommandInteraction } from 'discord.js';
-import { Command, MiddlewareResult } from '../types/index.js';
+import { Command, MiddlewareResult } from '../shared/types/index.js';
 
 export async function myMiddleware(
   interaction: ChatInputCommandInteraction,
@@ -94,7 +97,7 @@ export async function myMiddleware(
 ```
 
 2. Register in `src/middleware/index.ts`
-3. Add to `MiddlewareName` type in `src/types/middleware.ts`
+3. Add to `MiddlewareName` type in `src/shared/types/middleware.ts`
 
 ## Testing
 
@@ -103,6 +106,9 @@ Tests are **colocated with features** and shared code:
 - **Feature tests**: `src/features/<name>/__tests__/` — tests for that feature
 - **Shared helpers**: `src/__tests__/helpers/` — reusable test utilities (e.g., mock Discord objects)
 - **Integration tests**: `src/__tests__/integration/` — end-to-end or cross-module tests
+- **Shared code tests**: `src/shared/**/__tests__/` — shared utility and helper tests
+- **Infrastructure tests**: `src/infrastructure/**/__tests__/` — shared runtime infrastructure tests
+- **Middleware tests**: `src/middleware/**/__tests__/` — middleware and cooldown pipeline tests
 
 ### Commands
 
@@ -119,7 +125,7 @@ Tests are **colocated with features** and shared code:
 
 ## Database Migrations
 
-1. Add a new migration file in `src/services/database/migrations/` (e.g., `004_my_table.ts`):
+1. Add a new migration file in `src/infrastructure/database/migrations/` (e.g., `004_my_table.ts`):
 
 ```typescript
 import { database } from '../connection.js';
@@ -139,7 +145,7 @@ export function up(): void {
 }
 ```
 
-2. Import and register the migration in `src/services/database/migrations/index.ts`:
+2. Import and register the migration in `src/infrastructure/database/migrations/index.ts`:
 
 ```typescript
 import { up as myTableUp } from './004_my_table.js';

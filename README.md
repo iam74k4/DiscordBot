@@ -292,8 +292,10 @@ Feature-based architecture: each feature lives under `src/features/` and exports
 - `src/features/<feature>/commands/` contains only public slash command definitions.
 - `src/features/<feature>/application/` is the internal command/application layer.
 - `src/features/<feature>/repositories/` contains feature-specific persistence access.
-- `src/services/` is reserved for shared infrastructure such as database bootstrap, backup, health, and metrics.
-- `src/scripts/` contains TypeScript maintenance scripts, while root `scripts/` contains repo workflow shell scripts.
+- Feature runtime code should prefer explicit folders such as `integrations/`, `jobs/`, `recording/`, and `tracking/`; `services/` remains only where a smaller stateful boundary is clearer, such as `poll/services/`.
+- `src/infrastructure/` contains shared runtime infrastructure such as database bootstrap, backup, health, and metrics.
+- `src/shared/` contains cross-feature utilities, shared types, and the shared help catalog.
+- `src/app-scripts/` contains TypeScript maintenance scripts, while root `scripts/` contains repo workflow shell scripts.
 
 See [`docs/architecture.md`](docs/architecture.md) for the full structure and lifecycle rules.
 
@@ -303,6 +305,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full structure and li
 - [`docs/development.md`](docs/development.md): command development, middleware, and local workflow scripts
 - [`docs/database.md`](docs/database.md): SQLite tables and persistence notes
 - [`docs/deployment.md`](docs/deployment.md): Railway deployment and CI/CD flow
+- [`docs/quality.md`](docs/quality.md): quality standards and best practices
 
 ## License
 
