@@ -3,15 +3,15 @@ import {
   createEmbed,
   createErrorEmbed,
   createWarningEmbed,
-} from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
+} from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
 import {
   steamClient,
   formatPlaytime,
   formatPlaytimeWithBar,
-} from '../services/steam/index.js';
+} from '../integrations/steam/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { resolveSteamId } from '../lib/shared.js';
+import { resolveSteamId } from '../domain/shared.js';
 
 export async function handlePlaytime(
   interaction: ChatInputCommandInteraction

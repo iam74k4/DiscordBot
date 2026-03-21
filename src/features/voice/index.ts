@@ -1,15 +1,15 @@
 import type { Client } from 'discord.js';
 import './helpCatalog.js';
-import { memoryMonitor } from './services/memoryMonitor.js';
-import { fileCleanupService } from './services/fileCleanup.js';
-import { audioBufferManager } from './services/audioBuffer.js';
-import { connectionManager } from './services/connectionManager.js';
-import { setServiceStatus } from '../../services/health/index.js';
+import { memoryMonitor } from './jobs/memoryMonitor.js';
+import { fileCleanupService } from './jobs/fileCleanup.js';
+import { audioBufferManager } from './recording/audioBuffer.js';
+import { connectionManager } from './recording/connectionManager.js';
+import { setServiceStatus } from '../../infrastructure/health/index.js';
 
 export const name = 'voice';
 
 /**
- * Start Voice feature services
+ * Start Voice jobs and recording runtime
  */
 export function start(_client: Client): void {
   audioBufferManager.startCleanup();
@@ -22,7 +22,7 @@ export function start(_client: Client): void {
 }
 
 /**
- * Stop Voice feature services
+ * Stop Voice jobs and recording runtime
  */
 export async function stop(): Promise<void> {
   fileCleanupService.stop();

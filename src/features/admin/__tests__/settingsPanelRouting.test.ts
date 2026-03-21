@@ -7,6 +7,10 @@ vi.mock('../application/settingsPanel.js', () => ({
 }));
 
 vi.mock('../repositories/index.js', () => ({
+  auditRepository: {
+    getLogs: vi.fn(),
+    getLogsCount: vi.fn(),
+  },
   settingsRepository: {
     getGuildSettings: vi.fn(),
     setAuditChannel: vi.fn(),
@@ -14,11 +18,11 @@ vi.mock('../repositories/index.js', () => ({
   },
 }));
 
-vi.mock('../../../services/audit/index.js', () => ({
+vi.mock('../../../infrastructure/audit/index.js', () => ({
   logAuditAction: vi.fn(),
 }));
 
-vi.mock('../../../utils/discord.js', () => ({
+vi.mock('../../../shared/utils/discord.js', () => ({
   interactionHasGuildPermission: vi.fn(() => true),
   getSendableTextChannel: vi.fn(),
 }));
@@ -29,7 +33,8 @@ describe('admin settings panel routing', () => {
   });
 
   it('opens the overview panel from settings view', async () => {
-    const { executeSettingsCommand } = await import('../application/settings.js');
+    const { executeSettingsCommand } =
+      await import('../application/settings.js');
 
     const interaction = {
       locale: 'en-US',
@@ -42,11 +47,16 @@ describe('admin settings panel routing', () => {
 
     await executeSettingsCommand(interaction);
 
-    expect(showSettingsPanel).toHaveBeenCalledWith(interaction, 'en', 'overview');
+    expect(showSettingsPanel).toHaveBeenCalledWith(
+      interaction,
+      'en',
+      'overview'
+    );
   });
 
   it('opens the logs panel from settings logs', async () => {
-    const { executeSettingsCommand } = await import('../application/settings.js');
+    const { executeSettingsCommand } =
+      await import('../application/settings.js');
 
     const interaction = {
       locale: 'ja',

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../utils/logger.js', () => ({
+vi.mock('../../shared/utils/logger.js', () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -10,7 +10,7 @@ vi.mock('../../utils/logger.js', () => ({
 }));
 
 const setServiceStatus = vi.fn();
-vi.mock('../../services/health/index.js', () => ({
+vi.mock('../../infrastructure/health/index.js', () => ({
   setServiceStatus,
 }));
 

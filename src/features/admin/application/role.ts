@@ -4,10 +4,10 @@ import {
   MessageFlags,
   PermissionsBitField,
 } from 'discord.js';
-import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
+import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { logger } from '../../../utils/logger.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 
 function checkManageRoles(interaction: ChatInputCommandInteraction): boolean {
   if (!interaction.guild || !interaction.member) return false;
@@ -35,7 +35,9 @@ async function checkActorCanManageRole(
   const guild = interaction.guild;
   if (!guild) return false;
 
-  const executor = await guild.members.fetch(interaction.user.id).catch(() => null);
+  const executor = await guild.members
+    .fetch(interaction.user.id)
+    .catch(() => null);
   const role = guild.roles.cache.get(roleId);
   if (!executor || !role) return false;
 
@@ -172,15 +174,21 @@ export async function executeRoleCommand(
   } catch (error) {
     logger.error(
       `Failed to ${subcommand} role ${role.id} for ${user.id}:`,
-      error instanceof Error ? error.message : error
+      getErrorMessage(error)
     );
     const embed = createErrorEmbed(
       t('common.error', locale),
       t('admin.role.errors.failed', locale)
     );
-    await interaction.reply({
-      embeds: [embed],
-      flags: MessageFlags.Ephemeral,
-    });
+    if (interaction.replied || interaction.deferred) {
+      await interaction.editReply({ embeds: [embed] }).catch(() => {});
+    } else {
+      await interaction
+        .reply({
+          embeds: [embed],
+          flags: MessageFlags.Ephemeral,
+        })
+        .catch(() => {});
+    }
   }
 }

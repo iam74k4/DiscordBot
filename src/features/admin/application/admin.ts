@@ -3,13 +3,13 @@ import {
   EmbedBuilder,
   MessageFlags,
 } from 'discord.js';
-import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
+import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
 import { isBotOwner } from '../../../config/env.js';
-import { logger } from '../../../utils/logger.js';
-import { withTimeout } from '../../../utils/timeout.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
+import { withTimeout } from '../../../shared/utils/timeout.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { backupService } from '../../../services/backup/index.js';
+import { backupService } from '../../../infrastructure/backup/index.js';
 import { showAdminSystemPanel } from './systemPanel.js';
 
 function checkOwner(interaction: ChatInputCommandInteraction): boolean {
@@ -65,7 +65,7 @@ async function handleBroadcast(
       failed++;
       logger.debug(
         `Failed to send broadcast to guild ${guild.id}:`,
-        error instanceof Error ? error.message : error
+        getErrorMessage(error)
       );
     }
   }

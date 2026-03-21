@@ -4,8 +4,8 @@ import { createClient } from './client.js';
 import { env } from './config/index.js';
 import { loadCommands } from './handlers/commandHandler.js';
 import { loadEvents } from './handlers/eventHandler.js';
-import { logger } from './utils/logger.js';
-import { sendAlert } from './utils/alert.js';
+import { getErrorMessage, logger } from './shared/utils/logger.js';
+import { sendAlert } from './shared/utils/alert.js';
 import {
   loadFeatures,
   startAllFeatures,
@@ -14,11 +14,11 @@ import {
 import {
   closeDatabase,
   initializeDatabase,
-} from './services/database/index.js';
-import { backupService } from './services/backup/index.js';
+} from './infrastructure/database/index.js';
+import { backupService } from './infrastructure/backup/index.js';
+import { cooldownStore } from './middleware/cooldown/cooldownStore.js';
 import type { ExtendedClient } from './client.js';
 
-const SHUTDOWN_TIMEOUT_MS = 10_000;
 let isShuttingDown = false;
 
 async function gracefulShutdown(
@@ -36,25 +36,37 @@ async function gracefulShutdown(
   const forceExitTimer = setTimeout(() => {
     logger.error('Shutdown timed out, forcing exit');
     process.exit(1);
-  }, SHUTDOWN_TIMEOUT_MS);
+  }, env.SHUTDOWN_TIMEOUT_MS);
   forceExitTimer.unref();
 
-  const steps: [string, () => void | Promise<void>][] = [
+  const steps: [string, () => void | Promise<void>][] = [];
+
+  if (env.SHUTDOWN_FINAL_BACKUP) {
+    steps.push([
+      'Final backup',
+      async () => {
+        const result = await backupService.runBackup();
+        if (!result.success) {
+          logger.warn(`Final backup failed: ${result.error ?? 'Unknown'}`);
+        }
+      },
+    ]);
+  }
+
+  steps.push(
     ['Backup service', () => backupService.stop()],
     ['Features', () => stopAllFeatures()],
+    ['Cooldown store', () => cooldownStore.clearAll()],
     ['Database', () => closeDatabase()],
-    ['Discord client', () => client.destroy()],
-  ];
+    ['Discord client', () => client.destroy()]
+  );
 
   for (const [name, fn] of steps) {
     try {
       logger.debug(`Stopping ${name}...`);
       await fn();
     } catch (error) {
-      logger.error(
-        `Failed to stop ${name}:`,
-        error instanceof Error ? error.message : error
-      );
+      logger.error(`Failed to stop ${name}:`, getErrorMessage(error));
     }
   }
 
@@ -76,8 +88,7 @@ async function main(): Promise<void> {
 
   process.on('unhandledRejection', (reason, promise) => {
     logger.error('Unhandled Promise Rejection at:', promise, 'reason:', reason);
-    const message =
-      reason instanceof Error ? reason.message : String(reason ?? 'Unknown');
+    const message = getErrorMessage(reason ?? 'Unknown');
     const stack =
       reason instanceof Error && reason.stack
         ? reason.stack.slice(0, 1000)
@@ -91,20 +102,22 @@ async function main(): Promise<void> {
     logger.error('Uncaught Exception:', error);
     sendAlert(
       'Uncaught Exception',
-      error instanceof Error ? error.message : String(error),
+      getErrorMessage(error),
       error instanceof Error && error.stack
         ? [{ name: 'Stack', value: error.stack.slice(0, 1000) }]
         : undefined
     ).catch(() => undefined);
-    gracefulShutdown(client, 'uncaughtException');
+    void gracefulShutdown(client, 'uncaughtException').catch((e) => {
+      logger.error('Shutdown failed after uncaughtException:', e);
+      process.exit(1);
+    });
   });
 
   client.on('error', (error) => {
     logger.error('Discord client error:', error);
-    sendAlert(
-      'Discord Client Error',
-      error instanceof Error ? error.message : String(error)
-    ).catch(() => undefined);
+    sendAlert('Discord Client Error', getErrorMessage(error)).catch(
+      () => undefined
+    );
   });
 
   await loadFeatures();
@@ -125,11 +138,9 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
-  if (error instanceof Error) {
-    logger.error(`Failed to start bot: ${error.message}`);
+  logger.error(`Failed to start bot: ${getErrorMessage(error)}`);
+  if (error instanceof Error && error.stack) {
     logger.error(`Stack: ${error.stack}`);
-  } else {
-    logger.error('Failed to start bot:', error);
   }
   process.exit(1);
 });

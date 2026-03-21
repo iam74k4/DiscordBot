@@ -6,7 +6,7 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 import { permissionsMiddleware } from '../permissions.js';
-import { Command } from '../../types/index.js';
+import { Command } from '../../shared/types/index.js';
 
 function createMockInteraction(permissions?: bigint[], inGuild = true) {
   const bitField = permissions

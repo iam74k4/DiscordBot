@@ -8,17 +8,17 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } from 'discord.js';
-import { createEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
+import { createEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import {
   getHelpCategories,
   type CommandCategory,
   type CommandInfo,
   type PermissionLevel,
-} from '../../helpCatalog.js';
+} from '../../../shared/help/catalog.js';
 import { isBotOwner } from '../../../config/env.js';
-import { getErrorMessage, logger } from '../../../utils/logger.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 
 interface PermissionContext {
   userId: string;

@@ -142,6 +142,8 @@ export const ja: TranslationKeys = {
     errors: {
       notEnoughOptions: '投票には最低2つの選択肢が必要です。',
       tooManyOptions: '投票の選択肢は最大10個までです。',
+      questionTooLong: '質問は256文字以内にしてください。',
+      optionTooLong: '各選択肢は100文字以内にしてください。',
       maxActivePolls: '投票数上限',
       maxActivePollsDesc:
         '有効な投票が既に{count}件あります。新しい投票を作成する前に既存の投票を終了してください。',
@@ -578,6 +580,8 @@ export const ja: TranslationKeys = {
         'GITHUB_TOKEN が設定されていません。Bot管理者に設定を依頼してください。',
       noPermission:
         'このコマンドには「サーバー管理」権限またはBotオーナーである必要があります。',
+      titleEmpty: 'タイトルは必須です。',
+      titleTooLong: 'タイトルは256文字以内にしてください。',
       invalidRepo:
         'リポジトリ形式が不正です。`owner/name` で指定してください。',
       notFound: 'リポジトリ、PR、またはIssueが見つかりません。',

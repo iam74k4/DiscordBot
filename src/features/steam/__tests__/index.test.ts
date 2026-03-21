@@ -6,21 +6,21 @@ const startNotificationSystem = vi.fn();
 const stopNotificationSystem = vi.fn();
 const setServiceStatus = vi.fn();
 
-vi.mock('../services/scheduler/index.js', () => ({
+vi.mock('../jobs/scheduler/index.js', () => ({
   startScheduler,
   stopScheduler,
 }));
 
-vi.mock('../services/notifications/index.js', () => ({
+vi.mock('../jobs/notifications/index.js', () => ({
   startNotificationSystem,
   stopNotificationSystem,
 }));
 
-vi.mock('../services/steam/index.js', () => ({
+vi.mock('../integrations/steam/index.js', () => ({
   steamClient: {},
 }));
 
-vi.mock('../../../services/health/index.js', () => ({
+vi.mock('../../../infrastructure/health/index.js', () => ({
   setServiceStatus,
 }));
 

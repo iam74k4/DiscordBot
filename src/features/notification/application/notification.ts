@@ -3,13 +3,11 @@ import {
   ChannelType,
   MessageFlags,
 } from 'discord.js';
-import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
+import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import {
-  notificationChannelRepository,
-} from '../repositories/notificationChannelRepository.js';
-import { getSendableTextChannel } from '../../../utils/discord.js';
+import { notificationChannelRepository } from '../repositories/notificationChannelRepository.js';
+import { getSendableTextChannel } from '../../../shared/utils/discord.js';
 import { showNotificationPanel } from './panel.js';
 
 async function validateNotificationChannel(

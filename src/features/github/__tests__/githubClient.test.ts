@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseRepo } from '../services/githubClient.js';
+import { parseRepo } from '../integrations/githubClient.js';
 
 describe('parseRepo', () => {
   it('parses owner/repo format', () => {

@@ -1,4 +1,4 @@
-import { database } from '../../../services/database/connection.js';
+import { database } from '../../../infrastructure/database/connection.js';
 import { steamUserRepository } from '../../steam/repositories/steamUserRepository.js';
 
 const ALLOWED_TABLES = new Set([

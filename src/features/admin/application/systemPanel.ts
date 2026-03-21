@@ -5,17 +5,17 @@ import {
   ChatInputCommandInteraction,
   MessageFlags,
 } from 'discord.js';
-import { createEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
+import { createEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
 import { type Locale, t } from '../../../locales/index.js';
 import { databaseStatsRepository } from '../repositories/index.js';
 import {
   formatHealthStatus,
   getHealthStatus,
-} from '../../../services/health/index.js';
-import { backupService } from '../../../services/backup/index.js';
-import { metrics } from '../../../services/metrics/index.js';
-import { getErrorMessage, logger } from '../../../utils/logger.js';
+} from '../../../infrastructure/health/index.js';
+import { backupService } from '../../../infrastructure/backup/index.js';
+import { metrics } from '../../../infrastructure/metrics/index.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 
 type AdminPanelView =
   | 'stats'
@@ -65,7 +65,9 @@ function buildMainRow(
     new ButtonBuilder()
       .setCustomId('admin-panel:metrics')
       .setLabel(t('admin.panel.metricsTab', locale))
-      .setStyle(view === 'metrics' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+      .setStyle(
+        view === 'metrics' ? ButtonStyle.Primary : ButtonStyle.Secondary
+      )
       .setDisabled(disabled)
   );
 }
@@ -79,7 +81,9 @@ function buildUtilityRow(
     new ButtonBuilder()
       .setCustomId('admin-panel:backups')
       .setLabel(t('admin.panel.backupsTab', locale))
-      .setStyle(view === 'backups' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+      .setStyle(
+        view === 'backups' ? ButtonStyle.Primary : ButtonStyle.Secondary
+      )
       .setDisabled(disabled),
     new ButtonBuilder()
       .setCustomId('admin-panel:refresh')
@@ -155,7 +159,9 @@ function buildDbEmbed(locale: Locale) {
   const tableCounts = DB_STATS_TABLES.map((table) => ({
     name: table,
     count: databaseStatsRepository.getTableRowCount(table),
-  })).filter((table): table is { name: string; count: number } => table.count !== null);
+  })).filter(
+    (table): table is { name: string; count: number } => table.count !== null
+  );
 
   return createEmbed({
     title: t('admin.panel.dbTitle', locale),
@@ -170,7 +176,9 @@ function buildDbEmbed(locale: Locale) {
         name: t('admin.panel.tablesLabel', locale),
         value:
           tableCounts.length > 0
-            ? tableCounts.map((table) => `\`${table.name}\`: ${table.count}`).join('\n')
+            ? tableCounts
+                .map((table) => `\`${table.name}\`: ${table.count}`)
+                .join('\n')
             : t('common.noData', locale),
         inline: false,
       },

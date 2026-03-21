@@ -197,6 +197,8 @@ export interface TranslationKeys {
     errors: {
       notEnoughOptions: string;
       tooManyOptions: string;
+      questionTooLong: string;
+      optionTooLong: string;
       maxActivePolls: string;
       maxActivePollsDesc: string;
       invalidOption: string;
@@ -621,6 +623,8 @@ export interface TranslationKeys {
       tokenNotSet: string;
       noPermission: string;
       invalidRepo: string;
+      titleEmpty: string;
+      titleTooLong: string;
       notFound: string;
       isPullRequest: string;
       forbidden: string;

@@ -4,7 +4,7 @@ import {
   PermissionFlagsBits,
   SlashCommandBuilder,
 } from 'discord.js';
-import { Command } from '../../../types/index.js';
+import { Command } from '../../../shared/types/index.js';
 import {
   handleVoiceSet,
   handleVoiceRemove,
@@ -13,7 +13,7 @@ import {
   handleStatus,
   handleStats,
 } from '../application/index.js';
-import { interactionHasGuildPermission } from '../../../utils/discord.js';
+import { interactionHasGuildPermission } from '../../../shared/utils/discord.js';
 
 export const command: Command = {
   data: new SlashCommandBuilder()
@@ -132,7 +132,8 @@ export const command: Command = {
         PermissionFlagsBits.ManageGuild
       )
     ) {
-      const { createErrorEmbed } = await import('../../../utils/embed.js');
+      const { createErrorEmbed } =
+        await import('../../../shared/utils/embed.js');
       const { t, mapDiscordLocale } = await import('../../../locales/index.js');
       const locale = mapDiscordLocale(interaction.locale);
       await interaction.reply({

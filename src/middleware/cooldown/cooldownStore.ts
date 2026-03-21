@@ -1,5 +1,5 @@
 import { Collection } from 'discord.js';
-import { BoundedMap } from '../../utils/lruCache.js';
+import { BoundedMap } from '../../shared/utils/lruCache.js';
 
 const MAX_USERS_PER_COMMAND = 10000;
 const MAX_COMMANDS = 100;
@@ -8,6 +8,9 @@ class CooldownStore {
   private cooldowns = new BoundedMap<string, Collection<string, number>>(
     MAX_COMMANDS
   );
+
+  /** Pending timeout IDs for cleanup on shutdown */
+  private timers = new Map<string, NodeJS.Timeout>();
 
   private getTimestamps(commandName: string): Collection<string, number> {
     let timestamps = this.cooldowns.get(commandName);
@@ -39,9 +42,15 @@ class CooldownStore {
     const expirationTime = Date.now() + cooldownMs;
     timestamps.set(userId, expirationTime);
 
-    setTimeout(() => {
+    const key = `${commandName}:${userId}`;
+    const existing = this.timers.get(key);
+    if (existing) clearTimeout(existing);
+
+    const timer = setTimeout(() => {
+      this.timers.delete(key);
       this.removeCooldown(commandName, userId, expirationTime);
     }, cooldownMs);
+    this.timers.set(key, timer);
   }
 
   private removeCooldown(
@@ -61,6 +70,12 @@ class CooldownStore {
   }
 
   clearCooldown(commandName: string, userId: string): void {
+    const key = `${commandName}:${userId}`;
+    const timer = this.timers.get(key);
+    if (timer) {
+      clearTimeout(timer);
+      this.timers.delete(key);
+    }
     const timestamps = this.cooldowns.get(commandName);
     if (timestamps) {
       timestamps.delete(userId);
@@ -72,6 +87,10 @@ class CooldownStore {
   }
 
   clearAll(): void {
+    for (const timer of this.timers.values()) {
+      clearTimeout(timer);
+    }
+    this.timers.clear();
     this.cooldowns.clear();
   }
 

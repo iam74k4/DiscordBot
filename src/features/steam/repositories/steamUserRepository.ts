@@ -1,5 +1,5 @@
-import { database } from '../../../services/database/connection.js';
-import { logger } from '../../../utils/logger.js';
+import { database } from '../../../infrastructure/database/connection.js';
+import { logger } from '../../../shared/utils/logger.js';
 
 export interface SteamUserRecord {
   discord_id: string;

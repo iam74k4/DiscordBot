@@ -1,9 +1,9 @@
 import type { Client } from 'discord.js';
 import { readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { logger } from '../utils/logger.js';
-import { setServiceStatus } from '../services/health/index.js';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { getErrorMessage, logger } from '../shared/utils/logger.js';
+import { setServiceStatus } from '../infrastructure/health/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -43,7 +43,7 @@ export async function loadFeatures(): Promise<void> {
     const indexTs = join(featuresPath, dir, 'index.ts');
     const indexPath = existsSync(indexJs) ? indexJs : indexTs;
     try {
-      const mod = await import(`file://${indexPath.replace(/\\/g, '/')}`);
+      const mod = await import(pathToFileURL(indexPath).href);
       if (isFeatureModule(mod)) {
         loaded.push(mod);
         logger.debug(`Discovered feature: ${mod.name}`);
@@ -53,10 +53,7 @@ export async function loadFeatures(): Promise<void> {
         );
       }
     } catch (error) {
-      logger.error(
-        `Failed to load feature ${dir}:`,
-        error instanceof Error ? error.message : error
-      );
+      logger.error(`Failed to load feature ${dir}:`, getErrorMessage(error));
     }
   }
 
@@ -81,7 +78,7 @@ export async function startAllFeatures(client: Client): Promise<void> {
     } catch (error) {
       logger.error(
         `Failed to start feature ${feature.name}:`,
-        error instanceof Error ? error.message : error
+        getErrorMessage(error)
       );
       setServiceStatus(`feature:${feature.name}`, false);
     }
@@ -100,7 +97,7 @@ export async function stopAllFeatures(): Promise<void> {
     } catch (error) {
       logger.error(
         `Failed to stop feature ${feature.name}:`,
-        error instanceof Error ? error.message : error
+        getErrorMessage(error)
       );
     }
   }

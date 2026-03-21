@@ -1,5 +1,5 @@
 import { ChannelType, SlashCommandBuilder } from 'discord.js';
-import { Command } from '../../../types/index.js';
+import { Command } from '../../../shared/types/index.js';
 import {
   executeAdminCommand,
   executeRoleCommand,

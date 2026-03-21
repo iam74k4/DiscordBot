@@ -3,16 +3,16 @@ import {
   createEmbed,
   createErrorEmbed,
   createWarningEmbed,
-} from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
+} from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
 import {
   steamClient,
   getStatusColor,
   PersonaState,
-} from '../services/steam/index.js';
+} from '../integrations/steam/index.js';
 import { steamUserRepository } from '../repositories/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { awaitConfirmation } from '../../../utils/confirm.js';
+import { awaitConfirmation } from '../../../shared/utils/confirm.js';
 
 export async function handleRegister(
   interaction: ChatInputCommandInteraction

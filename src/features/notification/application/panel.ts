@@ -9,8 +9,8 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } from 'discord.js';
-import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
+import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
 import { t, type Locale } from '../../../locales/index.js';
 import {
   notificationChannelRepository,
@@ -20,9 +20,9 @@ import { voiceSessionRepository } from '../repositories/voiceSessionRepository.j
 import {
   getSendableTextChannel,
   interactionHasGuildPermission,
-} from '../../../utils/discord.js';
+} from '../../../shared/utils/discord.js';
 import { PermissionFlagsBits } from 'discord.js';
-import { getErrorMessage, logger } from '../../../utils/logger.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 
 type NotificationPanelView = 'status' | 'stats';
 type Period = 'today' | 'week' | 'month' | 'all';
@@ -164,16 +164,18 @@ function buildStatusEmbed(guildId: string, locale: Locale) {
     member_join: t('notification.status.welcomeLabel', locale),
   };
 
-  const fields = (['voice', 'member_join'] as NotificationType[]).map((type) => {
-    const record = records.find((item) => item.type === type);
-    return {
-      name: typeLabels[type],
-      value: record?.enabled
-        ? `<#${record.channel_id}>`
-        : t('notification.status.disabled', locale),
-      inline: true,
-    };
-  });
+  const fields = (['voice', 'member_join'] as NotificationType[]).map(
+    (type) => {
+      const record = records.find((item) => item.type === type);
+      return {
+        name: typeLabels[type],
+        value: record?.enabled
+          ? `<#${record.channel_id}>`
+          : t('notification.status.disabled', locale),
+        inline: true,
+      };
+    }
+  );
 
   return createEmbed({
     title: t('notification.status.title', locale),
@@ -222,7 +224,10 @@ function buildStatsEmbed(
   return createEmbed({
     title: t('notification.stats.title', locale),
     description: channelStats
-      .map((stat) => `🔊 **${stat.channel_name}** — ${formatDuration(stat.total_duration_ms)}`)
+      .map(
+        (stat) =>
+          `🔊 **${stat.channel_name}** — ${formatDuration(stat.total_duration_ms)}`
+      )
       .join('\n'),
     color: COLORS.INFO,
     fields: [
@@ -251,9 +256,7 @@ function buildComponents(
 ) {
   const rows: ActionRowBuilder<
     ButtonBuilder | StringSelectMenuBuilder | ChannelSelectMenuBuilder
-  >[] = [
-    buildNavigationRow(locale, view, canManageGuild, disabled),
-  ];
+  >[] = [buildNavigationRow(locale, view, canManageGuild, disabled)];
 
   if (view === 'stats') {
     rows.push(buildStatsPeriodRow(locale, period, disabled));
@@ -282,7 +285,10 @@ export async function showNotificationPanel(
   if (!interaction.guild || !interaction.guildId) {
     await interaction.reply({
       embeds: [
-        createErrorEmbed(t('common.error', locale), t('common.guildOnly', locale)),
+        createErrorEmbed(
+          t('common.error', locale),
+          t('common.guildOnly', locale)
+        ),
       ],
       flags: MessageFlags.Ephemeral,
     });
@@ -385,7 +391,10 @@ export async function showNotificationPanel(
           ? 'voice'
           : 'member_join';
         const channelId = componentInteraction.values[0];
-        const channel = await getSendableTextChannel(interaction.guild!, channelId);
+        const channel = await getSendableTextChannel(
+          interaction.guild!,
+          channelId
+        );
 
         if (!channel) {
           await componentInteraction.reply({
@@ -400,7 +409,11 @@ export async function showNotificationPanel(
           return;
         }
 
-        notificationChannelRepository.set(interaction.guildId!, type, channelId);
+        notificationChannelRepository.set(
+          interaction.guildId!,
+          type,
+          channelId
+        );
         currentView = 'status';
       }
 

@@ -1,12 +1,12 @@
 import { Events, GuildMember } from 'discord.js';
-import { Event } from '../../../types/index.js';
+import { Event } from '../../../shared/types/index.js';
 import { ExtendedClient } from '../../../client.js';
-import { createEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
-import { logger } from '../../../utils/logger.js';
+import { createEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { notificationChannelRepository } from '../repositories/notificationChannelRepository.js';
-import { getSendableTextChannel } from '../../../utils/discord.js';
+import { getSendableTextChannel } from '../../../shared/utils/discord.js';
 
 export const event: Event<typeof Events.GuildMemberAdd> = {
   name: Events.GuildMemberAdd,
@@ -50,7 +50,7 @@ export const event: Event<typeof Events.GuildMemberAdd> = {
       await textChannel.send({ embeds: [embed] });
     } catch (error) {
       logger.warn(
-        `Failed to send member join notification: ${error instanceof Error ? error.message : error}`
+        `Failed to send member join notification: ${getErrorMessage(error)}`
       );
     }
   },

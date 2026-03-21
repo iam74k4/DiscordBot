@@ -11,12 +11,12 @@ import {
   createEmbed,
   createErrorEmbed,
   createWarningEmbed,
-} from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
+} from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
 import { t } from '../../../locales/index.js';
-import { parseRepo } from '../services/githubClient.js';
+import { parseRepo } from '../integrations/githubClient.js';
 import { handleApiError } from './githubUtils.js';
-import { sendPaginatedMessage } from '../../../utils/pagination.js';
+import { sendPaginatedMessage } from '../../../shared/utils/pagination.js';
 import { trackRepo } from './autocomplete.js';
 
 const ITEMS_PER_PAGE = 10;

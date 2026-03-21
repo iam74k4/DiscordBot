@@ -12,7 +12,7 @@ vi.mock('../../repositories/index.js', () => ({
   },
 }));
 
-vi.mock('../../services/steam/index.js', () => ({
+vi.mock('../../integrations/steam/index.js', () => ({
   steamClient: {
     getPlayerSummaries,
     getTotalPlaytime,
@@ -21,11 +21,11 @@ vi.mock('../../services/steam/index.js', () => ({
   formatPlaytimeWithBar: vi.fn(() => 'bar'),
 }));
 
-vi.mock('../../../../utils/pagination.js', () => ({
+vi.mock('../../../../shared/utils/pagination.js', () => ({
   sendPaginatedMessage,
 }));
 
-vi.mock('../../../../utils/timeout.js', () => ({
+vi.mock('../../../../shared/utils/timeout.js', () => ({
   withTimeout,
 }));
 

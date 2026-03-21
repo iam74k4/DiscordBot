@@ -1,10 +1,10 @@
 import { ChatInputCommandInteraction } from 'discord.js';
 import type { Octokit } from 'octokit';
 import type { Locale } from '../../../locales/types.js';
-import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
+import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
 import { t } from '../../../locales/index.js';
-import { parseRepo } from '../services/githubClient.js';
+import { parseRepo } from '../integrations/githubClient.js';
 import { handleApiError } from './githubUtils.js';
 import { trackRepo } from './autocomplete.js';
 

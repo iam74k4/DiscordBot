@@ -3,11 +3,11 @@ import {
   Command,
   MiddlewareRegistry,
   MiddlewareResult,
-} from '../types/index.js';
+} from '../shared/types/index.js';
 import { permissionsMiddleware } from './permissions.js';
 import { cooldownMiddleware } from './cooldown/index.js';
-import { createErrorEmbed } from '../utils/embed.js';
-import { getErrorMessage, logger } from '../utils/logger.js';
+import { createErrorEmbed } from '../shared/utils/embed.js';
+import { getErrorMessage, logger } from '../shared/utils/logger.js';
 import { t, mapDiscordLocale } from '../locales/index.js';
 
 const middlewareRegistry: MiddlewareRegistry = {

@@ -1,6 +1,6 @@
 import { join } from 'path';
 import { config as dotenvConfig } from 'dotenv';
-import { logger } from '../utils/logger.js';
+import { logger } from '../shared/utils/logger.js';
 
 /** Normalize directory path to end with / */
 function normalizeDirPath(value: string): string {
@@ -97,6 +97,7 @@ function validateNumericalConfig(): void {
     process.env.STEAM_RANKING_BATCH_SIZE,
     8
   );
+  const shutdownTimeout = parseNumber(process.env.SHUTDOWN_TIMEOUT_MS, 10_000);
 
   if (maxRec <= 0) {
     errors.push('MAX_RECORDING_DURATION must be > 0');
@@ -134,6 +135,9 @@ function validateNumericalConfig(): void {
   }
   if (steamRankingBatch <= 0 || steamRankingBatch > 20) {
     errors.push('STEAM_RANKING_BATCH_SIZE must be between 1 and 20');
+  }
+  if (shutdownTimeout < 5_000 || shutdownTimeout > 120_000) {
+    errors.push('SHUTDOWN_TIMEOUT_MS must be between 5000 and 120000');
   }
 
   for (const w of warnings) {
@@ -266,13 +270,17 @@ export const env = {
   // Backup settings
   // -----------------------------------------------------------
   /** Backup directory (default: data/backups/) */
-  BACKUP_DIR: normalizeDirPath(
-    process.env.BACKUP_DIR || 'data/backups/'
-  ),
+  BACKUP_DIR: normalizeDirPath(process.env.BACKUP_DIR || 'data/backups/'),
   /** Backup retention days (default: 7) */
   BACKUP_RETENTION_DAYS: parseNumber(process.env.BACKUP_RETENTION_DAYS, 7),
   /** Backup cron schedule (default: 0 4 * * * = daily at 4am) */
   BACKUP_CRON: process.env.BACKUP_CRON || '0 4 * * *',
+
+  /** Run final backup before shutdown (default: true) */
+  SHUTDOWN_FINAL_BACKUP: process.env.SHUTDOWN_FINAL_BACKUP !== 'false',
+
+  /** Shutdown timeout in ms (default: 10000, range: 5000–120000) */
+  SHUTDOWN_TIMEOUT_MS: parseNumber(process.env.SHUTDOWN_TIMEOUT_MS, 10_000),
 
   // -----------------------------------------------------------
   // Timezone

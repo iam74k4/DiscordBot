@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction } from 'discord.js';
-import { Command, MiddlewareResult } from '../../types/index.js';
+import { Command, MiddlewareResult } from '../../shared/types/index.js';
 import { cooldownStore } from './cooldownStore.js';
 import { t, mapDiscordLocale } from '../../locales/index.js';
 

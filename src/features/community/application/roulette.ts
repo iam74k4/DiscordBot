@@ -6,9 +6,9 @@ import {
   StageChannel,
   VoiceChannel,
 } from 'discord.js';
-import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
-import { logger } from '../../../utils/logger.js';
+import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
+import { logger } from '../../../shared/utils/logger.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 
 const ANIMATION_DELAY = 800;

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('../../services/steam/index.js', () => ({
+vi.mock('../../integrations/steam/index.js', () => ({
   steamClient: {
     getFormattedPlayerInfo: vi.fn().mockResolvedValue(null),
   },

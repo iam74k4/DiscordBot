@@ -10,35 +10,35 @@ const disconnect = vi.fn();
 const getAllConnections = vi.fn(() => new Map<string, unknown>());
 const setServiceStatus = vi.fn();
 
-vi.mock('../services/audioBuffer.js', () => ({
+vi.mock('../recording/audioBuffer.js', () => ({
   audioBufferManager: {
     startCleanup,
     stopCleanup,
   },
 }));
 
-vi.mock('../services/memoryMonitor.js', () => ({
+vi.mock('../jobs/memoryMonitor.js', () => ({
   memoryMonitor: {
     start: memoryMonitorStart,
     stop: memoryMonitorStop,
   },
 }));
 
-vi.mock('../services/fileCleanup.js', () => ({
+vi.mock('../jobs/fileCleanup.js', () => ({
   fileCleanupService: {
     start: fileCleanupStart,
     stop: fileCleanupStop,
   },
 }));
 
-vi.mock('../services/connectionManager.js', () => ({
+vi.mock('../recording/connectionManager.js', () => ({
   connectionManager: {
     disconnect,
     getAllConnections,
   },
 }));
 
-vi.mock('../../../services/health/index.js', () => ({
+vi.mock('../../../infrastructure/health/index.js', () => ({
   setServiceStatus,
 }));
 

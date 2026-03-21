@@ -7,15 +7,16 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import { createErrorEmbed } from '../../../utils/embed.js';
+import { createErrorEmbed } from '../../../shared/utils/embed.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { isBotOwner } from '../../../config/env.js';
-import { getGitHubClient } from '../services/githubClient.js';
+import { getGitHubClient } from '../integrations/githubClient.js';
 import { executePrCommand } from './pr.js';
 import { executeIssueCommand } from './issue.js';
 import { executeRepoCommand } from './repo.js';
 import type { Locale } from '../../../locales/types.js';
-import { interactionHasGuildPermission } from '../../../utils/discord.js';
+import { getErrorMessage } from '../../../shared/utils/logger.js';
+import { interactionHasGuildPermission } from '../../../shared/utils/discord.js';
 
 function checkPermission(interaction: ChatInputCommandInteraction): boolean {
   if (isBotOwner(interaction.user.id)) return true;
@@ -162,7 +163,7 @@ export async function executeGitHubCommand(
     );
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = getErrorMessage(error);
     const embed = createErrorEmbed(
       t('common.error', locale),
       t('github.errors.apiError', locale, { message })

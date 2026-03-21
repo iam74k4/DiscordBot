@@ -9,18 +9,18 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } from 'discord.js';
-import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
+import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
 import { type Locale, t } from '../../../locales/index.js';
-import { settingsRepository } from '../repositories/index.js';
 import {
   auditRepository,
   type AuditLogRecord,
-} from '../../../services/audit/index.js';
-import { logAuditAction } from '../../../services/audit/index.js';
-import { formatAuditTarget } from '../../../services/audit/format.js';
-import { getSendableTextChannel } from '../../../utils/discord.js';
-import { getErrorMessage, logger } from '../../../utils/logger.js';
+  settingsRepository,
+} from '../repositories/index.js';
+import { logAuditAction } from '../../../infrastructure/audit/index.js';
+import { formatAuditTarget } from '../../../infrastructure/audit/format.js';
+import { getSendableTextChannel } from '../../../shared/utils/discord.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 
 type SettingsPanelView = 'overview' | 'language' | 'audit' | 'logs';
 
@@ -171,7 +171,8 @@ function buildOverviewEmbed(guildId: string, locale: Locale) {
 }
 
 function buildLanguageEmbed(guildId: string, locale: Locale) {
-  const language = settingsRepository.getGuildSettings(guildId)?.language ?? 'ja';
+  const language =
+    settingsRepository.getGuildSettings(guildId)?.language ?? 'ja';
   const languageDisplay = LANGUAGE_DISPLAY_NAMES[language] ?? language;
 
   return createEmbed({
@@ -183,7 +184,8 @@ function buildLanguageEmbed(guildId: string, locale: Locale) {
 }
 
 function buildAuditEmbed(guildId: string, locale: Locale) {
-  const auditChannel = settingsRepository.getGuildSettings(guildId)?.audit_channel_id;
+  const auditChannel =
+    settingsRepository.getGuildSettings(guildId)?.audit_channel_id;
 
   return createEmbed({
     title: t('settings.audit.name', locale),
@@ -267,8 +269,8 @@ function buildComponents(
   }
 
   if (view === 'audit') {
-    const hasAuditChannel = !!settingsRepository.getGuildSettings(guildId)
-      ?.audit_channel_id;
+    const hasAuditChannel =
+      !!settingsRepository.getGuildSettings(guildId)?.audit_channel_id;
     rows.push(buildAuditSelectRow(locale, disabled));
     rows.push(buildAuditActionsRow(locale, hasAuditChannel, disabled));
   }
@@ -291,7 +293,10 @@ export async function showSettingsPanel(
   if (!interaction.guild || !interaction.guildId) {
     await interaction.reply({
       embeds: [
-        createErrorEmbed(t('common.error', locale), t('common.guildOnly', locale)),
+        createErrorEmbed(
+          t('common.error', locale),
+          t('common.guildOnly', locale)
+        ),
       ],
       flags: MessageFlags.Ephemeral,
     });

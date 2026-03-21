@@ -3,11 +3,11 @@ import {
   createEmbed,
   createErrorEmbed,
   createWarningEmbed,
-} from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
-import { steamClient } from '../services/steam/index.js';
+} from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
+import { steamClient } from '../integrations/steam/index.js';
 import { steamUserRepository } from '../repositories/index.js';
-import { createHorizontalBarChart } from '../../../utils/chart.js';
+import { createHorizontalBarChart } from '../../../shared/utils/chart.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 
 export async function handleChart(

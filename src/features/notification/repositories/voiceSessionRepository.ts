@@ -1,4 +1,4 @@
-import { database } from '../../../services/database/connection.js';
+import { database } from '../../../infrastructure/database/connection.js';
 
 export interface VoiceSessionRecord {
   id: number;

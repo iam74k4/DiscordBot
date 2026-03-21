@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const deleteOldLogs = vi.fn(() => 2);
 const loggerInfo = vi.fn();
 
-vi.mock('../../../services/audit/index.js', () => ({
+vi.mock('../repositories/index.js', () => ({
   auditRepository: {
     deleteOldLogs,
   },
@@ -15,7 +15,7 @@ vi.mock('../../../config/index.js', () => ({
   },
 }));
 
-vi.mock('../../../utils/logger.js', () => ({
+vi.mock('../../../shared/utils/logger.js', () => ({
   logger: {
     info: loggerInfo,
   },

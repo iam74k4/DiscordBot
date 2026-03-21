@@ -1,10 +1,13 @@
 import type { Client } from 'discord.js';
 import './helpCatalog.js';
-import { voiceTracker } from './services/voiceTracker.js';
+import { voiceTracker } from './tracking/voiceTracker.js';
 import { voiceSessionRepository } from './repositories/voiceSessionRepository.js';
 import { env } from '../../config/index.js';
-import { logger } from '../../utils/logger.js';
-import { startDailyCleanup, stopCleanupInterval } from '../../utils/cleanup.js';
+import { logger } from '../../shared/utils/logger.js';
+import {
+  startDailyCleanup,
+  stopCleanupInterval,
+} from '../../shared/utils/cleanup.js';
 
 export const name = 'notification';
 let cleanupInterval: NodeJS.Timeout | null = null;

@@ -6,9 +6,9 @@ import {
   ButtonStyle,
 } from 'discord.js';
 import { pollStore, PollData } from './pollStore.js';
-import { createEmbed } from '../../../utils/embed.js';
-import { COLORS, PROGRESS_BAR } from '../../../utils/constants/index.js';
-import { logger } from '../../../utils/logger.js';
+import { createEmbed } from '../../../shared/utils/embed.js';
+import { COLORS, PROGRESS_BAR } from '../../../shared/utils/constants/index.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 
 /**
@@ -176,7 +176,7 @@ export async function handlePollVote(
   // Update the poll message with new results
   const embed = buildPollResultEmbed(poll);
   await interaction.message.edit({ embeds: [embed] }).catch((e) => {
-    logger.debug(`Failed to update poll message: ${e.message}`);
+    logger.debug(`Failed to update poll message: ${getErrorMessage(e)}`);
   });
 }
 

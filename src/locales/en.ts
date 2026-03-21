@@ -142,6 +142,8 @@ export const en: TranslationKeys = {
     errors: {
       notEnoughOptions: 'A poll needs at least 2 options.',
       tooManyOptions: 'A poll can have at most 10 options.',
+      questionTooLong: 'Question must be 256 characters or less.',
+      optionTooLong: 'Each option must be 100 characters or less.',
       maxActivePolls: 'Poll Limit Reached',
       maxActivePollsDesc:
         'There are already {count} active polls. Please end an existing poll before creating a new one.',
@@ -581,6 +583,8 @@ export const en: TranslationKeys = {
       noPermission:
         'You need "Manage Server" permission or be a bot owner to use this command.',
       invalidRepo: 'Invalid repository format. Use `owner/name`.',
+      titleEmpty: 'Title cannot be empty.',
+      titleTooLong: 'Title must be 256 characters or less.',
       notFound: 'Repository, PR, or Issue not found.',
       isPullRequest: 'This number is a PR. Use `/github pr view` instead.',
       forbidden: 'Insufficient permissions. Check your token scopes.',

@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, SlashCommandStringOption } from 'discord.js';
-import { Command } from '../../../types/index.js';
+import { Command } from '../../../shared/types/index.js';
 import { executeGitHubCommand } from '../application/index.js';
 import { handleGitHubAutocomplete } from '../application/autocomplete.js';
 

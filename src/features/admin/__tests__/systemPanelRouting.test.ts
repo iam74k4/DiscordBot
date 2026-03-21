@@ -10,7 +10,7 @@ vi.mock('../../../config/env.js', () => ({
   isBotOwner: vi.fn(() => true),
 }));
 
-vi.mock('../../../services/backup/index.js', () => ({
+vi.mock('../../../infrastructure/backup/index.js', () => ({
   backupService: {
     runBackup: vi.fn(),
   },
@@ -36,7 +36,11 @@ describe('admin system panel routing', () => {
 
     await executeAdminCommand(interaction);
 
-    expect(showAdminSystemPanel).toHaveBeenCalledWith(interaction, 'en', 'stats');
+    expect(showAdminSystemPanel).toHaveBeenCalledWith(
+      interaction,
+      'en',
+      'stats'
+    );
   });
 
   it('opens the backups panel for backup list', async () => {

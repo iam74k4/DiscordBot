@@ -3,20 +3,15 @@ import {
   MessageFlags,
   PermissionFlagsBits,
 } from 'discord.js';
-import {
-  createEmbed,
-  createErrorEmbed,
-} from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
-import {
-  settingsRepository,
-} from '../repositories/index.js';
-import { logAuditAction } from '../../../services/audit/index.js';
+import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
+import { settingsRepository } from '../repositories/index.js';
+import { logAuditAction } from '../../../infrastructure/audit/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import {
   getSendableTextChannel,
   interactionHasGuildPermission,
-} from '../../../utils/discord.js';
+} from '../../../shared/utils/discord.js';
 import { showSettingsPanel } from './settingsPanel.js';
 
 const LANGUAGE_DISPLAY_NAMES: Record<string, string> = {

@@ -3,14 +3,14 @@ import {
   ChatInputCommandInteraction,
   MessageFlags,
 } from 'discord.js';
-import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
-import { createPieChart } from '../../../utils/chart.js';
+import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
+import { createPieChart } from '../../../shared/utils/chart.js';
 import { steamClient } from '../index.js';
 import { steamUserRepository } from '../repositories/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { logger } from '../../../utils/logger.js';
-import { withTimeout } from '../../../utils/timeout.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
+import { withTimeout } from '../../../shared/utils/timeout.js';
 
 export async function executeServerCommand(
   interaction: ChatInputCommandInteraction
@@ -35,9 +35,7 @@ export async function executeServerCommand(
   if (guild.members.cache.size < guild.memberCount) {
     await withTimeout(guild.members.fetch({ limit: 1000 }), 10_000).catch(
       (e) => {
-        logger.warn(
-          `guild.members.fetch timed out: ${e instanceof Error ? e.message : e}`
-        );
+        logger.warn(`guild.members.fetch timed out: ${getErrorMessage(e)}`);
       }
     );
   }

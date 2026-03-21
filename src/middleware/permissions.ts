@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, PermissionsBitField } from 'discord.js';
-import { Command, MiddlewareResult } from '../types/index.js';
+import { Command, MiddlewareResult } from '../shared/types/index.js';
 import { t, mapDiscordLocale } from '../locales/index.js';
 
 /**

@@ -1,5 +1,5 @@
 import { PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
-import { Command } from '../../../types/index.js';
+import { Command } from '../../../shared/types/index.js';
 import { executeRecordCommand } from '../application/index.js';
 
 /**

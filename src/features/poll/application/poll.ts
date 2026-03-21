@@ -1,7 +1,7 @@
 import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
-import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
-import { logger } from '../../../utils/logger.js';
+import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import {
   PollData,
@@ -12,7 +12,7 @@ import {
   findUserPollInChannel,
   pollStore,
 } from '../services/index.js';
-import { awaitConfirmation } from '../../../utils/confirm.js';
+import { awaitConfirmation } from '../../../shared/utils/confirm.js';
 
 async function handleCreatePoll(
   interaction: ChatInputCommandInteraction
@@ -22,10 +22,38 @@ async function handleCreatePoll(
   const duration = interaction.options.getInteger('duration');
   const anonymous = interaction.options.getBoolean('anonymous') ?? false;
 
+  const MAX_QUESTION_LENGTH = 256;
+  const MAX_OPTION_LENGTH = 100;
+
+  if (question.length > MAX_QUESTION_LENGTH) {
+    await interaction.reply({
+      embeds: [
+        createErrorEmbed(
+          t('common.error', locale),
+          t('poll.errors.questionTooLong', locale)
+        ),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
   const options: string[] = [];
   for (let i = 1; i <= 10; i++) {
     const option = interaction.options.getString(`option${i}`);
     if (option) {
+      if (option.length > MAX_OPTION_LENGTH) {
+        await interaction.reply({
+          embeds: [
+            createErrorEmbed(
+              t('common.error', locale),
+              t('poll.errors.optionTooLong', locale)
+            ),
+          ],
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
       options.push(option);
     }
   }
@@ -94,7 +122,7 @@ async function handleCreatePoll(
         } catch (error) {
           logger.error(
             `Failed to auto-end poll ${message.id}:`,
-            error instanceof Error ? error.message : error
+            getErrorMessage(error)
           );
         }
       },

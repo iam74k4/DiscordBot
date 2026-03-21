@@ -7,14 +7,14 @@ import {
   createEmbed,
   createErrorEmbed,
   createWarningEmbed,
-} from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
+} from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
 import {
   steamNotificationRepository,
   steamUserRepository,
 } from '../repositories/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { interactionHasGuildPermission } from '../../../utils/discord.js';
+import { interactionHasGuildPermission } from '../../../shared/utils/discord.js';
 
 async function handleSetup(
   interaction: ChatInputCommandInteraction

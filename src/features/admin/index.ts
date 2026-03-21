@@ -1,9 +1,12 @@
 import type { Client } from 'discord.js';
 import './helpCatalog.js';
-import { auditRepository } from '../../services/audit/index.js';
 import { env } from '../../config/index.js';
-import { logger } from '../../utils/logger.js';
-import { startDailyCleanup, stopCleanupInterval } from '../../utils/cleanup.js';
+import { auditRepository } from './repositories/index.js';
+import { logger } from '../../shared/utils/logger.js';
+import {
+  startDailyCleanup,
+  stopCleanupInterval,
+} from '../../shared/utils/cleanup.js';
 
 export const name = 'admin';
 let cleanupInterval: NodeJS.Timeout | null = null;

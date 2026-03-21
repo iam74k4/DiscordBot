@@ -1,10 +1,10 @@
 import { REST, Routes } from 'discord.js';
 import { readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { Command } from '../types/index.js';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { Command } from '../shared/types/index.js';
 import { env } from '../config/index.js';
-import { logger } from '../utils/logger.js';
+import { getErrorMessage, logger } from '../shared/utils/logger.js';
 import { ExtendedClient } from '../client.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -34,9 +34,7 @@ export async function loadCommands(client: ExtendedClient): Promise<void> {
       for (const file of commandFiles) {
         const filePath = join(featureCommandsPath, file);
         try {
-          const commandModule = await import(
-            `file://${filePath.replace(/\\/g, '/')}`
-          );
+          const commandModule = await import(pathToFileURL(filePath).href);
           const command: Command =
             commandModule.default ?? commandModule.command;
 
@@ -53,7 +51,7 @@ export async function loadCommands(client: ExtendedClient): Promise<void> {
         } catch (error) {
           logger.error(
             `Failed to load command from ${filePath}:`,
-            error instanceof Error ? error.message : error
+            getErrorMessage(error)
           );
         }
       }

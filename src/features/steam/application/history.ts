@@ -3,14 +3,14 @@ import {
   createEmbed,
   createErrorEmbed,
   createWarningEmbed,
-} from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
-import { steamClient, formatPlaytime } from '../services/steam/index.js';
+} from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
+import { steamClient, formatPlaytime } from '../integrations/steam/index.js';
 import {
   playtimeRepository,
   steamUserRepository,
 } from '../repositories/index.js';
-import { createLineChart } from '../../../utils/chart.js';
+import { createLineChart } from '../../../shared/utils/chart.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import {
   ONE_DAY,
@@ -19,7 +19,7 @@ import {
   THREE_MONTHS,
   SIX_MONTHS,
   ONE_YEAR,
-} from '../lib/shared.js';
+} from '../domain/shared.js';
 
 export async function handleHistory(
   interaction: ChatInputCommandInteraction

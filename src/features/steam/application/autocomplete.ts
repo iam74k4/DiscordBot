@@ -1,8 +1,8 @@
 import { AutocompleteInteraction } from 'discord.js';
-import { steamClient } from '../services/steam/index.js';
+import { steamClient } from '../integrations/steam/index.js';
 import { steamUserRepository } from '../repositories/index.js';
-import { smartFilter } from '../../../utils/fuzzy.js';
-import { CACHE_TTL, gameCache, formatHoursShort } from '../lib/shared.js';
+import { smartFilter } from '../../../shared/utils/fuzzy.js';
+import { CACHE_TTL, gameCache, formatHoursShort } from '../domain/shared.js';
 
 function getGuildScopedUsers(
   interaction: AutocompleteInteraction

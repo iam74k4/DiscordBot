@@ -3,16 +3,16 @@ import './helpCatalog.js';
 import {
   startNotificationSystem,
   stopNotificationSystem,
-} from './services/notifications/index.js';
-import { startScheduler, stopScheduler } from './services/scheduler/index.js';
-import { steamClient } from './services/steam/index.js';
-import { setServiceStatus } from '../../services/health/index.js';
+} from './jobs/notifications/index.js';
+import { startScheduler, stopScheduler } from './jobs/scheduler/index.js';
+import { steamClient } from './integrations/steam/index.js';
+import { setServiceStatus } from '../../infrastructure/health/index.js';
 
 export const name = 'steam';
 let isSteamFeatureStarted = false;
 
 /**
- * Start Steam feature services (notifications, scheduler)
+ * Start Steam integrations and jobs
  */
 export function start(client: Client): void {
   if (isSteamFeatureStarted) {
@@ -28,7 +28,7 @@ export function start(client: Client): void {
 }
 
 /**
- * Stop Steam feature services
+ * Stop Steam integrations and jobs
  */
 export async function stop(): Promise<void> {
   if (!isSteamFeatureStarted) {

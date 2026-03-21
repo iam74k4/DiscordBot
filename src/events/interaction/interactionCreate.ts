@@ -1,10 +1,10 @@
 import { Events, MessageFlags } from 'discord.js';
-import { Event } from '../../types/index.js';
+import { Event } from '../../shared/types/index.js';
 import { ExtendedClient } from '../../client.js';
 import { clearCooldown, runMiddleware } from '../../middleware/index.js';
-import { getErrorMessage, logger } from '../../utils/logger.js';
-import { createErrorEmbed } from '../../utils/embed.js';
-import { metrics } from '../../services/metrics/index.js';
+import { getErrorMessage, logger } from '../../shared/utils/logger.js';
+import { createErrorEmbed } from '../../shared/utils/embed.js';
+import { metrics } from '../../infrastructure/metrics/index.js';
 import { t, mapDiscordLocale } from '../../locales/index.js';
 
 /**
@@ -51,6 +51,24 @@ export const event: Event<typeof Events.InteractionCreate> = {
 
     if (!command) {
       logger.warn(`Unknown command: ${interaction.commandName}`);
+      const locale = mapDiscordLocale(interaction.locale);
+      await interaction
+        .reply({
+          embeds: [
+            createErrorEmbed(
+              t('help.commandNotFound', locale),
+              t('help.commandNotFoundDesc', locale, {
+                command: interaction.commandName,
+              })
+            ),
+          ],
+          flags: MessageFlags.Ephemeral,
+        })
+        .catch((e: unknown) => {
+          logger.debug(
+            `Failed to reply unknown command: ${getErrorMessage(e)}`
+          );
+        });
       return;
     }
 

@@ -1,7 +1,7 @@
 import { ChannelType, SlashCommandBuilder, MessageFlags } from 'discord.js';
-import { Command } from '../../../types/index.js';
-import { createErrorEmbed } from '../../../utils/embed.js';
-import { steamClient } from '../services/steam/index.js';
+import { Command } from '../../../shared/types/index.js';
+import { createErrorEmbed } from '../../../shared/utils/embed.js';
+import { steamClient } from '../integrations/steam/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import {
   handleAutocomplete,

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { connectionManager } from '../services/connectionManager.js';
+import { connectionManager } from '../recording/connectionManager.js';
 
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: vi.fn(),

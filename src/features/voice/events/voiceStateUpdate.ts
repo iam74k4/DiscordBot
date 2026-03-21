@@ -1,8 +1,8 @@
 import { Events, VoiceState } from 'discord.js';
-import { Event } from '../../../types/index.js';
+import { Event } from '../../../shared/types/index.js';
 import { ExtendedClient } from '../../../client.js';
-import { connectionManager } from '../services/connectionManager.js';
-import { logger } from '../../../utils/logger.js';
+import { connectionManager } from '../recording/connectionManager.js';
+import { logger } from '../../../shared/utils/logger.js';
 
 /**
  * Voice State Update event handler

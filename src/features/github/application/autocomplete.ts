@@ -1,8 +1,8 @@
 import { AutocompleteInteraction, PermissionFlagsBits } from 'discord.js';
-import { getGitHubClient } from '../services/githubClient.js';
-import { getErrorMessage, logger } from '../../../utils/logger.js';
+import { getGitHubClient } from '../integrations/githubClient.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 import { isBotOwner } from '../../../config/env.js';
-import { hasPermission } from '../../../utils/discord.js';
+import { hasPermission } from '../../../shared/utils/discord.js';
 
 const recentRepos: string[] = [];
 const MAX_RECENT = 10;

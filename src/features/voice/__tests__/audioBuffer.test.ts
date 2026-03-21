@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { HybridAudioBuffer } from '../services/audioBuffer.js';
+import { HybridAudioBuffer } from '../recording/audioBuffer.js';
 
 vi.mock('fs/promises', () => ({
   mkdir: vi.fn(() => Promise.resolve()),

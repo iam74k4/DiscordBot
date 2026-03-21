@@ -3,7 +3,7 @@ import { MessageFlags } from 'discord.js';
 import { createMockInteraction } from '../setup.js';
 
 // Mock dependencies
-vi.mock('../../../services/database/connection.js', () => ({
+vi.mock('../../../infrastructure/database/connection.js', () => ({
   database: {
     prepare: vi.fn().mockReturnValue({
       get: vi.fn().mockReturnValue({ count: 5 }),
@@ -13,7 +13,7 @@ vi.mock('../../../services/database/connection.js', () => ({
   },
 }));
 
-vi.mock('../../../services/health/index.js', () => ({
+vi.mock('../../../infrastructure/health/index.js', () => ({
   getHealthStatus: vi.fn().mockReturnValue({
     status: 'healthy',
     uptime: 3600,
@@ -26,7 +26,7 @@ vi.mock('../../../services/health/index.js', () => ({
   formatHealthStatus: vi.fn().mockReturnValue('Health status formatted'),
 }));
 
-vi.mock('../../../services/backup/index.js', () => ({
+vi.mock('../../../infrastructure/backup/index.js', () => ({
   backupService: {
     runBackup: vi.fn().mockResolvedValue({
       success: true,
@@ -39,7 +39,7 @@ vi.mock('../../../services/backup/index.js', () => ({
   },
 }));
 
-vi.mock('../../../services/metrics/index.js', () => ({
+vi.mock('../../../infrastructure/metrics/index.js', () => ({
   metrics: {
     formatForDisplay: vi.fn().mockReturnValue('Metrics formatted'),
     getSnapshot: vi.fn().mockReturnValue({

@@ -9,9 +9,12 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } from 'discord.js';
-import { createEmbed, createWarningEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
-import { getErrorMessage, logger } from '../../../utils/logger.js';
+import {
+  createEmbed,
+  createWarningEmbed,
+} from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 import { Locale, t } from '../../../locales/index.js';
 import {
   type FormattedGameInfo,
@@ -24,7 +27,7 @@ import {
   getStatusColor,
   getVisibilityIcon,
   steamClient,
-} from '../services/steam/index.js';
+} from '../integrations/steam/index.js';
 
 type DashboardView = 'profile' | 'playtime' | 'recent' | 'games';
 type GamesSort = 'playtime' | 'recent' | 'alphabetical';

@@ -6,16 +6,16 @@ import {
   MessageFlags,
   PermissionFlagsBits,
 } from 'discord.js';
-import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
-import { logger } from '../../../utils/logger.js';
+import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { env, RETRY } from '../../../config/index.js';
-import { connectionManager } from '../services/connectionManager.js';
+import { connectionManager } from '../recording/connectionManager.js';
 import {
   parseDurationString,
   recordAudio,
-} from '../services/recordingService.js';
+} from '../recording/recordingService.js';
 
 export async function executeRecordCommand(
   interaction: ChatInputCommandInteraction
@@ -72,8 +72,20 @@ export async function executeRecordCommand(
   }
 
   const channel = interaction.channel;
+  const botMember = interaction.guild.members.me;
+  if (!botMember) {
+    await interaction.editReply({
+      embeds: [
+        createErrorEmbed(
+          t('record.errors.botNotInVoice', locale),
+          t('record.errors.botNotInVoiceDesc', locale)
+        ),
+      ],
+    });
+    return;
+  }
   if (channel && 'permissionsFor' in channel) {
-    const permissions = channel.permissionsFor(interaction.guild.members.me!);
+    const permissions = channel.permissionsFor(botMember);
     if (
       !permissions ||
       !permissions.has(PermissionFlagsBits.AttachFiles) ||
@@ -240,7 +252,7 @@ export async function executeRecordCommand(
       `Recording completed: ${duration}s from channel ${voiceChannel.name} (${voiceChannel.id}) by ${interaction.user.tag}`
     );
   } catch (error) {
-    const rawMessage = error instanceof Error ? error.message : String(error);
+    const rawMessage = getErrorMessage(error);
     logger.error(
       `Recording failed for channel ${voiceChannel.id}:`,
       rawMessage

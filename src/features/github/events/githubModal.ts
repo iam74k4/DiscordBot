@@ -1,14 +1,14 @@
 import { Events, MessageFlags, PermissionsBitField } from 'discord.js';
-import { Event } from '../../../types/index.js';
-import { createEmbed, createErrorEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
+import { Event } from '../../../shared/types/index.js';
+import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { getGitHubClient, parseRepo } from '../services/githubClient.js';
+import { getGitHubClient, parseRepo } from '../integrations/githubClient.js';
 import { handleApiError } from '../application/githubUtils.js';
-import { getErrorMessage, logger } from '../../../utils/logger.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 import { trackRepo } from '../application/autocomplete.js';
 import { isBotOwner } from '../../../config/env.js';
-import { hasPermission } from '../../../utils/discord.js';
+import { hasPermission } from '../../../shared/utils/discord.js';
 
 export const event: Event<typeof Events.InteractionCreate> = {
   name: Events.InteractionCreate,
@@ -65,8 +65,28 @@ export const event: Event<typeof Events.InteractionCreate> = {
     }
 
     trackRepo(repoStr);
-    const title = interaction.fields.getTextInputValue('title');
-    const body = interaction.fields.getTextInputValue('body') || undefined;
+    const rawTitle = interaction.fields.getTextInputValue('title');
+    const title = rawTitle.trim();
+    const body =
+      (interaction.fields.getTextInputValue('body') || '').trim() || undefined;
+
+    if (!title) {
+      const embed = createErrorEmbed(
+        t('common.error', locale),
+        t('github.errors.titleEmpty', locale)
+      );
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
+    if (title.length > 256) {
+      const embed = createErrorEmbed(
+        t('common.error', locale),
+        t('github.errors.titleTooLong', locale)
+      );
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
 
     try {
       if (isIssueCreate) {

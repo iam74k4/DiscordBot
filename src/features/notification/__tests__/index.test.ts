@@ -4,7 +4,7 @@ const closeAllStaleSessions = vi.fn();
 const cleanupOldSessions = vi.fn(() => 3);
 const loggerInfo = vi.fn();
 
-vi.mock('../services/voiceTracker.js', () => ({
+vi.mock('../tracking/voiceTracker.js', () => ({
   voiceTracker: {
     closeAllStaleSessions,
   },
@@ -22,7 +22,7 @@ vi.mock('../../../config/index.js', () => ({
   },
 }));
 
-vi.mock('../../../utils/logger.js', () => ({
+vi.mock('../../../shared/utils/logger.js', () => ({
   logger: {
     info: loggerInfo,
   },

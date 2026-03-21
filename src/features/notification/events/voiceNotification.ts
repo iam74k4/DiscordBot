@@ -1,13 +1,13 @@
 import { Events, VoiceState } from 'discord.js';
-import { Event } from '../../../types/index.js';
+import { Event } from '../../../shared/types/index.js';
 import { ExtendedClient } from '../../../client.js';
-import { createEmbed } from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
-import { logger } from '../../../utils/logger.js';
+import { createEmbed } from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { notificationChannelRepository } from '../repositories/notificationChannelRepository.js';
-import { voiceTracker } from '../services/voiceTracker.js';
-import { getSendableTextChannel } from '../../../utils/discord.js';
+import { voiceTracker } from '../tracking/voiceTracker.js';
+import { getSendableTextChannel } from '../../../shared/utils/discord.js';
 
 export const event: Event<typeof Events.VoiceStateUpdate> = {
   name: Events.VoiceStateUpdate,
@@ -50,9 +50,7 @@ async function handleJoin(guildId: string, state: VoiceState): Promise<void> {
   try {
     voiceTracker.startSession(guildId, userId, channel.id, channel.name);
   } catch (error) {
-    logger.error(
-      `Failed to start voice session: ${error instanceof Error ? error.message : error}`
-    );
+    logger.error(`Failed to start voice session: ${getErrorMessage(error)}`);
   }
 
   const notifyChannelId = notificationChannelRepository.getEnabled(
@@ -81,7 +79,7 @@ async function handleJoin(guildId: string, state: VoiceState): Promise<void> {
     await textChannel.send({ embeds: [embed] });
   } catch (error) {
     logger.warn(
-      `Failed to send voice join notification: ${error instanceof Error ? error.message : error}`
+      `Failed to send voice join notification: ${getErrorMessage(error)}`
     );
   }
 }
@@ -95,9 +93,7 @@ async function handleLeave(guildId: string, state: VoiceState): Promise<void> {
   try {
     voiceTracker.endSession(guildId, userId);
   } catch (error) {
-    logger.error(
-      `Failed to end voice session: ${error instanceof Error ? error.message : error}`
-    );
+    logger.error(`Failed to end voice session: ${getErrorMessage(error)}`);
   }
 
   const notifyChannelId = notificationChannelRepository.getEnabled(
@@ -126,7 +122,7 @@ async function handleLeave(guildId: string, state: VoiceState): Promise<void> {
     await textChannel.send({ embeds: [embed] });
   } catch (error) {
     logger.warn(
-      `Failed to send voice leave notification: ${error instanceof Error ? error.message : error}`
+      `Failed to send voice leave notification: ${getErrorMessage(error)}`
     );
   }
 }

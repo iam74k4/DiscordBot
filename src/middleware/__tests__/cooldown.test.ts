@@ -34,7 +34,7 @@ import {
   clearCommandCooldowns,
 } from '../cooldown/cooldownMiddleware.js';
 import { cooldownStore } from '../cooldown/index.js';
-import { Command } from '../../types/index.js';
+import { Command } from '../../shared/types/index.js';
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 
 function createMockInteraction(userId = 'user-123') {

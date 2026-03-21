@@ -1,7 +1,7 @@
 import { Events, MessageFlags } from 'discord.js';
-import { Event } from '../../../types/index.js';
-import { getErrorMessage, logger } from '../../../utils/logger.js';
-import { createErrorEmbed } from '../../../utils/embed.js';
+import { Event } from '../../../shared/types/index.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
+import { createErrorEmbed } from '../../../shared/utils/embed.js';
 import { handlePollVote, pollStore } from '../services/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 

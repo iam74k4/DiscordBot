@@ -1,5 +1,5 @@
 import { Client, GatewayIntentBits, Collection } from 'discord.js';
-import { Command } from './types/index.js';
+import { Command } from './shared/types/index.js';
 
 /**
  * Extended Discord client with custom properties

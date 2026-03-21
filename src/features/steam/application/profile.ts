@@ -1,8 +1,8 @@
 import { ChatInputCommandInteraction } from 'discord.js';
-import { createErrorEmbed } from '../../../utils/embed.js';
-import { steamClient } from '../services/steam/index.js';
+import { createErrorEmbed } from '../../../shared/utils/embed.js';
+import { steamClient } from '../integrations/steam/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { resolveSteamId } from '../lib/shared.js';
+import { resolveSteamId } from '../domain/shared.js';
 import { showSteamProfileDashboard } from './dashboard.js';
 
 export async function handleProfile(

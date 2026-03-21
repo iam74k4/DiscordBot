@@ -1,9 +1,9 @@
 import { readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { Event } from '../types/index.js';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { Event } from '../shared/types/index.js';
 import { ExtendedClient } from '../client.js';
-import { logger } from '../utils/logger.js';
+import { getErrorMessage, logger } from '../shared/utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,7 +18,7 @@ async function registerEvent(
   label: string
 ): Promise<boolean> {
   try {
-    const eventModule = await import(`file://${filePath.replace(/\\/g, '/')}`);
+    const eventModule = await import(pathToFileURL(filePath).href);
     const event: Event = eventModule.default ?? eventModule.event;
 
     if (event?.name && typeof event.execute === 'function') {
@@ -51,7 +51,7 @@ async function registerEvent(
   } catch (error) {
     logger.error(
       `Failed to load event from ${filePath}:`,
-      error instanceof Error ? error.message : error
+      getErrorMessage(error)
     );
     return false;
   }
@@ -72,7 +72,9 @@ export async function loadEvents(client: ExtendedClient): Promise<void> {
   for (const category of categoryFolders) {
     const categoryPath = join(eventsPath, category);
     const eventFiles = readdirSync(categoryPath).filter(
-      (file) => file.endsWith('.ts') || file.endsWith('.js')
+      (file) =>
+        (file.endsWith('.ts') || file.endsWith('.js')) &&
+        !file.startsWith('index.')
     );
 
     for (const file of eventFiles) {
@@ -97,7 +99,9 @@ export async function loadEvents(client: ExtendedClient): Promise<void> {
       if (!existsSync(featureEventsPath)) continue;
 
       const eventFiles = readdirSync(featureEventsPath).filter(
-        (file) => file.endsWith('.ts') || file.endsWith('.js')
+        (file) =>
+          (file.endsWith('.ts') || file.endsWith('.js')) &&
+          !file.startsWith('index.')
       );
 
       for (const file of eventFiles) {

@@ -3,16 +3,19 @@ import {
   createEmbed,
   createErrorEmbed,
   createWarningEmbed,
-} from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
-import { steamClient, formatPlaytimeWithBar } from '../services/steam/index.js';
+} from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
+import {
+  steamClient,
+  formatPlaytimeWithBar,
+} from '../integrations/steam/index.js';
 import { steamUserRepository } from '../repositories/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { env } from '../../../config/index.js';
-import { logger } from '../../../utils/logger.js';
-import { USERS_PER_PAGE } from '../lib/shared.js';
-import { withTimeout } from '../../../utils/timeout.js';
-import { sendPaginatedMessage } from '../../../utils/pagination.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
+import { USERS_PER_PAGE } from '../domain/shared.js';
+import { withTimeout } from '../../../shared/utils/timeout.js';
+import { sendPaginatedMessage } from '../../../shared/utils/pagination.js';
 
 export async function handleRanking(
   interaction: ChatInputCommandInteraction
@@ -37,9 +40,7 @@ export async function handleRanking(
   if (guild.members.cache.size < guild.memberCount * 0.5) {
     await withTimeout(guild.members.fetch({ limit: 1000 }), 10_000).catch(
       (e) => {
-        logger.warn(
-          `guild.members.fetch timed out: ${e instanceof Error ? e.message : e}`
-        );
+        logger.warn(`guild.members.fetch timed out: ${getErrorMessage(e)}`);
       }
     );
   }
@@ -84,9 +85,7 @@ export async function handleRanking(
       steamClient.getPlayerSummaries(batch.map((user) => user.steam_id)),
       10_000
     ).catch((e) => {
-      logger.warn(
-        `getPlayerSummaries timed out: ${e instanceof Error ? e.message : e}`
-      );
+      logger.warn(`getPlayerSummaries timed out: ${getErrorMessage(e)}`);
       return [];
     });
     const summaryBySteamId = new Map(

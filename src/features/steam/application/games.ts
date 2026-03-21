@@ -3,12 +3,15 @@ import {
   createEmbed,
   createErrorEmbed,
   createWarningEmbed,
-} from '../../../utils/embed.js';
-import { COLORS } from '../../../utils/constants/index.js';
-import { steamClient, formatPlaytimeWithBar } from '../services/steam/index.js';
+} from '../../../shared/utils/embed.js';
+import { COLORS } from '../../../shared/utils/constants/index.js';
+import {
+  steamClient,
+  formatPlaytimeWithBar,
+} from '../integrations/steam/index.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
-import { GAMES_PER_PAGE, resolveSteamId } from '../lib/shared.js';
-import { sendPaginatedMessage } from '../../../utils/pagination.js';
+import { GAMES_PER_PAGE, resolveSteamId } from '../domain/shared.js';
+import { sendPaginatedMessage } from '../../../shared/utils/pagination.js';
 
 interface FormattedGame {
   name: string;

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { recordAudio } from '../services/recordingService.js';
+import { recordAudio } from '../recording/recordingService.js';
 
 const mockGetBuffer = vi.hoisted(() => vi.fn());
-vi.mock('../services/audioBuffer.js', () => ({
+vi.mock('../recording/audioBuffer.js', () => ({
   audioBufferManager: {
     getBuffer: mockGetBuffer,
   },
