@@ -19,7 +19,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "cleanup-commands": "tsx src/app-scripts/cleanup-commands.ts"
+    "cleanup-commands": "tsx src/app-scripts/cleanup-commands.ts",
+    "audit:all": "bash scripts/audit-all.sh"
   },
   "keywords": [
     "discord",

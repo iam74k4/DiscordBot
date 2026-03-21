@@ -270,20 +270,21 @@ See [`docs/database.md`](docs/database.md) for schema details and retention beha
 
 ## Available Scripts
 
-| Script                     | Description                          |
-| -------------------------- | ------------------------------------ |
-| `npm run dev`              | Start with hot-reload (development)  |
-| `npm run build`            | Compile TypeScript to JavaScript     |
-| `npm start`                | Run compiled JavaScript (production) |
-| `npm run lint`             | Check code with ESLint               |
-| `npm run lint:fix`         | Fix ESLint errors automatically      |
-| `npm run format`           | Format code with Prettier            |
-| `npm run format:check`     | Check code formatting                |
-| `npm run type-check`       | Check TypeScript types               |
-| `npm test`                 | Run unit tests                       |
-| `npm run test:watch`       | Run tests in watch mode              |
-| `npm run test:coverage`    | Run tests with coverage report       |
-| `npm run cleanup-commands` | Remove registered Discord commands   |
+| Script                     | Description                                                                         |
+| -------------------------- | ----------------------------------------------------------------------------------- |
+| `npm run dev`              | Start with hot-reload (development)                                                 |
+| `npm run build`            | Compile TypeScript to JavaScript                                                    |
+| `npm start`                | Run compiled JavaScript (production)                                                |
+| `npm run lint`             | Check code with ESLint                                                              |
+| `npm run lint:fix`         | Fix ESLint errors automatically                                                     |
+| `npm run format`           | Format code with Prettier                                                           |
+| `npm run format:check`     | Check code formatting                                                               |
+| `npm run type-check`       | Check TypeScript types                                                              |
+| `npm test`                 | Run unit tests                                                                      |
+| `npm run test:watch`       | Run tests in watch mode                                                             |
+| `npm run test:coverage`    | Run tests with coverage report                                                      |
+| `npm run audit:all`        | Run full + production-scoped `npm audit` (see [`docs/quality.md`](docs/quality.md)) |
+| `npm run cleanup-commands` | Remove registered Discord commands                                                  |
 
 ## Project Structure
 

@@ -67,6 +67,12 @@ No manual registration in `features/index.ts` is needed.
 
 All PRs should include tests for new functionality.
 
+## Security maintenance
+
+- Run `npm run audit:all` (or `./scripts/audit-all.sh`) before releases; see [`docs/quality.md`](docs/quality.md) for dependency and `overrides` policy.
+- **Dependabot**: Review weekly PRs labeled `dependencies` for `npm` and `github-actions`. GitHub Action updates use commit SHA pins—merge security-related bumps promptly.
+- **Code scanning**: CodeQL runs on `main` and `develop`; address or triage alerts in the repository **Security** tab.
+
 ## Pull Requests
 
 1. Ensure all checks pass: `npm run lint && npm run type-check && npm test`
