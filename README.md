@@ -179,29 +179,29 @@ npm start
 
 Requires **Manage Server** in the guild (slash command default permission).
 
-| Command                             | Description                       |
-| ----------------------------------- | --------------------------------- |
-| `/admin settings view`              | View current settings             |
-| `/admin settings language <lang>`   | Set server language (ja/en)       |
-| `/admin settings audit [channel]`   | Set audit log channel             |
-| `/admin settings logs`              | View recent audit logs            |
-| `/admin role add`                   | Add a role to a member            |
-| `/admin role remove`                | Remove a role from a member       |
+| Command                           | Description                 |
+| --------------------------------- | --------------------------- |
+| `/admin settings view`            | View current settings       |
+| `/admin settings language <lang>` | Set server language (ja/en) |
+| `/admin settings audit [channel]` | Set audit log channel       |
+| `/admin settings logs`            | View recent audit logs      |
+| `/admin role add`                 | Add a role to a member      |
+| `/admin role remove`              | Remove a role from a member |
 
 ### Bot owner (`/owner`)
 
 Only users listed in `BOT_OWNER_IDS` can run these commands (can be used in DMs with the bot).
 
-| Command                             | Description                       |
-| ----------------------------------- | --------------------------------- |
-| `/owner system stats`               | View bot statistics               |
-| `/owner system db`                  | View database statistics          |
-| `/owner system guilds`              | List servers the bot is in        |
+| Command                             | Description                                  |
+| ----------------------------------- | -------------------------------------------- |
+| `/owner system stats`               | View bot statistics                          |
+| `/owner system db`                  | View database statistics                     |
+| `/owner system guilds`              | List servers the bot is in                   |
 | `/owner system broadcast <message>` | Send message to server owners (capped batch) |
-| `/owner system health`              | View system health status         |
-| `/owner system metrics`             | View bot metrics                  |
-| `/owner backup list`                | List database backups             |
-| `/owner backup run`                 | Run a manual database backup      |
+| `/owner system health`              | View system health status                    |
+| `/owner system metrics`             | View bot metrics                             |
+| `/owner backup list`                | List database backups                        |
+| `/owner backup run`                 | Run a manual database backup                 |
 
 ### GitHub (`/github`)
 
