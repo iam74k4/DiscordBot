@@ -119,8 +119,7 @@ export class MemoryMonitor {
   async getStats(): Promise<MemoryMonitorStats> {
     const connections = connectionManager.getAllConnections();
 
-    const totalBufferSizeMB =
-      channelMixRingManager.getTotalMixBufferSizeMB();
+    const totalBufferSizeMB = channelMixRingManager.getTotalMixBufferSizeMB();
     const diskBufferSizeMB = 0;
 
     // Get process memory usage

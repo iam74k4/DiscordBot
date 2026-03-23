@@ -36,9 +36,9 @@ Examples:
 ## Code Style
 
 - TypeScript strict mode is enforced
-- Run `npm run lint` and `npm run format` before committing
-- Run `npm run type-check` to verify types
-- Use `scripts/validate.sh` for a full pre-push check
+- **Prettier**: Run `npm run format` before committing (or `npm run format:check` to verify). CI fails at **Check formatting** if Prettier output does not match—this step runs before ESLint in [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+- Run `npm run lint` and `npm run type-check`
+- Use `bash scripts/validate.sh` for full CI parity (format check, lint, type-check, test, audit, build)
 
 ## Adding Features
 
@@ -75,7 +75,7 @@ All PRs should include tests for new functionality.
 
 ## Pull Requests
 
-1. Ensure all checks pass: `npm run lint && npm run type-check && npm test`
+1. Ensure all checks pass: `npm run format:check && npm run lint && npm run type-check && npm test` (or `bash scripts/validate.sh`)
 2. Write a clear PR description explaining the change
 3. Reference related issues if applicable
 4. Keep PRs focused — one logical change per PR

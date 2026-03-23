@@ -32,7 +32,6 @@ export async function stop(): Promise<void> {
   for (const [channelId] of connectionManager.getAllConnections()) {
     await connectionManager.disconnect(channelId);
   }
-
 }
 
 export { connectionManager, channelMixRingManager };

@@ -49,7 +49,8 @@ export class ChannelMixRing {
       const g = startGlobal + j;
       if (g < 0) continue;
 
-      const idx = ((g % this.sizeSamples) + this.sizeSamples) % this.sizeSamples;
+      const idx =
+        ((g % this.sizeSamples) + this.sizeSamples) % this.sizeSamples;
       if (this.slotOwner[idx] !== g) {
         this.mix[idx] = 0;
         this.slotOwner[idx] = g;
@@ -67,9 +68,7 @@ export class ChannelMixRing {
       Math.floor(seconds * SAMPLE_RATE),
       this.sizeSamples
     );
-    const endGlobal = Math.floor(
-      (nowMs - this.epochMs) * (SAMPLE_RATE / 1000)
-    );
+    const endGlobal = Math.floor((nowMs - this.epochMs) * (SAMPLE_RATE / 1000));
     const startGlobal = endGlobal - totalSamples;
     const out = Buffer.allocUnsafe(totalSamples * 2);
 
@@ -77,7 +76,8 @@ export class ChannelMixRing {
       const g = startGlobal + j;
       let v = 0;
       if (g >= 0) {
-        const idx = ((g % this.sizeSamples) + this.sizeSamples) % this.sizeSamples;
+        const idx =
+          ((g % this.sizeSamples) + this.sizeSamples) % this.sizeSamples;
         if (this.slotOwner[idx] === g) {
           v = this.mix[idx];
         }
@@ -126,7 +126,11 @@ export class ChannelMixRingManager {
     this.rings.delete(channelId);
   }
 
-  extractLastSeconds(channelId: string, seconds: number, nowMs?: number): Buffer {
+  extractLastSeconds(
+    channelId: string,
+    seconds: number,
+    nowMs?: number
+  ): Buffer {
     const ring = this.rings.get(channelId);
     if (!ring) {
       return Buffer.alloc(0);
