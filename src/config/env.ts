@@ -107,8 +107,16 @@ function validateNumericalConfig(): void {
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  const maxRec = parseNumber(process.env.MAX_RECORDING_DURATION, 300, 'MAX_RECORDING_DURATION');
-  const bufferDur = parseNumber(process.env.AUDIO_BUFFER_DURATION, 600, 'AUDIO_BUFFER_DURATION');
+  const maxRec = parseNumber(
+    process.env.MAX_RECORDING_DURATION,
+    300,
+    'MAX_RECORDING_DURATION'
+  );
+  const bufferDur = parseNumber(
+    process.env.AUDIO_BUFFER_DURATION,
+    600,
+    'AUDIO_BUFFER_DURATION'
+  );
   const memBuf = parseNumber(
     process.env.AUDIO_MEMORY_BUFFER_DURATION,
     120,
@@ -124,7 +132,11 @@ function validateNumericalConfig(): void {
     24,
     'RECORDING_RETENTION_HOURS'
   );
-  const backupDays = parseNumber(process.env.BACKUP_RETENTION_DAYS, 7, 'BACKUP_RETENTION_DAYS');
+  const backupDays = parseNumber(
+    process.env.BACKUP_RETENTION_DAYS,
+    7,
+    'BACKUP_RETENTION_DAYS'
+  );
   const playtimeRetentionDays = parseNumber(
     process.env.PLAYTIME_HISTORY_RETENTION_DAYS,
     365,

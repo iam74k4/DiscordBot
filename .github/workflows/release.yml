@@ -78,3 +78,35 @@ jobs:
             discord-bot-${{ steps.version.outputs.version }}.zip
           generate_release_notes: true
 
+  railway-deploy:
+    name: Deploy to Railway (optional)
+    runs-on: ubuntu-latest
+    needs: build-and-release
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: '22.12.0'
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          if [ -z "${RAILWAY_TOKEN}" ] || [ -z "${RAILWAY_SERVICE_ID}" ]; then
+            echo "Railway deploy skipped (RAILWAY_TOKEN / RAILWAY_SERVICE_ID not configured)."
+            exit 0
+          fi
+          git fetch origin main
+          if ! git merge-base --is-ancestor "${GITHUB_SHA}" origin/main; then
+            echo "Tagged commit is not an ancestor of main; refusing Railway deploy."
+            exit 1
+          fi
+          npx --yes @railway/cli@4.33.0 up --ci --service "${RAILWAY_SERVICE_ID}"
+

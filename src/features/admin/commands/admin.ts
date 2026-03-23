@@ -1,6 +1,13 @@
-import { ChannelType, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
+import {
+  ChannelType,
+  PermissionFlagsBits,
+  SlashCommandBuilder,
+} from 'discord.js';
 import { Command } from '../../../shared/types/index.js';
-import { executeRoleCommand, executeSettingsCommand } from '../application/index.js';
+import {
+  executeRoleCommand,
+  executeSettingsCommand,
+} from '../application/index.js';
 
 export const command: Command = {
   data: new SlashCommandBuilder()
