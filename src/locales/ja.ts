@@ -611,7 +611,10 @@ export const ja: TranslationKeys = {
       durationTooLongDesc: '最大録音時間は{max}秒です。',
       durationExceedsBuffer: 'バッファ範囲外',
       durationExceedsBufferDesc:
-        '指定された期間がバッファ範囲（{buffer}秒）を超えています。',
+        '指定された期間が保持可能な音声ウィンドウ（{buffer}秒）を超えています。',
+      noAudibleAudio: '音声が検出されませんでした',
+      noAudibleAudioDesc:
+        'その期間に十分な音量の音声がありませんでした。マイクに近づくか、より短い時間で試してください。',
       noPermission: '権限不足',
       noPermissionDesc: 'Botがファイルを送信する権限がありません。',
       connectionLimit: '接続数上限',

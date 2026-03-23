@@ -73,7 +73,8 @@ Each feature follows a layered structure:
 ### Voice
 
 - Use the `entersState` + `Promise.race` pattern from `@discordjs/voice` for disconnect handling
-- Always clean up audio buffers when disconnecting (`audioBufferManager.removeBuffer`)
+- On voice disconnect, remove the channel mix ring (`channelMixRingManager.remove`) so PCM state does not leak
+- Legacy `HybridAudioBuffer` / `audioBufferManager` is not used by production `/record`; do not re-wire it without revisiting env and monitoring
 - Respect `MAX_CONCURRENT_VC_CONNECTIONS` limit
 
 ### Services & Features

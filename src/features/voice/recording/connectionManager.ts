@@ -14,13 +14,12 @@ import {
 } from 'discord.js';
 import { Readable } from 'stream';
 import prism from 'prism-media';
-import { env } from '../../../config/index.js';
+import { env, AUDIO } from '../../../config/index.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 import {
   VoiceConnectionInfo,
   VoiceConnectionState,
 } from '../../../shared/types/voice.js';
-import { audioBufferManager } from './audioBuffer.js';
 import { channelMixRingManager } from './channelMixRing.js';
 
 /**
@@ -122,7 +121,7 @@ export class VoiceConnectionManager {
         });
 
         const decoder = new prism.opus.Decoder({
-          rate: 48000,
+          rate: AUDIO.SAMPLE_RATE,
           channels: 2,
           frameSize: 960,
         });
@@ -208,7 +207,6 @@ export class VoiceConnectionManager {
           this.destroyStreamsForChannel(channelId);
           connection.destroy();
           this.connections.delete(channelId);
-          audioBufferManager.removeBuffer(channelId);
           channelMixRingManager.remove(channelId);
           logger.info(`Disconnected from voice channel ${channelId}`);
         }
@@ -265,7 +263,6 @@ export class VoiceConnectionManager {
       info.connection.destroy();
       this.connections.delete(channelId);
 
-      audioBufferManager.removeBuffer(channelId);
       channelMixRingManager.remove(channelId);
 
       logger.info(`Disconnected from voice channel ${channelId}`);
@@ -276,7 +273,6 @@ export class VoiceConnectionManager {
       );
       this.destroyStreamsForChannel(channelId);
       this.connections.delete(channelId);
-      audioBufferManager.removeBuffer(channelId);
       channelMixRingManager.remove(channelId);
     }
   }

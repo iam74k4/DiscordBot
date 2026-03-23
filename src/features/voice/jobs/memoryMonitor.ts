@@ -1,10 +1,7 @@
-import { existsSync } from 'fs';
-import { join } from 'path';
-import { env, MONITORING } from '../../../config/index.js';
+import { MONITORING } from '../../../config/index.js';
 import { logger } from '../../../shared/utils/logger.js';
 import { sendAlert } from '../../../shared/utils/alert.js';
 import { connectionManager } from '../recording/connectionManager.js';
-import { audioBufferManager } from '../recording/audioBuffer.js';
 import { channelMixRingManager } from '../recording/channelMixRing.js';
 import { MemoryMonitorStats } from '../../../shared/types/voice.js';
 
@@ -121,18 +118,10 @@ export class MemoryMonitor {
    */
   async getStats(): Promise<MemoryMonitorStats> {
     const connections = connectionManager.getAllConnections();
-    const bufferStats = await audioBufferManager.getAllStats();
 
-    // Calculate memory usage
-    let totalBufferSizeMB = 0;
-    let diskBufferSizeMB = 0;
-
-    for (const stats of bufferStats.values()) {
-      totalBufferSizeMB += stats.memorySizeMB;
-      diskBufferSizeMB += stats.diskSizeMB;
-    }
-
-    totalBufferSizeMB += channelMixRingManager.getTotalMixBufferSizeMB();
+    const totalBufferSizeMB =
+      channelMixRingManager.getTotalMixBufferSizeMB();
+    const diskBufferSizeMB = 0;
 
     // Get process memory usage
     const processMemoryMB = process.memoryUsage().heapUsed / (1024 * 1024);
@@ -146,20 +135,11 @@ export class MemoryMonitor {
   }
 
   /**
-   * Get disk usage for buffer directory
+   * Legacy HybridAudioBuffer disk spill is unused; always 0.
+   * Extend with directory walk if orphaned `AUDIO_DISK_BUFFER_DIR` data must be tracked.
    */
   async getDiskUsage(): Promise<number> {
-    const bufferDir = join(process.cwd(), env.AUDIO_DISK_BUFFER_DIR);
-    if (!existsSync(bufferDir)) return 0;
-
-    let totalSize = 0;
-    const bufferStats = await audioBufferManager.getAllStats();
-
-    for (const stats of bufferStats.values()) {
-      totalSize += stats.diskSizeMB;
-    }
-
-    return totalSize;
+    return 0;
   }
 }
 

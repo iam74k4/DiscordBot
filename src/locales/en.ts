@@ -611,7 +611,10 @@ export const en: TranslationKeys = {
       durationTooLongDesc: 'Maximum recording duration is {max} seconds.',
       durationExceedsBuffer: 'Duration Exceeds Buffer',
       durationExceedsBufferDesc:
-        'Specified duration exceeds buffer range ({buffer} seconds).',
+        'Specified duration exceeds the retainable audio window ({buffer} seconds).',
+      noAudibleAudio: 'No Audible Audio',
+      noAudibleAudioDesc:
+        'No usable audio was captured in that window. Speak closer to the mic or try a shorter duration.',
       noPermission: 'No Permission',
       noPermissionDesc: 'Bot does not have permission to send files.',
       connectionLimit: 'Connection Limit',

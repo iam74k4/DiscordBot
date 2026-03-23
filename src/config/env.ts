@@ -179,6 +179,8 @@ function validateNumericalConfig(): void {
       `AUDIO_MEMORY_BUFFER_DURATION (${memBuf}) must be <= AUDIO_BUFFER_DURATION (${bufferDur})`
     );
   }
+  // memBuf / disk split above apply to legacy HybridAudioBuffer only; the mix
+  // ring uses AUDIO_BUFFER_DURATION as a single in-memory window.
   if (maxVc <= 0 || maxVc > 100) {
     errors.push('MAX_CONCURRENT_VC_CONNECTIONS must be between 1 and 100');
   }
@@ -285,13 +287,19 @@ export const env = {
     300,
     'MAX_RECORDING_DURATION'
   ),
-  /** Audio buffer duration in seconds (default: 600 = 10 minutes) */
+  /**
+   * Ring buffer length for `/record` (channel mix ring), in seconds
+   * (default: 600 = 10 minutes).
+   */
   AUDIO_BUFFER_DURATION: parseNumber(
     process.env.AUDIO_BUFFER_DURATION,
     600,
     'AUDIO_BUFFER_DURATION'
   ),
-  /** Memory buffer duration in seconds (default: 120 = 2 minutes) */
+  /**
+   * Legacy HybridAudioBuffer (memory segment); unused by production recording.
+   * Kept for compatibility with existing deployments and unit tests.
+   */
   AUDIO_MEMORY_BUFFER_DURATION: parseNumber(
     process.env.AUDIO_MEMORY_BUFFER_DURATION,
     120,
@@ -339,7 +347,10 @@ export const env = {
   RECORDINGS_DIR: normalizeDirPath(
     process.env.RECORDINGS_DIR || 'data/recordings/'
   ),
-  /** Disk buffer directory (default: data/buffers/) */
+  /**
+   * Legacy HybridAudioBuffer disk spill directory (default: data/buffers/).
+   * Production recording does not write here.
+   */
   AUDIO_DISK_BUFFER_DIR: normalizeDirPath(
     process.env.AUDIO_DISK_BUFFER_DIR || 'data/buffers/'
   ),

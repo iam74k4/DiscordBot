@@ -15,6 +15,7 @@ import { connectionManager } from '../recording/connectionManager.js';
 import {
   parseDurationString,
   recordAudio,
+  RecordingNoAudibleAudioError,
 } from '../recording/recordingService.js';
 
 export async function executeRecordCommand(
@@ -252,6 +253,21 @@ export async function executeRecordCommand(
       `Recording completed: ${duration}s from channel ${voiceChannel.name} (${voiceChannel.id}) by ${interaction.user.tag}`
     );
   } catch (error) {
+    if (error instanceof RecordingNoAudibleAudioError) {
+      logger.warn(
+        `Recording had no audible audio for channel ${voiceChannel.id}`
+      );
+      await interaction.editReply({
+        embeds: [
+          createErrorEmbed(
+            t('record.errors.noAudibleAudio', locale),
+            t('record.errors.noAudibleAudioDesc', locale)
+          ),
+        ],
+      });
+      return;
+    }
+
     const rawMessage = getErrorMessage(error);
     logger.error(
       `Recording failed for channel ${voiceChannel.id}:`,

@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { recordAudio } from '../recording/recordingService.js';
+import {
+  recordAudio,
+  pcmBufferHasAudibleSignal,
+  RecordingNoAudibleAudioError,
+} from '../recording/recordingService.js';
 
 const mockExtractLastSeconds = vi.hoisted(() => vi.fn());
 vi.mock('../recording/channelMixRing.js', () => ({
@@ -63,5 +67,27 @@ describe('recordingService', () => {
     ).rejects.toThrow('Recording already in progress');
 
     p1.catch(() => undefined);
+  });
+
+  it('pcmBufferHasAudibleSignal respects threshold', () => {
+    const quiet = Buffer.alloc(4);
+    quiet.writeInt16LE(10, 0);
+    expect(pcmBufferHasAudibleSignal(quiet, 48)).toBe(false);
+    quiet.writeInt16LE(100, 0);
+    expect(pcmBufferHasAudibleSignal(quiet, 48)).toBe(true);
+  });
+
+  it('throws RecordingNoAudibleAudioError when mix output is silent', async () => {
+    const silent = Buffer.alloc(96000);
+    mockExtractLastSeconds.mockReturnValue(silent);
+
+    await expect(
+      recordAudio({
+        channelId: 'ch-silent',
+        duration: 1,
+        userId: 'u1',
+        guildId: 'g1',
+      })
+    ).rejects.toBeInstanceOf(RecordingNoAudibleAudioError);
   });
 });

@@ -62,9 +62,25 @@ function createWAVHeader(dataSize: number): Buffer {
 }
 
 /**
+ * Thrown when the mix window has no samples above the noise threshold.
+ */
+export class RecordingNoAudibleAudioError extends Error {
+  override readonly name = 'RecordingNoAudibleAudioError';
+
+  constructor() {
+    super(
+      'No audible audio in the recording window. Make sure someone is speaking in the voice channel.'
+    );
+  }
+}
+
+/**
  * True if buffer has any sample above a small noise threshold.
  */
-function pcmBufferHasAudibleSignal(buf: Buffer, threshold = 48): boolean {
+export function pcmBufferHasAudibleSignal(
+  buf: Buffer,
+  threshold = 48
+): boolean {
   for (let i = 0; i < buf.length; i += 2) {
     if (Math.abs(buf.readInt16LE(i)) > threshold) {
       return true;
@@ -139,7 +155,7 @@ async function writeWavFile(filePath: string, pcmData: Buffer): Promise<void> {
 }
 
 /**
- * Record audio from buffer
+ * Record audio from the channel time-aligned mix ring.
  */
 export async function recordAudio(
   options: RecordingOptions
@@ -174,9 +190,7 @@ export async function recordAudio(
       );
 
       if (audioData.length === 0 || !pcmBufferHasAudibleSignal(audioData)) {
-        throw new Error(
-          'No audio data in buffer. Make sure someone is speaking in the voice channel.'
-        );
+        throw new RecordingNoAudibleAudioError();
       }
 
       const recordingsDir = join(process.cwd(), env.RECORDINGS_DIR);

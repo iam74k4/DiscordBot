@@ -1,3 +1,10 @@
+/**
+ * Legacy hybrid audio buffer (memory + disk spill).
+ *
+ * Production `/record` uses `channelMixRingManager` only; this module is
+ * kept for unit tests and optional reuse. Do not wire it back into the voice
+ * connection path without revisiting env (`AUDIO_MEMORY_BUFFER_DURATION`, etc.).
+ */
 import { createWriteStream } from 'fs';
 import { readFile, stat, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';

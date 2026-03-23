@@ -652,6 +652,8 @@ export interface TranslationKeys {
       durationTooLongDesc: string;
       durationExceedsBuffer: string;
       durationExceedsBufferDesc: string;
+      noAudibleAudio: string;
+      noAudibleAudioDesc: string;
       noPermission: string;
       noPermissionDesc: string;
       connectionLimit: string;
