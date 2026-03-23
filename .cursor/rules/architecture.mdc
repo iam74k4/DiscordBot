@@ -1,108 +1,131 @@
 ---
-description: Architecture and coding standards for the Discord Bot project
+description: DiscordBot — layout, standards, voice/DB/testing, and CI (Prettier-first)
 alwaysApply: true
 ---
 
-# Architecture Rules
+# DiscordBot — project rules
 
-## Project Structure
+Architecture, coding standards, and CI expectations for this repository.
 
-Feature-based architecture with auto-discovery. Each feature is self-contained under `src/features/`.
+---
 
-- `src/features/` — Feature modules (auto-discovered at startup)
-  - `src/features/steam/` — Steam integration (profile, games, playtime, notifications)
-  - `src/features/voice/` — Voice recording
-  - `src/features/poll/` — Poll system
-  - `src/features/admin/` — Admin commands (`/admin` server settings, `/owner` bot owner tools)
-  - `src/features/general/` — General commands (ping, help)
-  - `src/features/github/` — GitHub integration
-  - `src/features/notification/` — Join/voice notifications
-  - `src/features/community/` — Community commands (roulette)
-- `src/events/` — Core event handlers (ready, interactionCreate)
-- `src/infrastructure/` — Shared runtime infrastructure only
-  - `src/infrastructure/database/` — Connection, transactions, migrations (NO business logic)
-  - `src/infrastructure/backup/` — Scheduled database backups
-  - `src/infrastructure/health/` — Health check service
-  - `src/infrastructure/metrics/` — In-memory metrics
-  - `src/infrastructure/audit/` — Audit log delivery/orchestration
-- `src/shared/` — Cross-feature shared code
-  - `src/shared/utils/` — Pure utilities (logger, embed, chart, retry, etc.)
-  - `src/shared/types/` — TypeScript type definitions
-  - `src/shared/help/catalog.ts` — Shared help catalog types/state
-- `src/handlers/` — Auto-loaders for commands and events
+## Project structure
+
+Feature-based layout with auto-discovery. Each feature lives under `src/features/`.
+
+- **`src/features/`** — Feature modules (auto-discovered at startup)
+  - `steam/` — Steam integration (profile, games, playtime, notifications)
+  - `voice/` — Voice recording (mix ring + `/record`)
+  - `poll/` — Poll system
+  - `admin/` — Admin commands (`/admin`, `/owner`)
+  - `general/` — General commands (ping, help)
+  - `github/` — GitHub integration
+  - `notification/` — Join/voice notifications
+  - `community/` — Community commands (roulette)
+- **`src/events/`** — Core event handlers (e.g. ready, interactionCreate)
+- **`src/handlers/`** — Auto-loaders for commands and events
+- **`src/middleware/`** — Pre-execution checks (cooldown, permissions)
+- **`src/infrastructure/`** — Shared runtime infrastructure only
+  - `database/` — Connection, transactions, migrations (no business logic)
+  - `backup/` — Scheduled backups
+  - `health/` — Health checks
+  - `metrics/` — In-memory metrics
+  - `audit/` — Audit log delivery
+- **`src/shared/`** — Cross-feature code (`utils/`, `types/`, `help/catalog.ts`)
+- **`src/config/`** — Environment config, validation, constants
+- **`src/locales/`** — i18n (`en`, `ja`)
+- **`src/app-scripts/`** — One-off utility scripts
+- **`scripts/`** — Repo workflow shell scripts (`validate.sh`, etc.)
 
 ### Discord event registration order
 
-`loadEvents` registers handlers from `src/events/<category>/` first, then `src/features/*/events/` in **filesystem order** (feature folder name order). For `Events.InteractionCreate`, the core handler in `src/events/interaction/interactionCreate.ts` runs as the primary router for slash commands; feature-level `interactionCreate` modules must not assume they run first. Prefer extending behavior via the core handler or document ordering if a feature must register the same event name.
-- `src/middleware/` — Pre-execution checks
-  - `src/middleware/cooldown/` — Cooldown middleware + store
-  - `src/middleware/permissions.ts` — Permission checks
-- `src/config/` — Environment config, validation, and constants
-- `src/locales/` — i18n translations (en, ja)
-- `src/app-scripts/` — Utility scripts
-- `scripts/` — Repository workflow shell scripts
+`loadEvents` registers `src/events/<category>/` first, then `src/features/*/events/` in **filesystem order** (feature folder name order). For `Events.InteractionCreate`, the core router is `src/events/interaction/interactionCreate.ts`. Feature-level `interactionCreate` handlers must not assume they run first; extend via the core handler or document ordering if the same event name is required.
 
-## Layer Architecture
+---
 
-Each feature follows a layered structure:
-- `commands/` — Slash command definitions (presentation layer, auto-loaded)
-- `application/` — Business logic handlers (application layer)
-- `repositories/` — Database access with real SQL queries (persistence layer)
-- supporting runtime folders — Prefer explicit names such as `integrations/`, `jobs/`, `recording/`, or `tracking/`; use `services/` only when no clearer boundary exists
+## Layer architecture (per feature)
 
-`infrastructure/database/` is pure infrastructure: connection, transactions, and migrations only. All SQL queries live in feature repositories.
+- `commands/` — Slash definitions (presentation, auto-loaded)
+- `application/` — Business logic
+- `repositories/` — SQL / persistence (prepared statements)
+- Supporting folders — Prefer `integrations/`, `jobs/`, `recording/`, `tracking/`; use `services/` only when no clearer boundary exists
 
-## Coding Standards
+`infrastructure/database/` is connection, transactions, and migrations only. **All SQL lives in feature `repositories/`,** not under `infrastructure/database/`.
 
-### Error Handling
+---
 
-- Always wrap command/event execution in try-catch
-- Log errors with `logger.error()` — never use empty catch blocks
-- Use `error instanceof Error ? error.message : error` pattern for safe logging
-- Commands should reply with user-friendly error embeds, not raw error messages
-- Use `process.on('unhandledRejection')` and `process.on('uncaughtException')` at the top level
+## Coding standards
+
+### Error handling
+
+- Wrap command/event execution in try-catch
+- Log with `logger.error()` — no empty catch blocks
+- Use `error instanceof Error ? error.message : error` for safe logging
+- Reply with user-friendly error embeds, not raw stack traces
+- Top-level `process.on('unhandledRejection')` and `process.on('uncaughtException')` are in use — preserve that pattern
 
 ### Database
 
-- Use prepared statements for all queries (enforced by better-sqlite3)
-- Use `runTransaction()` for operations that modify multiple tables
-- Table names in dynamic queries must be validated against allowlists
-- All table creation goes in `infrastructure/database/migrations/`
-- SQL queries belong in feature `repositories/`, NOT in `infrastructure/database/`
+- Prepared statements only (better-sqlite3)
+- `runTransaction()` for multi-table writes
+- Dynamic table names: allowlist validation
+- New tables: `infrastructure/database/migrations/`
 
 ### Voice
 
-- Use the `entersState` + `Promise.race` pattern from `@discordjs/voice` for disconnect handling
-- On voice disconnect, remove the channel mix ring (`channelMixRingManager.remove`) so PCM state does not leak
-- Legacy `HybridAudioBuffer` / `audioBufferManager` is not used by production `/record`; do not re-wire it without revisiting env and monitoring
-- Respect `MAX_CONCURRENT_VC_CONNECTIONS` limit
+- Disconnect handling: `entersState` + `Promise.race` (`@discordjs/voice`)
+- On voice disconnect: `channelMixRingManager.remove` so PCM state does not leak
+- Production `/record` does **not** use `HybridAudioBuffer` / `audioBufferManager`; do not re-wire without revisiting env and monitoring
+- Respect `MAX_CONCURRENT_VC_CONNECTIONS`
 
-### Services & Features
+### Services and features
 
-- Follow singleton pattern for service instances (export `const instance = new Service()`)
-- Each feature module exports `{ name, start, stop }` from its `index.ts`
-- Features are auto-discovered — no manual registration needed
-- `startAllFeatures()` / `stopAllFeatures()` handle per-feature error isolation
-- Health status is automatically tracked for each feature
+- Singleton services: `export const instance = new Service()`
+- Each feature exports `{ name, start, stop }` from `index.ts`
+- No manual registration in a central feature list — auto-discovery
+- `startAllFeatures()` / `stopAllFeatures()` isolate per-feature failures
+- Health tracks each feature automatically
 
 ### Localization
 
-- Use `t(key, locale, params?)` for user-facing text
-- Map Discord locales with `mapDiscordLocale(interaction.locale)`
-- Add translations to both `en.ts` and `ja.ts`
+- `t(key, locale, params?)` for user-visible strings
+- `mapDiscordLocale(interaction.locale)` for Discord locale → catalog
+- Add keys to both `en.ts` and `ja.ts`
 
 ### Testing
 
-- Colocate tests with features: `features/<name>/__tests__/`
-- Shared test helpers in `src/__tests__/helpers/`
-- Shared utility tests may live under `src/shared/**/__tests__/`
-- Infrastructure tests may live under `src/infrastructure/**/__tests__/`
-- Integration tests in `src/__tests__/integration/`
-- Use vitest with `vi.mock()` for module mocking
-- Import mock Discord objects from `__tests__/helpers/discord.ts`
+- Colocate: `features/<name>/__tests__/`
+- Helpers: `src/__tests__/helpers/` (e.g. `discord.ts`)
+- Shared utils: `src/shared/**/__tests__/`
+- Infrastructure: `src/infrastructure/**/__tests__/`
+- Integration: `src/__tests__/integration/`
+- Vitest + `vi.mock()`; mock Discord objects from helpers
 
 ### File I/O
 
-- Prefer `fs/promises` (async) over `fs` sync methods in async contexts
-- Use `createWriteStream` for large file writes
-- Sync methods (`existsSync`, `mkdirSync`) are acceptable only in constructors and module-level initialization
+- Prefer `fs/promises` in async code
+- `createWriteStream` for large writes
+- Sync `existsSync` / `mkdirSync` only in constructors or module init
+
+---
+
+## CI and quality gates
+
+GitHub Actions (`.github/workflows/ci.yml`) runs in order:
+
+1. **`npm run format:check`** (Prettier) — fails first if formatting drifts
+2. `npm run lint`
+3. `npm run type-check`
+4. `npm run test`
+5. `npm audit` (high threshold for prod deps)
+6. `npm run build`
+
+**Prettier scope** (see `package.json`): `src/**/*.ts`, `docs/**/*.md`, `README.md`, `CONTRIBUTING.md`.
+
+**Before push or finishing a change:** run `npm run format` (or `format:check`) when touching those paths; then lint, type-check, and tests. Full local parity:
+
+```bash
+bash scripts/validate.sh
+```
+
+Human-oriented detail: [CONTRIBUTING.md](CONTRIBUTING.md).

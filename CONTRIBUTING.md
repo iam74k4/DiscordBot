@@ -36,6 +36,7 @@ Examples:
 ## Code Style
 
 - TypeScript strict mode is enforced
+- **Cursor / AI**: Project conventions and CI order live in [`.cursor/rules/architecture.mdc`](.cursor/rules/architecture.mdc).
 - **Prettier**: Run `npm run format` before committing (or `npm run format:check` to verify). CI fails at **Check formatting** if Prettier output does not match—this step runs before ESLint in [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 - Run `npm run lint` and `npm run type-check`
 - Use `bash scripts/validate.sh` for full CI parity (format check, lint, type-check, test, audit, build)
