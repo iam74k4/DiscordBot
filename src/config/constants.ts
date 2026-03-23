@@ -18,8 +18,8 @@ const pkg = require('../../package.json') as { version?: string };
  * Changing these breaks WAV file compatibility and existing recordings.
  */
 export const AUDIO = {
-  /** Sample rate in Hz (32 kHz – good balance of quality and file size) */
-  SAMPLE_RATE: 32000,
+  /** Sample rate in Hz (48 kHz – matches Discord voice decode; WAV output) */
+  SAMPLE_RATE: 48000,
   /** Bit depth (16-bit PCM) */
   BIT_DEPTH: 16,
   /** Channel count (1 = mono) */

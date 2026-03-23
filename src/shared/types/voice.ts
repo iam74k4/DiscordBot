@@ -22,7 +22,7 @@ export interface AudioBufferConfig {
   diskBufferDuration: number;
   /** Total buffer duration in seconds (default: 600 = 10 minutes) */
   totalBufferDuration: number;
-  /** Sample rate in Hz (default: 32000) */
+  /** Sample rate in Hz (default: 48000, mono PCM from voice pipeline) */
   sampleRate: number;
   /** Bit depth (default: 16) */
   bitDepth: number;

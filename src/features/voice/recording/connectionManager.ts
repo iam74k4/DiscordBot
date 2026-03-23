@@ -21,6 +21,7 @@ import {
   VoiceConnectionState,
 } from '../../../shared/types/voice.js';
 import { audioBufferManager } from './audioBuffer.js';
+import { channelMixRingManager } from './channelMixRing.js';
 
 /**
  * Voice connection manager
@@ -111,12 +112,12 @@ export class VoiceConnectionManager {
           `Speaking started for user ${userId} in channel ${channelId}`
         );
 
-        const buffer = audioBufferManager.getBuffer(channelId);
+        const mixRing = channelMixRingManager.getOrCreate(channelId);
 
         const opusStream = connection.receiver.subscribe(userId, {
           end: {
             behavior: EndBehaviorType.AfterSilence,
-            duration: 1000,
+            duration: 1500,
           },
         });
 
@@ -165,8 +166,7 @@ export class VoiceConnectionManager {
             monoChunk.writeInt16LE(mono, i * 2);
           }
 
-          const duration = (monoChunk.length / (48000 * 2)) * 1000;
-          buffer.addChunk(monoChunk, duration);
+          mixRing.addMonoPcmInt16(monoChunk, Date.now());
         });
 
         pcmStream.on('error', (error) => {
@@ -209,6 +209,7 @@ export class VoiceConnectionManager {
           connection.destroy();
           this.connections.delete(channelId);
           audioBufferManager.removeBuffer(channelId);
+          channelMixRingManager.remove(channelId);
           logger.info(`Disconnected from voice channel ${channelId}`);
         }
       });
@@ -233,6 +234,8 @@ export class VoiceConnectionManager {
       };
 
       this.connections.set(channelId, info);
+
+      channelMixRingManager.getOrCreate(channelId).setEpoch(Date.now());
 
       logger.info(
         `Connecting to voice channel ${channel.name} (${channelId}) in guild ${guild.name}`
@@ -263,6 +266,7 @@ export class VoiceConnectionManager {
       this.connections.delete(channelId);
 
       audioBufferManager.removeBuffer(channelId);
+      channelMixRingManager.remove(channelId);
 
       logger.info(`Disconnected from voice channel ${channelId}`);
     } catch (error) {
@@ -273,6 +277,7 @@ export class VoiceConnectionManager {
       this.destroyStreamsForChannel(channelId);
       this.connections.delete(channelId);
       audioBufferManager.removeBuffer(channelId);
+      channelMixRingManager.remove(channelId);
     }
   }
 

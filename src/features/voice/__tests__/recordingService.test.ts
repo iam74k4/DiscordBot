@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { recordAudio } from '../recording/recordingService.js';
 
-const mockGetBuffer = vi.hoisted(() => vi.fn());
-vi.mock('../recording/audioBuffer.js', () => ({
-  audioBufferManager: {
-    getBuffer: mockGetBuffer,
+const mockExtractLastSeconds = vi.hoisted(() => vi.fn());
+vi.mock('../recording/channelMixRing.js', () => ({
+  channelMixRingManager: {
+    extractLastSeconds: mockExtractLastSeconds,
   },
 }));
 
@@ -27,9 +27,7 @@ vi.mock('fs', () => ({
 describe('recordingService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetBuffer.mockReturnValue({
-      getAudioData: vi.fn().mockResolvedValue(Buffer.alloc(0)),
-    });
+    mockExtractLastSeconds.mockReturnValue(Buffer.alloc(0));
   });
 
   it('throws for duration <= 0', async () => {
@@ -44,9 +42,9 @@ describe('recordingService', () => {
   });
 
   it('throws when recording already in progress', async () => {
-    mockGetBuffer.mockReturnValue({
-      getAudioData: () => new Promise(() => {}),
-    });
+    mockExtractLastSeconds.mockImplementation(
+      () => new Promise<Buffer>(() => {})
+    );
 
     const p1 = recordAudio({
       channelId: 'ch1',

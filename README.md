@@ -261,7 +261,7 @@ Only users listed in `BOT_OWNER_IDS` can run these commands (can be used in DMs 
 
 - Auto-join: Bot automatically joins voice channels when users enter
 - Hybrid buffering: Stores 10 minutes of audio (2 min in memory, 8 min on disk)
-- WAV format output at 32kHz/16bit/mono (~18.3MB for 5 minutes)
+- WAV format output at 48kHz/16bit/mono (~27.5MB for 5 minutes)
 - Private delivery: Recording responses and files are sent ephemerally
 - Automatic file cleanup after `RECORDING_RETENTION_HOURS` (default: 24 hours)
 - Memory monitoring with automatic disconnection when threshold exceeded

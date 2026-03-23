@@ -3,6 +3,7 @@ import './helpCatalog.js';
 import { memoryMonitor } from './jobs/memoryMonitor.js';
 import { fileCleanupService } from './jobs/fileCleanup.js';
 import { audioBufferManager } from './recording/audioBuffer.js';
+import { channelMixRingManager } from './recording/channelMixRing.js';
 import { connectionManager } from './recording/connectionManager.js';
 import { setServiceStatus } from '../../infrastructure/health/index.js';
 
@@ -38,4 +39,4 @@ export async function stop(): Promise<void> {
   audioBufferManager.stopCleanup();
 }
 
-export { connectionManager, audioBufferManager };
+export { connectionManager, audioBufferManager, channelMixRingManager };

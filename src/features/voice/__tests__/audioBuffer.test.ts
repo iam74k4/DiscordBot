@@ -23,7 +23,7 @@ const config = {
   memoryBufferDuration: 10,
   diskBufferDuration: 90,
   totalBufferDuration: 100,
-  sampleRate: 32000,
+  sampleRate: 48000,
   bitDepth: 16,
   channels: 1,
   diskBufferDir: '/tmp/test-buffers',
@@ -36,7 +36,7 @@ describe('HybridAudioBuffer', () => {
 
   it('stores chunks in memory when under duration', async () => {
     const buffer = new HybridAudioBuffer('test-channel', config);
-    const bytesPerSecond = 64000;
+    const bytesPerSecond = 96000;
     const chunkDurationMs = 1000;
 
     for (let i = 0; i < 5; i++) {
@@ -49,7 +49,7 @@ describe('HybridAudioBuffer', () => {
 
   it('clear removes all data', async () => {
     const buffer = new HybridAudioBuffer('test-channel', config);
-    const bytesPerSecond = 64000;
+    const bytesPerSecond = 96000;
 
     buffer.addChunk(Buffer.alloc(bytesPerSecond), 1000);
     buffer.clear();
@@ -60,7 +60,7 @@ describe('HybridAudioBuffer', () => {
 
   it('getStats returns correct structure', async () => {
     const buffer = new HybridAudioBuffer('test-channel', config);
-    buffer.addChunk(Buffer.alloc(64000), 1000);
+    buffer.addChunk(Buffer.alloc(96000), 1000);
 
     const stats = await buffer.getStats();
     expect(stats).toHaveProperty('memoryChunks');

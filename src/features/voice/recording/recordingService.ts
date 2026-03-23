@@ -2,7 +2,7 @@ import { createWriteStream } from 'fs';
 import { stat, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { env, AUDIO, DISCORD_LIMITS } from '../../../config/index.js';
-import { audioBufferManager } from './audioBuffer.js';
+import { channelMixRingManager } from './channelMixRing.js';
 import {
   RecordingOptions,
   RecordingResult,
@@ -62,33 +62,15 @@ function createWAVHeader(dataSize: number): Buffer {
 }
 
 /**
- * Resample audio data from 48kHz to 32kHz using linear interpolation
+ * True if buffer has any sample above a small noise threshold.
  */
-function resampleAudio(
-  inputBuffer: Buffer,
-  inputSampleRate: number,
-  outputSampleRate: number
-): Buffer {
-  const inputLength = inputBuffer.length / 2; // 16-bit samples
-  const ratio = inputSampleRate / outputSampleRate;
-  const outputLength = Math.floor(inputLength / ratio);
-  const output = Buffer.allocUnsafe(outputLength * 2);
-
-  for (let i = 0; i < outputLength; i++) {
-    const srcIndex = i * ratio;
-    const srcIndexFloor = Math.floor(srcIndex);
-    const srcIndexCeil = Math.min(srcIndexFloor + 1, inputLength - 1);
-    const fraction = srcIndex - srcIndexFloor;
-
-    // Linear interpolation
-    const sample1 = inputBuffer.readInt16LE(srcIndexFloor * 2);
-    const sample2 = inputBuffer.readInt16LE(srcIndexCeil * 2);
-    const interpolated = Math.round(sample1 + (sample2 - sample1) * fraction);
-
-    output.writeInt16LE(interpolated, i * 2);
+function pcmBufferHasAudibleSignal(buf: Buffer, threshold = 48): boolean {
+  for (let i = 0; i < buf.length; i += 2) {
+    if (Math.abs(buf.readInt16LE(i)) > threshold) {
+      return true;
+    }
   }
-
-  return output;
+  return false;
 }
 
 /**
@@ -186,26 +168,26 @@ export async function recordAudio(
 
   const recordingPromise = (async (): Promise<RecordingResult> => {
     try {
-      const buffer = audioBufferManager.getBuffer(channelId);
-      const audioData = await buffer.getAudioData(duration);
+      const audioData = channelMixRingManager.extractLastSeconds(
+        channelId,
+        duration
+      );
 
-      if (audioData.length === 0) {
+      if (audioData.length === 0 || !pcmBufferHasAudibleSignal(audioData)) {
         throw new Error(
           'No audio data in buffer. Make sure someone is speaking in the voice channel.'
         );
       }
 
-      const resampledData = resampleAudio(audioData, 48000, AUDIO.SAMPLE_RATE);
-
       const recordingsDir = join(process.cwd(), env.RECORDINGS_DIR);
       await mkdir(recordingsDir, { recursive: true });
 
-      const estimatedSize = resampledData.length + 44;
+      const estimatedSize = audioData.length + 44;
       const maxSize = DISCORD_LIMITS.MAX_FILE_SIZE_MB * 1024 * 1024;
 
       if (shouldSplitFile(estimatedSize)) {
         const splitSize = Math.floor(maxSize * 0.9);
-        const parts = splitAudioBuffer(resampledData, splitSize);
+        const parts = splitAudioBuffer(audioData, splitSize);
         const filePaths: string[] = [];
 
         for (let i = 0; i < parts.length; i++) {
@@ -229,7 +211,7 @@ export async function recordAudio(
       } else {
         const fileName = generateFileName(duration);
         const filePath = join(recordingsDir, fileName);
-        await writeWavFile(filePath, resampledData);
+        await writeWavFile(filePath, audioData);
 
         const fileStats = await stat(filePath);
 

@@ -5,6 +5,7 @@ import { logger } from '../../../shared/utils/logger.js';
 import { sendAlert } from '../../../shared/utils/alert.js';
 import { connectionManager } from '../recording/connectionManager.js';
 import { audioBufferManager } from '../recording/audioBuffer.js';
+import { channelMixRingManager } from '../recording/channelMixRing.js';
 import { MemoryMonitorStats } from '../../../shared/types/voice.js';
 
 /**
@@ -130,6 +131,8 @@ export class MemoryMonitor {
       totalBufferSizeMB += stats.memorySizeMB;
       diskBufferSizeMB += stats.diskSizeMB;
     }
+
+    totalBufferSizeMB += channelMixRingManager.getTotalMixBufferSizeMB();
 
     // Get process memory usage
     const processMemoryMB = process.memoryUsage().heapUsed / (1024 * 1024);
