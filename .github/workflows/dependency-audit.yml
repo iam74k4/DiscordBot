@@ -1,0 +1,46 @@
+name: Dependency Audit
+
+on:
+  schedule:
+    - cron: '0 20 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-tree-audit:
+    name: Full-tree npm audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: '22.12.0'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full-tree audit
+        id: audit
+        continue-on-error: true
+        run: npm audit --json > npm-audit-full.json
+
+      - name: Upload audit artifact
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        if: always()
+        with:
+          name: npm-audit-full
+          path: npm-audit-full.json
+          if-no-files-found: error
+
+      - name: Warn on audit findings
+        if: steps.audit.outcome == 'failure'
+        run: |
+          echo "npm audit reported dependency advisories."
+          echo "Review the uploaded npm-audit-full artifact and remediate or document exceptions."

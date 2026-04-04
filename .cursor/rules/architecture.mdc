@@ -1,0 +1,131 @@
+---
+description: DiscordBot — layout, standards, voice/DB/testing, and CI (Prettier-first)
+alwaysApply: true
+---
+
+# DiscordBot — project rules
+
+Architecture, coding standards, and CI expectations for this repository.
+
+---
+
+## Project structure
+
+Feature-based layout with auto-discovery. Each feature lives under `src/features/`.
+
+- **`src/features/`** — Feature modules (auto-discovered at startup)
+  - `steam/` — Steam integration (profile, games, playtime, notifications)
+  - `voice/` — Voice recording (mix ring + `/record`)
+  - `poll/` — Poll system
+  - `admin/` — Admin commands (`/admin`, `/owner`)
+  - `general/` — General commands (ping, help)
+  - `github/` — GitHub integration
+  - `notification/` — Join/voice notifications
+  - `community/` — Community commands (roulette)
+- **`src/events/`** — Core event handlers (e.g. ready, interactionCreate)
+- **`src/handlers/`** — Auto-loaders for commands and events
+- **`src/middleware/`** — Pre-execution checks (cooldown, permissions)
+- **`src/infrastructure/`** — Shared runtime infrastructure only
+  - `database/` — Connection, transactions, migrations (no business logic)
+  - `backup/` — Scheduled backups
+  - `health/` — Health checks
+  - `metrics/` — In-memory metrics
+  - `audit/` — Audit log delivery
+- **`src/shared/`** — Cross-feature code (`utils/`, `types/`, `help/catalog.ts`)
+- **`src/config/`** — Environment config, validation, constants
+- **`src/locales/`** — i18n (`en`, `ja`)
+- **`src/app-scripts/`** — One-off utility scripts
+- **`scripts/`** — Repo workflow shell scripts (`validate.sh`, etc.)
+
+### Discord event registration order
+
+`loadEvents` registers `src/events/<category>/` first, then `src/features/*/events/` in **filesystem order** (feature folder name order). For `Events.InteractionCreate`, the core router is `src/events/interaction/interactionCreate.ts`. Feature-level `interactionCreate` handlers must not assume they run first; extend via the core handler or document ordering if the same event name is required.
+
+---
+
+## Layer architecture (per feature)
+
+- `commands/` — Slash definitions (presentation, auto-loaded)
+- `application/` — Business logic
+- `repositories/` — SQL / persistence (prepared statements)
+- Supporting folders — Prefer `integrations/`, `jobs/`, `recording/`, `tracking/`; use `services/` only when no clearer boundary exists
+
+`infrastructure/database/` is connection, transactions, and migrations only. **All SQL lives in feature `repositories/`,** not under `infrastructure/database/`.
+
+---
+
+## Coding standards
+
+### Error handling
+
+- Wrap command/event execution in try-catch
+- Log with `logger.error()` — no empty catch blocks
+- Use `error instanceof Error ? error.message : error` for safe logging
+- Reply with user-friendly error embeds, not raw stack traces
+- Top-level `process.on('unhandledRejection')` and `process.on('uncaughtException')` are in use — preserve that pattern
+
+### Database
+
+- Prepared statements only (better-sqlite3)
+- `runTransaction()` for multi-table writes
+- Dynamic table names: allowlist validation
+- New tables: `infrastructure/database/migrations/`
+
+### Voice
+
+- Disconnect handling: `entersState` + `Promise.race` (`@discordjs/voice`)
+- On voice disconnect: `channelMixRingManager.remove` so PCM state does not leak
+- Production `/record` does **not** use `HybridAudioBuffer` / `audioBufferManager`; do not re-wire without revisiting env and monitoring
+- Respect `MAX_CONCURRENT_VC_CONNECTIONS`
+
+### Services and features
+
+- Singleton services: `export const instance = new Service()`
+- Each feature exports `{ name, start, stop }` from `index.ts`
+- No manual registration in a central feature list — auto-discovery
+- `startAllFeatures()` / `stopAllFeatures()` isolate per-feature failures
+- Health tracks each feature automatically
+
+### Localization
+
+- `t(key, locale, params?)` for user-visible strings
+- `mapDiscordLocale(interaction.locale)` for Discord locale → catalog
+- Add keys to both `en.ts` and `ja.ts`
+
+### Testing
+
+- Colocate: `features/<name>/__tests__/`
+- Helpers: `src/__tests__/helpers/` (e.g. `discord.ts`)
+- Shared utils: `src/shared/**/__tests__/`
+- Infrastructure: `src/infrastructure/**/__tests__/`
+- Integration: `src/__tests__/integration/`
+- Vitest + `vi.mock()`; mock Discord objects from helpers
+
+### File I/O
+
+- Prefer `fs/promises` in async code
+- `createWriteStream` for large writes
+- Sync `existsSync` / `mkdirSync` only in constructors or module init
+
+---
+
+## CI and quality gates
+
+GitHub Actions (`.github/workflows/ci.yml`) runs in order:
+
+1. **`npm run format:check`** (Prettier) — fails first if formatting drifts
+2. `npm run lint`
+3. `npm run type-check`
+4. `npm run test`
+5. `npm audit` (high threshold for prod deps)
+6. `npm run build`
+
+**Prettier scope** (see `package.json`): `src/**/*.ts`, `docs/**/*.md`, `README.md`, `CONTRIBUTING.md`.
+
+**Before push or finishing a change:** run `npm run format` (or `format:check`) when touching those paths; then lint, type-check, and tests. Full local parity:
+
+```bash
+bash scripts/validate.sh
+```
+
+Human-oriented detail: [CONTRIBUTING.md](CONTRIBUTING.md).

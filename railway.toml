@@ -1,0 +1,12 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npm start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# Volume: mount path = /app/data
+# Create a volume in the Railway dashboard and set mount path to /app/data.
+# This persists data/ (database, recordings, buffers, backups) across deploys.
+
