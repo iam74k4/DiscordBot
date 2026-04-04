@@ -17,7 +17,7 @@ import {
   type CommandInfo,
   type PermissionLevel,
 } from '../../../shared/help/catalog.js';
-import { env, isBotOwner } from '../../../config/env.js';
+import { isBotOwner } from '../../../config/env.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 
 interface PermissionContext {
@@ -36,22 +36,10 @@ function getPermissionContext(
   };
 }
 
-function isGitHubHelpVisibleForContext(ctx: PermissionContext): boolean {
-  if (isBotOwner(ctx.userId)) {
-    return true;
-  }
-
-  return env.GITHUB_ALLOWED_REPOS.length > 0;
-}
-
 export function canUserSeeCommandWithContext(
   cmd: CommandInfo,
   ctx: PermissionContext
 ): boolean {
-  if (cmd.name === 'github' && !isGitHubHelpVisibleForContext(ctx)) {
-    return false;
-  }
-
   const perm = cmd.requiredPermission;
   if (!perm || perm === 'everyone') return true;
 

@@ -21,7 +21,6 @@ describe('command taxonomy', () => {
         'voice',
         'admin',
         'owner',
-        'github',
       ])
     );
     expect(names).not.toEqual(

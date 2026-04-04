@@ -22,31 +22,6 @@ function parseOwnerIds(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
-function normalizeAllowedRepo(repo: string, envKey: string): string {
-  const trimmed = repo.trim();
-  if (!trimmed) {
-    throw new Error(`${envKey} contains an empty repository entry`);
-  }
-  const parts = trimmed.split('/');
-  if (parts.length !== 2 || !parts[0] || !parts[1]) {
-    throw new Error(
-      `${envKey} must use comma-separated owner/name entries. Invalid value: "${trimmed}"`
-    );
-  }
-  return `${parts[0].toLowerCase()}/${parts[1].toLowerCase()}`;
-}
-
-function parseAllowedRepos(value: string | undefined): string[] {
-  if (!value) return [];
-  return [
-    ...new Set(
-      value
-        .split(',')
-        .map((repo) => normalizeAllowedRepo(repo, 'GITHUB_ALLOWED_REPOS'))
-    ),
-  ];
-}
-
 function isWithinWorkspaceRoot(baseDir: string, targetPath: string): boolean {
   const relativePath = relative(baseDir, targetPath);
   return (
@@ -138,11 +113,6 @@ function validateEnv(): void {
   if (!process.env.STEAM_API_KEY) {
     logger.warn(
       'STEAM_API_KEY is not set. Steam-related commands will not work.'
-    );
-  }
-  if (!process.env.GITHUB_TOKEN) {
-    logger.warn(
-      'GITHUB_TOKEN is not set. GitHub-related commands will not work.'
     );
   }
 
@@ -306,7 +276,6 @@ validateEnv();
 validateNumericalConfig();
 validateBotOwnerIds();
 
-const githubAllowedRepos = parseAllowedRepos(process.env.GITHUB_ALLOWED_REPOS);
 const dataDir = validateWorkspacePath(
   process.env.DATA_DIR || 'data/',
   'DATA_DIR',
@@ -355,12 +324,6 @@ export const env = {
     8,
     'STEAM_RANKING_BATCH_SIZE'
   ),
-
-  /** GitHub Personal Access Token (optional — GitHub commands require this) */
-  GITHUB_TOKEN: process.env.GITHUB_TOKEN || '',
-
-  /** GitHub repositories that non-owners may access via `/github` */
-  GITHUB_ALLOWED_REPOS: githubAllowedRepos,
 
   /** Bot owner IDs (comma-separated) */
   BOT_OWNER_IDS: parseOwnerIds(process.env.BOT_OWNER_IDS),

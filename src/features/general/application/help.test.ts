@@ -56,9 +56,9 @@ afterEach(() => {
 });
 
 describe('canUserSeeCommandWithContext', () => {
-  const githubCommand: CommandInfo = {
-    name: 'github',
-    description: { en: 'GitHub', ja: 'GitHub' },
+  const adminCommand: CommandInfo = {
+    name: 'admin',
+    description: { en: 'Admin', ja: '管理' },
     requiredPermission: ['manageGuild', 'owner'],
   };
 
@@ -66,25 +66,11 @@ describe('canUserSeeCommandWithContext', () => {
     permissions: new PermissionsBitField(PermissionsBitField.Flags.ManageGuild),
   };
 
-  it('hides github help from non-owners when no allowlist is configured', async () => {
+  it('shows commands to members with required guild permissions', async () => {
     const { canUserSeeCommandWithContext } = await loadHelpModule();
 
     expect(
-      canUserSeeCommandWithContext(githubCommand, {
-        userId: 'member-1',
-        guild: { id: 'guild-1' },
-        member: memberWithManageGuild,
-      })
-    ).toBe(false);
-  });
-
-  it('shows github help to non-owners when an allowlist is configured', async () => {
-    const { canUserSeeCommandWithContext } = await loadHelpModule({
-      GITHUB_ALLOWED_REPOS: 'iam74k4/DiscordBot',
-    });
-
-    expect(
-      canUserSeeCommandWithContext(githubCommand, {
+      canUserSeeCommandWithContext(adminCommand, {
         userId: 'member-1',
         guild: { id: 'guild-1' },
         member: memberWithManageGuild,
@@ -92,11 +78,25 @@ describe('canUserSeeCommandWithContext', () => {
     ).toBe(true);
   });
 
-  it('always shows github help to bot owners', async () => {
+  it('hides commands from members without required permissions', async () => {
     const { canUserSeeCommandWithContext } = await loadHelpModule();
 
     expect(
-      canUserSeeCommandWithContext(githubCommand, {
+      canUserSeeCommandWithContext(adminCommand, {
+        userId: 'member-1',
+        guild: { id: 'guild-1' },
+        member: {
+          permissions: new PermissionsBitField(),
+        },
+      })
+    ).toBe(false);
+  });
+
+  it('always shows owner-visible commands to bot owners', async () => {
+    const { canUserSeeCommandWithContext } = await loadHelpModule();
+
+    expect(
+      canUserSeeCommandWithContext(adminCommand, {
         userId: 'owner-1',
         guild: null,
         member: null,

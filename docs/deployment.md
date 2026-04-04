@@ -32,8 +32,6 @@ In Railway dashboard, add the following variables:
 | `DISCORD_CLIENT_ID`               | Discord application client ID                                                    | Yes                           |
 | `STEAM_API_KEY`                   | Steam Web API key                                                                | No (Steam commands need this) |
 | `STEAM_RANKING_BATCH_SIZE`        | Steam ranking API batch size (1–20, default: 8)                                  | No                            |
-| `GITHUB_TOKEN`                    | GitHub Personal Access Token for `/github` commands                              | No                            |
-| `GITHUB_ALLOWED_REPOS`            | Comma-separated `owner/name` allowlist for non-owner `/github` access            | No                            |
 | `BOT_OWNER_IDS`                   | Bot owner Discord IDs (comma-separated); **required when `NODE_ENV=production`** | Yes in production             |
 | `DISCORD_GUILD_ID`                | Development guild for faster slash command updates                               | No                            |
 | `NODE_ENV`                        | Set to `production`                                                              | No                            |
@@ -59,8 +57,6 @@ In Railway dashboard, add the following variables:
 | `BACKUP_DIR`                      | Backup output directory (must stay relative to repo root)                        | No                            |
 
 If you enable voice recording in production, remember that `/voice record` now requires `Manage Server`, and generated files are delivered ephemerally and cleaned up automatically according to `RECORDING_RETENTION_HOURS`.
-
-If you enable GitHub integration, prefer a least-privilege token and scope it only to the repositories that should be managed by the bot. By default `/github` is bot-owner only; if you want `Manage Server` users to use it, set `GITHUB_ALLOWED_REPOS` and keep the token limited to that allowlist.
 
 ### 4. Choose how production deploys run
 

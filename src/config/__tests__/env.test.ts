@@ -74,19 +74,14 @@ describe('env security validation', () => {
     );
   });
 
-  it('normalizes valid relative paths and GitHub allowlists', async () => {
+  it('normalizes valid relative runtime paths', async () => {
     const { env } = await loadEnvModule({
-      GITHUB_ALLOWED_REPOS: 'Iam74k4/DiscordBot, octo/Hello-World ',
       DATA_DIR: 'runtime-data',
       DATABASE_PATH: 'runtime-data/app.db',
       RECORDINGS_DIR: 'runtime-data/recordings',
       BACKUP_DIR: 'runtime-data/backups',
     });
 
-    expect(env.GITHUB_ALLOWED_REPOS).toEqual([
-      'iam74k4/discordbot',
-      'octo/hello-world',
-    ]);
     expect(env.DATA_DIR).toBe('runtime-data/');
     expect(env.DATABASE_PATH).toBe('runtime-data/app.db');
     expect(env.RECORDINGS_DIR).toBe('runtime-data/recordings/');

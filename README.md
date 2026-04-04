@@ -97,15 +97,6 @@ Optional (for Steam features):
 STEAM_API_KEY=your_steam_api_key
 ```
 
-Optional (for GitHub features):
-
-```env
-GITHUB_TOKEN=your_github_token
-GITHUB_ALLOWED_REPOS=iam74k4/DiscordBot
-```
-
-`/github` is bot-owner only by default. To allow guild managers to use it, set `GITHUB_ALLOWED_REPOS` to a comma-separated allowlist and keep the token scoped only to those repositories.
-
 See [.env.example](.env.example) for all configuration options and [docs/deployment.md](docs/deployment.md) for the full environment variable reference.
 
 ### 3. Get Discord Credentials
@@ -217,25 +208,6 @@ Only users listed in `BOT_OWNER_IDS` can run these commands (can be used in DMs 
 | `/owner system metrics`             | View bot metrics                             |
 | `/owner backup list`                | List database backups                        |
 | `/owner backup run`                 | Run a manual database backup                 |
-
-### GitHub (`/github`)
-
-| Command                | Description                           |
-| ---------------------- | ------------------------------------- |
-| `/github pr list`      | List pull requests for a repository   |
-| `/github pr view`      | View a pull request                   |
-| `/github pr create`    | Open a modal to create a pull request |
-| `/github pr merge`     | Merge a pull request                  |
-| `/github issue list`   | List issues for a repository          |
-| `/github issue view`   | View an issue                         |
-| `/github issue create` | Open a modal to create an issue       |
-| `/github repo info`    | Show repository information           |
-
-**Notes:**
-
-- Bot owners can use `/github` everywhere
-- Non-owner access requires `Manage Server` and `GITHUB_ALLOWED_REPOS`
-- `GITHUB_TOKEN` must be configured for the feature to work
 
 ### Community (`/community`)
 

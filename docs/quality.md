@@ -41,7 +41,6 @@ This document describes the quality standards and practices for this Discord bot
 - Validate backup filenames and paths to prevent traversal.
 - Require HTTPS for `ALERT_WEBHOOK_URL`.
 - Keep `DATA_DIR`, `DATABASE_PATH`, `RECORDINGS_DIR`, `AUDIO_DISK_BUFFER_DIR`, and `BACKUP_DIR` relative to the workspace root. Absolute paths and `../` escapes must fail fast at startup.
-- Treat `/github` as bot-owner functionality by default. If server managers need access, require `GITHUB_ALLOWED_REPOS` and a least-privilege token scoped only to those repositories.
 
 ## Dependencies and `npm audit`
 
