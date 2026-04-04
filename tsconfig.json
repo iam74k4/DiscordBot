@@ -3,12 +3,6 @@
     "target": "ES2022",
     "module": "Node16",
     "moduleResolution": "Node16",
-    "baseUrl": "./src",
-    "ignoreDeprecations": "6.0",
-    "paths": {
-      "@/*": ["./*"],
-      "@/features/*": ["./features/*"]
-    },
     "lib": ["ES2022"],
     "outDir": "./dist",
     "rootDir": "./src",
