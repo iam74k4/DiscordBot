@@ -10,6 +10,13 @@ import {
   Collection,
 } from 'discord.js';
 
+type MockUserOverrides = Partial<
+  Pick<
+    User,
+    'id' | 'username' | 'displayName' | 'tag' | 'bot' | 'discriminator' | 'avatar'
+  >
+>;
+
 /**
  * Create a mock Discord.js Client
  */
@@ -43,7 +50,7 @@ export function createMockClient(): Client {
 /**
  * Create a mock User
  */
-export function createMockUser(overrides: Partial<User> = {}): User {
+export function createMockUser(overrides: MockUserOverrides = {}): User {
   return {
     id: '987654321098765432',
     username: 'TestUser',
@@ -84,7 +91,7 @@ export function createMockInteraction(
     subcommandGroup?: string;
     subcommand?: string;
     options?: Record<string, unknown>;
-    user?: Partial<User>;
+    user?: MockUserOverrides;
     guild?: Partial<Guild>;
     locale?: string;
   } = {}
