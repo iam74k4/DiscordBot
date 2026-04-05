@@ -13,7 +13,13 @@ import {
 type MockUserOverrides = Partial<
   Pick<
     User,
-    'id' | 'username' | 'displayName' | 'tag' | 'bot' | 'discriminator' | 'avatar'
+    | 'id'
+    | 'username'
+    | 'displayName'
+    | 'tag'
+    | 'bot'
+    | 'discriminator'
+    | 'avatar'
   >
 >;
 
