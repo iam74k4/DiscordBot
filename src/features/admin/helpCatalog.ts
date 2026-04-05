@@ -9,8 +9,8 @@ export const adminHelpCategory: CommandCategory = {
     {
       name: 'admin',
       description: {
-        en: 'Server settings and role management (Manage Server)',
-        ja: 'サーバー設定とロール管理（サーバー管理権限が必要）',
+        en: 'Server settings and member role tools for moderators',
+        ja: '管理者向けのサーバー設定とロール操作',
       },
       usage:
         '/admin settings view, /admin settings language, /admin settings audit, /admin settings logs, /admin role add, /admin role remove\nInteractive panels: `/admin settings view`, `/admin settings logs`',
@@ -19,8 +19,8 @@ export const adminHelpCategory: CommandCategory = {
     {
       name: 'owner',
       description: {
-        en: 'Bot owner tools (statistics, backups, broadcast to guild owners)',
-        ja: 'Botオーナー向け（統計・バックアップ・オーナーへの一斉通知など）',
+        en: 'Bot owner tools for system status, backups, and owner broadcasts',
+        ja: 'Botオーナー向けの状態確認、バックアップ、一斉通知',
       },
       usage:
         '/owner system stats, /owner system db, /owner system guilds, /owner system broadcast, /owner system health, /owner system metrics, /owner backup list, /owner backup run\nInteractive panels: `/owner system stats`, `/owner backup list`',

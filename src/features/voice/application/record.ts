@@ -151,9 +151,10 @@ export async function executeRecordCommand(
     embeds: [
       createEmbed({
         title: t('record.recording', locale),
-        description: t('record.recordingDesc', locale, {
-          duration: durationStr,
-        }),
+        description:
+          t('record.recordingDesc', locale, {
+            duration: durationStr,
+          }) + `\n\n${t('record.durationNote', locale)}`,
         color: COLORS.WARNING,
       }),
     ],
@@ -194,9 +195,10 @@ export async function executeRecordCommand(
           embeds: [
             createEmbed({
               title: t('record.success', locale),
-              description: t('record.successDesc', locale, {
-                duration: durationStr,
-              }),
+              description:
+                t('record.successDesc', locale, {
+                  duration: durationStr,
+                }) + `\n\n${t('record.successNextStep', locale)}`,
               color: COLORS.SUCCESS,
               footer: result.isSplit
                 ? `File size: ${(result.fileSize / (1024 * 1024)).toFixed(2)}MB (split into ${totalFiles} files)`

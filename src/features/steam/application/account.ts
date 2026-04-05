@@ -67,6 +67,11 @@ export async function handleRegister(
         value: `\`${steamId}\``,
         inline: true,
       },
+      {
+        name: t('common.nextStep', locale),
+        value: t('steam.register.nextStep', locale),
+        inline: false,
+      },
     ],
     thumbnail: playerInfo.avatarUrl,
     timestamp: true,
@@ -127,6 +132,11 @@ export async function handleUnregister(
       {
         name: t('steam.unregister.removedAccount', locale),
         value: `**${existing.steam_name || 'Unknown'}**\n\`${existing.steam_id}\``,
+        inline: false,
+      },
+      {
+        name: t('common.nextStep', locale),
+        value: t('steam.unregister.nextStep', locale),
         inline: false,
       },
     ],
@@ -199,6 +209,11 @@ export async function handleWhoami(
         name: t('steam.whoami.linkedSince', locale),
         value: registeredAt,
         inline: true,
+      },
+      {
+        name: t('common.nextStep', locale),
+        value: t('steam.whoami.nextStep', locale),
+        inline: false,
       },
     ],
     thumbnail: playerInfo.avatarUrl,

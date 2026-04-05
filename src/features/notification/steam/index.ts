@@ -48,7 +48,9 @@ async function handleSetup(
           t('steam.notify.howItWorksDesc', locale)
             .split('\n')
             .map((line) => `• ${line}`)
-            .join('\n'),
+            .join('\n') +
+          '\n\n' +
+          t('steam.notify.setupHint', locale),
         color: COLORS.SUCCESS,
         timestamp: true,
       }),
@@ -143,7 +145,10 @@ async function handleEnable(
     embeds: [
       createEmbed({
         title: t('steam.notify.title', locale),
-        description: t('steam.notify.nowEnabled', locale),
+        description: `${t('steam.notify.nowEnabled', locale)}\n\n${t(
+          'steam.notify.enableHint',
+          locale
+        )}`,
         color: COLORS.SUCCESS,
         timestamp: true,
       }),
@@ -190,7 +195,10 @@ async function handleDisable(
     embeds: [
       createEmbed({
         title: t('steam.notify.title', locale),
-        description: t('steam.notify.nowDisabled', locale),
+        description: `${t('steam.notify.nowDisabled', locale)}\n\n${t(
+          'steam.notify.disableHint',
+          locale
+        )}`,
         color: COLORS.WARNING,
         timestamp: true,
       }),
@@ -236,7 +244,10 @@ async function handleRemove(
     embeds: [
       createEmbed({
         title: t('steam.notify.title', locale),
-        description: t('steam.notify.removed', locale),
+        description: `${t('steam.notify.removed', locale)}\n\n${t(
+          'steam.notify.removeHint',
+          locale
+        )}`,
         color: COLORS.INFO,
         timestamp: true,
       }),
@@ -275,7 +286,9 @@ async function handleMe(
               `**${t('common.status', locale)}:** ${enabled ? '`ON`' : '`OFF`'}\n\n` +
               (enabled
                 ? t('steam.notify.meEnabled', locale)
-                : t('steam.notify.meDisabled', locale)),
+                : t('steam.notify.meDisabled', locale)) +
+              '\n\n' +
+              t('steam.notify.meStatusHint', locale),
             color: enabled ? COLORS.SUCCESS : COLORS.WARNING,
             timestamp: true,
           }),
@@ -290,7 +303,10 @@ async function handleMe(
         embeds: [
           createEmbed({
             title: t('steam.notify.meStatus', locale),
-            description: t('steam.notify.meNowEnabled', locale),
+            description: `${t('steam.notify.meNowEnabled', locale)}\n\n${t(
+              'steam.notify.meEnableHint',
+              locale
+            )}`,
             color: COLORS.SUCCESS,
             timestamp: true,
           }),
@@ -304,7 +320,10 @@ async function handleMe(
         embeds: [
           createEmbed({
             title: t('steam.notify.meStatus', locale),
-            description: t('steam.notify.meNowDisabled', locale),
+            description: `${t('steam.notify.meNowDisabled', locale)}\n\n${t(
+              'steam.notify.meDisableHint',
+              locale
+            )}`,
             color: COLORS.WARNING,
             timestamp: true,
           }),
@@ -333,7 +352,7 @@ export async function executeSteamNotificationCommand(
         embeds: [
           createErrorEmbed(
             t('common.error', locale),
-            t('common.noPermission', locale)
+            t('notification.errors.manageGuildRequired', locale)
           ),
         ],
         flags: MessageFlags.Ephemeral,

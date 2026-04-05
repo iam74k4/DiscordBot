@@ -19,14 +19,16 @@ import { executeSteamNotificationCommand } from '../steam/index.js';
 export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('notification')
-    .setDescription('Notification settings and VC stats')
-    .setDescriptionLocalizations({ ja: '通知設定とVC統計' })
+    .setDescription('Notification settings, Steam alerts, and VC time stats')
+    .setDescriptionLocalizations({ ja: '通知設定・Steam通知・VC統計' })
     .setDMPermission(false)
     .addSubcommandGroup((group) =>
       group
         .setName('voice')
-        .setDescription('Voice channel join/leave notifications')
-        .setDescriptionLocalizations({ ja: 'VC入退室通知' })
+        .setDescription('VC join/leave notifications, not recordings')
+        .setDescriptionLocalizations({
+          ja: 'VC入退室の通知設定（録音ではありません）',
+        })
         .addSubcommand((sub) =>
           sub
             .setName('set')
@@ -53,7 +55,7 @@ export const command: Command = {
     .addSubcommandGroup((group) =>
       group
         .setName('welcome')
-        .setDescription('New member join notifications')
+        .setDescription('New member join announcements')
         .setDescriptionLocalizations({ ja: 'メンバー参加通知' })
         .addSubcommand((sub) =>
           sub
@@ -81,14 +83,14 @@ export const command: Command = {
     .addSubcommand((sub) =>
       sub
         .setName('status')
-        .setDescription('Show current notification settings')
-        .setDescriptionLocalizations({ ja: '現在の通知設定を表示' })
+        .setDescription('Show the current notification settings panel')
+        .setDescriptionLocalizations({ ja: '現在の通知設定パネルを表示' })
     )
     .addSubcommand((sub) =>
       sub
         .setName('stats')
-        .setDescription('Show your VC time statistics')
-        .setDescriptionLocalizations({ ja: 'あなたのVC滞在時間統計を表示' })
+        .setDescription('Show your own VC time statistics')
+        .setDescriptionLocalizations({ ja: '自分のVC滞在時間統計を表示' })
         .addStringOption((opt) =>
           opt
             .setName('period')
@@ -121,8 +123,8 @@ export const command: Command = {
     .addSubcommandGroup((group) =>
       group
         .setName('steam')
-        .setDescription('Steam game launch notification settings')
-        .setDescriptionLocalizations({ ja: 'Steamゲーム通知設定' })
+        .setDescription('Steam game start notification settings')
+        .setDescriptionLocalizations({ ja: 'Steamゲーム開始通知の設定' })
         .addSubcommand((sub) =>
           sub
             .setName('setup')
@@ -168,29 +170,43 @@ export const command: Command = {
         .addSubcommand((sub) =>
           sub
             .setName('remove')
-            .setDescription('Remove Steam notification settings')
+            .setDescription('Delete Steam notification settings entirely')
             .setDescriptionLocalizations({
-              ja: 'Steam通知設定を削除',
+              ja: 'Steam通知設定を完全に削除',
             })
         )
         .addSubcommand((sub) =>
           sub
             .setName('me')
-            .setDescription('Toggle your personal Steam notification settings')
+            .setDescription(
+              'Check or change your own Steam notification status'
+            )
             .setDescriptionLocalizations({
-              ja: '個人のSteam通知設定を切り替え',
+              ja: '自分のSteam通知設定を確認・変更',
             })
             .addStringOption((opt) =>
               opt
                 .setName('action')
-                .setDescription('Action to perform')
+                .setDescription('What do you want to do?')
                 .setDescriptionLocalizations({
-                  ja: '実行するアクション',
+                  ja: '何をしますか？',
                 })
                 .addChoices(
-                  { name: 'Status - Check your settings', value: 'status' },
-                  { name: 'On - Enable notifications', value: 'on' },
-                  { name: 'Off - Disable notifications', value: 'off' }
+                  {
+                    name: 'Check status',
+                    name_localizations: { ja: '状態を確認' },
+                    value: 'status',
+                  },
+                  {
+                    name: 'Turn on notifications',
+                    name_localizations: { ja: '通知をオン' },
+                    value: 'on',
+                  },
+                  {
+                    name: 'Turn off notifications',
+                    name_localizations: { ja: '通知をオフ' },
+                    value: 'off',
+                  }
                 )
             )
         )
@@ -221,7 +237,7 @@ export const command: Command = {
         embeds: [
           createErrorEmbed(
             t('common.error', locale),
-            t('common.noPermission', locale)
+            t('notification.errors.manageGuildRequired', locale)
           ),
         ],
         flags: MessageFlags.Ephemeral,

@@ -34,7 +34,7 @@ async function handleCreatePoll(
   }
 
   const options: string[] = [];
-  for (let i = 1; i <= 10; i++) {
+  for (let i = 1; i <= 5; i++) {
     const option = interaction.options.getString(`option${i}`);
     if (!option) continue;
 

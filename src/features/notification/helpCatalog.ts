@@ -9,8 +9,8 @@ export const notificationHelpCategory: CommandCategory = {
     {
       name: 'notification stats',
       description: {
-        en: 'Show your VC time statistics',
-        ja: 'あなたのVC滞在時間統計を表示',
+        en: 'Show your own VC time statistics',
+        ja: '自分のVC滞在時間統計を表示',
       },
       usage: '/notification stats [period]',
       requiredPermission: 'everyone',
@@ -18,16 +18,16 @@ export const notificationHelpCategory: CommandCategory = {
     {
       name: 'notification steam me',
       description: {
-        en: 'Show or change your personal Steam notification preference',
-        ja: '個人のSteam通知設定を確認・変更',
+        en: 'Check or change your personal Steam notification preference',
+        ja: '自分用のSteam通知設定を確認・変更',
       },
-      usage: '/notification steam me [status|on|off]',
+      usage: '/notification steam me [action]',
       requiredPermission: 'everyone',
     },
     {
       name: 'notification status',
       description: {
-        en: 'Show server notification settings panel',
+        en: 'Show the server notification settings panel',
         ja: 'サーバー通知設定パネルを表示',
       },
       usage: '/notification status',
@@ -36,8 +36,8 @@ export const notificationHelpCategory: CommandCategory = {
     {
       name: 'notification voice set',
       description: {
-        en: 'Set the VC join/leave notification channel',
-        ja: 'VC入退室通知チャンネルを設定',
+        en: 'Set the VC join/leave notification channel, not recording',
+        ja: 'VC入退室通知チャンネルを設定（録音ではありません）',
       },
       usage: '/notification voice set <channel>',
       requiredPermission: 'manageGuild',
@@ -108,8 +108,8 @@ export const notificationHelpCategory: CommandCategory = {
     {
       name: 'notification steam remove',
       description: {
-        en: 'Remove Steam notification settings for this server',
-        ja: 'このサーバーのSteam通知設定を削除',
+        en: 'Delete Steam notification settings for this server',
+        ja: 'このサーバーのSteam通知設定を完全に削除',
       },
       usage: '/notification steam remove',
       requiredPermission: 'manageGuild',

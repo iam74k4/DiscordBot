@@ -9,8 +9,8 @@ export const communityHelpCategory: CommandCategory = {
     {
       name: 'community',
       description: {
-        en: 'Community utilities for polls and roulette',
-        ja: '投票とルーレットのコミュニティ機能',
+        en: 'Quick polls and VC roulette for casual group activities',
+        ja: '投票作成とVCルーレットで気軽なグループ進行を支援',
       },
       usage:
         '/community poll create, /community poll end, /community roulette member, /community roulette team',

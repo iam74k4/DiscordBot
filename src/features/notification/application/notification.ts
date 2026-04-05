@@ -86,9 +86,9 @@ export async function handleVoiceSet(
     embeds: [
       createEmbed({
         title: t('notification.voice.setTitle', locale),
-        description: t('notification.voice.set', locale, {
+        description: `${t('notification.voice.set', locale, {
           channel: channel.id,
-        }),
+        })}\n\n${t('notification.voice.nextStep', locale)}`,
         color: COLORS.SUCCESS,
       }),
     ],
@@ -136,7 +136,10 @@ export async function handleVoiceRemove(
     embeds: [
       createEmbed({
         title: t('notification.voice.removedTitle', locale),
-        description: t('notification.voice.removed', locale),
+        description: `${t('notification.voice.removed', locale)}\n\n${t(
+          'notification.voice.disabledHint',
+          locale
+        )}`,
         color: COLORS.SUCCESS,
       }),
     ],
@@ -198,9 +201,9 @@ export async function handleWelcomeSet(
     embeds: [
       createEmbed({
         title: t('notification.welcome.setTitle', locale),
-        description: t('notification.welcome.set', locale, {
+        description: `${t('notification.welcome.set', locale, {
           channel: channel.id,
-        }),
+        })}\n\n${t('notification.welcome.nextStep', locale)}`,
         color: COLORS.SUCCESS,
       }),
     ],
@@ -248,7 +251,10 @@ export async function handleWelcomeRemove(
     embeds: [
       createEmbed({
         title: t('notification.welcome.removedTitle', locale),
-        description: t('notification.welcome.removed', locale),
+        description: `${t('notification.welcome.removed', locale)}\n\n${t(
+          'notification.welcome.disabledHint',
+          locale
+        )}`,
         color: COLORS.SUCCESS,
       }),
     ],

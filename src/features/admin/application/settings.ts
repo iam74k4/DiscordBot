@@ -66,9 +66,9 @@ async function handleAudit(
 
     const embed = createEmbed({
       title: t('settings.audit.name', locale),
-      description: t('settings.audit.configured', locale, {
+      description: `${t('settings.audit.configured', locale, {
         channel: channel.id,
-      }),
+      })}\n\n${t('common.nextStep', locale)}: /admin settings logs`,
       color: COLORS.SUCCESS,
     });
 
@@ -90,7 +90,10 @@ async function handleAudit(
 
     const embed = createEmbed({
       title: t('settings.audit.name', locale),
-      description: t('settings.audit.disabled', locale),
+      description: `${t('settings.audit.disabled', locale)}\n\n${t(
+        'common.nextStep',
+        locale
+      )}: /admin settings audit`,
       color: COLORS.WARNING,
     });
 
@@ -133,9 +136,10 @@ async function handleLanguage(
 
   const embed = createEmbed({
     title: t('settings.language.name', locale),
-    description: t('settings.language.changed', locale, {
-      language: languageDisplay,
-    }),
+    description:
+      t('settings.language.changed', locale, {
+        language: languageDisplay,
+      }) + `\n\n${t('common.nextStep', locale)}: /admin settings view`,
     color: COLORS.SUCCESS,
   });
 
@@ -165,7 +169,9 @@ export async function executeSettingsCommand(
   ) {
     const errorEmbed = createErrorEmbed(
       t('common.error', locale),
-      t('common.noPermission', locale)
+      t('common.permissionsRequired', locale, {
+        permissions: t('help.permission.manageGuild', locale),
+      })
     );
     await interaction.reply({
       embeds: [errorEmbed],

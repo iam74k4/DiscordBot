@@ -12,17 +12,17 @@ import {
 export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('admin')
-    .setDescription('Server settings and moderation (requires Manage Server)')
+    .setDescription('Server settings plus role tools for moderators')
     .setDescriptionLocalizations({
-      ja: 'サーバー設定とモデレーション（サーバー管理権限が必要）',
+      ja: 'サーバー設定とロール操作の管理者コマンド',
     })
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addSubcommandGroup((group) =>
       group
         .setName('settings')
-        .setDescription('Server settings management')
+        .setDescription('View and change this server configuration')
         .setDescriptionLocalizations({
-          ja: 'サーバー設定の管理',
+          ja: 'このサーバーの設定を確認・変更',
         })
         .addSubcommand((sub) =>
           sub
@@ -84,9 +84,9 @@ export const command: Command = {
     .addSubcommandGroup((group) =>
       group
         .setName('role')
-        .setDescription('Assign or remove roles from members')
+        .setDescription('Add or remove member roles')
         .setDescriptionLocalizations({
-          ja: 'メンバーにロールを付与・剥奪',
+          ja: 'メンバーへのロール付与・剥奪',
         })
         .addSubcommand((sub) =>
           sub

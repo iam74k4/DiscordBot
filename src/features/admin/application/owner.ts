@@ -11,6 +11,7 @@ import { withTimeout } from '../../../shared/utils/timeout.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
 import { backupService } from '../../../infrastructure/backup/index.js';
 import { showAdminSystemPanel } from './systemPanel.js';
+import { awaitConfirmation } from '../../../shared/utils/confirm.js';
 
 /** Limit broadcast fan-out per invocation (rate limits / UX). */
 const BROADCAST_MAX_GUILDS = 250;
@@ -45,9 +46,8 @@ async function handleGuilds(
 async function handleBroadcast(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  const locale = mapDiscordLocale(interaction.locale);
   const message = interaction.options.getString('message', true);
-
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const client = interaction.client;
   let sent = 0;
@@ -65,6 +65,40 @@ async function handleBroadcast(
   const totalGuilds = allGuilds.length;
   const guilds = allGuilds.slice(0, BROADCAST_MAX_GUILDS);
   const capped = totalGuilds > BROADCAST_MAX_GUILDS;
+
+  const confirmed = await awaitConfirmation(
+    interaction,
+    t('owner.broadcast.confirm', locale, {
+      count: guilds.length,
+      message,
+    }),
+    { ephemeral: true, timeout: 45_000 }
+  );
+
+  if (!confirmed) {
+    await interaction.editReply({
+      embeds: [
+        createEmbed({
+          title: t('common.cancelled', locale),
+          color: COLORS.INFO,
+        }),
+      ],
+      components: [],
+    });
+    return;
+  }
+
+  await interaction.editReply({
+    content: t('owner.broadcast.progress', locale, {
+      processed: 0,
+      total: guilds.length,
+      sent: 0,
+      failed: 0,
+      capNote: capped ? ` [${BROADCAST_MAX_GUILDS}/${totalGuilds}]` : '',
+    }),
+    embeds: [],
+    components: [],
+  });
 
   let processed = 0;
   for (const guild of guilds) {
@@ -89,7 +123,13 @@ async function handleBroadcast(
         : '';
       await interaction
         .editReply({
-          content: `Broadcast in progress… ${processed}/${guilds.length}${capNote} (sent ${sent}, failed ${failed})`,
+          content: t('owner.broadcast.progress', locale, {
+            processed,
+            total: guilds.length,
+            sent,
+            failed,
+            capNote,
+          }),
           embeds: [],
         })
         .catch((e: unknown) => {
@@ -101,12 +141,19 @@ async function handleBroadcast(
   }
 
   const capLine = capped
-    ? `\n\n**Note:** Only the first ${BROADCAST_MAX_GUILDS} of ${totalGuilds} guilds were processed.`
+    ? t('owner.broadcast.capNote', locale, {
+        limit: BROADCAST_MAX_GUILDS,
+        total: totalGuilds,
+      })
     : '';
 
   const resultEmbed = createEmbed({
-    title: 'Broadcast Complete',
-    description: `Sent: ${sent}\nFailed: ${failed}${capLine}`,
+    title: locale === 'ja' ? '一斉通知完了' : 'Broadcast Complete',
+    description: t('owner.broadcast.complete', locale, {
+      sent,
+      failed,
+      capNote: capLine,
+    }),
     color: COLORS.SUCCESS,
     timestamp: true,
   });
@@ -134,24 +181,53 @@ async function handleBackupList(
 async function handleBackupRun(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  const locale = mapDiscordLocale(interaction.locale);
+  const confirmed = await awaitConfirmation(
+    interaction,
+    t('owner.backup.confirm', locale),
+    { ephemeral: true }
+  );
+
+  if (!confirmed) {
+    await interaction.editReply({
+      embeds: [
+        createEmbed({
+          title: t('common.cancelled', locale),
+          color: COLORS.INFO,
+        }),
+      ],
+      components: [],
+    });
+    return;
+  }
+
+  await interaction.editReply({
+    embeds: [],
+    components: [],
+    content: locale === 'ja' ? 'バックアップを実行中...' : 'Running backup...',
+  });
 
   const result = await backupService.runBackup();
 
   if (result.success) {
     const embed = createEmbed({
-      title: 'Backup Complete',
-      description: `Backup created successfully.\n\n**Filename:** \`${result.filename}\`\n**Size:** ${Math.round(result.size / 1024)} KB`,
+      title: locale === 'ja' ? 'バックアップ完了' : 'Backup Complete',
+      description: t('owner.backup.complete', locale, {
+        filename: result.filename,
+        size: Math.round(result.size / 1024),
+      }),
       color: COLORS.SUCCESS,
       timestamp: true,
     });
-    await interaction.editReply({ embeds: [embed] });
+    await interaction.editReply({ content: '', embeds: [embed] });
   } else {
     const embed = createErrorEmbed(
-      'Backup Failed',
-      result.error || 'Unknown error occurred'
+      locale === 'ja' ? 'バックアップ失敗' : 'Backup Failed',
+      t('owner.backup.failed', locale, {
+        error: result.error || 'Unknown error occurred',
+      })
     );
-    await interaction.editReply({ embeds: [embed] });
+    await interaction.editReply({ content: '', embeds: [embed] });
   }
 }
 
@@ -170,7 +246,7 @@ export async function executeOwnerCommand(
   if (!checkOwner(interaction)) {
     const errorEmbed = createErrorEmbed(
       t('common.error', locale),
-      t('common.noPermission', locale)
+      t('owner.errors.ownerOnly', locale)
     );
     await interaction.reply({
       embeds: [errorEmbed],

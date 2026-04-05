@@ -8,7 +8,7 @@ import { executeRecordCommand } from '../application/index.js';
 import { createEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
 import { connectionManager } from '../recording/connectionManager.js';
-import { mapDiscordLocale } from '../../../locales/index.js';
+import { mapDiscordLocale, t } from '../../../locales/index.js';
 import { env } from '../../../config/index.js';
 
 /**
@@ -17,16 +17,16 @@ import { env } from '../../../config/index.js';
 export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('voice')
-    .setDescription('Voice feature commands')
+    .setDescription('VC recording and recorder status')
     .setDescriptionLocalizations({
-      ja: 'ボイス機能コマンド',
+      ja: 'VC録音とレコーダー状態確認',
     })
     .addSubcommand((sub) =>
       sub
         .setName('record')
-        .setDescription('Record past audio from voice channel')
+        .setDescription('Record recent audio from your current voice channel')
         .setDescriptionLocalizations({
-          ja: 'ボイスチャンネルの過去音声を録音',
+          ja: '現在参加中のVCの少し前の音声を録音',
         })
         .addStringOption((option) =>
           option
@@ -37,20 +37,40 @@ export const command: Command = {
             })
             .setRequired(true)
             .addChoices(
-              { name: '30 seconds', value: '30s' },
-              { name: '1 minute', value: '1m' },
-              { name: '2 minutes', value: '2m' },
-              { name: '3 minutes', value: '3m' },
-              { name: '5 minutes (max)', value: '5m' }
+              {
+                name: '30 seconds',
+                name_localizations: { ja: '30秒' },
+                value: '30s',
+              },
+              {
+                name: '1 minute',
+                name_localizations: { ja: '1分' },
+                value: '1m',
+              },
+              {
+                name: '2 minutes',
+                name_localizations: { ja: '2分' },
+                value: '2m',
+              },
+              {
+                name: '3 minutes',
+                name_localizations: { ja: '3分' },
+                value: '3m',
+              },
+              {
+                name: '5 minutes (max)',
+                name_localizations: { ja: '5分（最大）' },
+                value: '5m',
+              }
             )
         )
     )
     .addSubcommand((sub) =>
       sub
         .setName('status')
-        .setDescription('Show voice subsystem status')
+        .setDescription('Show recorder capacity and active connections')
         .setDescriptionLocalizations({
-          ja: 'ボイス機能の状態を表示',
+          ja: '録音の接続数と上限を表示',
         })
     ),
 
@@ -72,6 +92,7 @@ export const command: Command = {
     const activeConnections = connectionManager.getConnectionCount();
     const embed = createEmbed({
       title: locale === 'ja' ? 'ボイス機能の状態' : 'Voice subsystem status',
+      description: t('record.statusHint', locale),
       color: COLORS.INFO,
       fields: [
         {

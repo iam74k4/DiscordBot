@@ -8,16 +8,16 @@ import {
 export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('general')
-    .setDescription('General utility commands')
+    .setDescription('Start here for help, ping, and bot info')
     .setDescriptionLocalizations({
-      ja: '一般ユーティリティコマンド',
+      ja: 'ヘルプ・Ping・Bot情報の入口',
     })
     .addSubcommand((sub) =>
       sub
         .setName('help')
-        .setDescription('Show command list and usage')
+        .setDescription('Browse commands and usage examples')
         .setDescriptionLocalizations({
-          ja: 'コマンド一覧と使い方を表示',
+          ja: 'コマンド一覧と使い方の例を表示',
         })
         .addStringOption((option) =>
           option

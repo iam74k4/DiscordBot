@@ -9,8 +9,8 @@ export const voiceHelpCategory: CommandCategory = {
     {
       name: 'voice record',
       description: {
-        en: 'Record past audio from your voice channel',
-        ja: '参加中VCの過去音声を録音',
+        en: 'Record recent audio from your current VC, not notifications',
+        ja: '現在のVCの最近の音声を録音（通知設定ではありません）',
       },
       usage: '/voice record <duration>',
       requiredPermission: 'manageGuild',
@@ -18,8 +18,8 @@ export const voiceHelpCategory: CommandCategory = {
     {
       name: 'voice status',
       description: {
-        en: 'Show the voice subsystem status',
-        ja: 'ボイス機能の状態を表示',
+        en: 'Show recorder capacity and active VC connections',
+        ja: '録音の接続数と利用上限を表示',
       },
       usage: '/voice status',
       requiredPermission: 'manageGuild',

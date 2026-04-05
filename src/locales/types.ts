@@ -77,6 +77,7 @@ export interface TranslationKeys {
     confirmMessage: string;
     timeout: string;
     cancelled: string;
+    nextStep: string;
   };
 
   // Units
@@ -240,6 +241,7 @@ export interface TranslationKeys {
       linked: string;
       updated: string;
       viewProfile: string;
+      nextStep: string;
     };
     unregister: {
       title: string;
@@ -249,6 +251,7 @@ export interface TranslationKeys {
       confirmDesc: string;
       unlinked: string;
       removedAccount: string;
+      nextStep: string;
     };
     whoami: {
       title: string;
@@ -256,6 +259,7 @@ export interface TranslationKeys {
       info: string;
       linkedSince: string;
       viewProfile: string;
+      nextStep: string;
     };
     ranking: {
       title: string;
@@ -344,6 +348,13 @@ export interface TranslationKeys {
       meDisabled: string;
       meNowEnabled: string;
       meNowDisabled: string;
+      setupHint: string;
+      enableHint: string;
+      disableHint: string;
+      removeHint: string;
+      meStatusHint: string;
+      meEnableHint: string;
+      meDisableHint: string;
     };
     nowPlaying: {
       title: string;
@@ -437,7 +448,8 @@ export interface TranslationKeys {
       errors: {
         noPermission: string;
         memberNotFound: string;
-        roleHierarchy: string;
+        botRoleHierarchy: string;
+        actorRoleHierarchy: string;
         alreadyHasRole: string;
         doesNotHaveRole: string;
         failed: string;
@@ -472,6 +484,23 @@ export interface TranslationKeys {
     };
   };
 
+  owner: {
+    errors: {
+      ownerOnly: string;
+    };
+    broadcast: {
+      confirm: string;
+      progress: string;
+      complete: string;
+      capNote: string;
+    };
+    backup: {
+      confirm: string;
+      complete: string;
+      failed: string;
+    };
+  };
+
   // Help command
   help: {
     title: string;
@@ -499,12 +528,16 @@ export interface TranslationKeys {
       set: string;
       removedTitle: string;
       removed: string;
+      nextStep: string;
+      disabledHint: string;
     };
     welcome: {
       setTitle: string;
       set: string;
       removedTitle: string;
       removed: string;
+      nextStep: string;
+      disabledHint: string;
     };
     status: {
       title: string;
@@ -545,6 +578,7 @@ export interface TranslationKeys {
       textChannelOnly: string;
       notConfigured: string;
       channelNotSendable: string;
+      manageGuildRequired: string;
     };
   };
 
@@ -556,6 +590,9 @@ export interface TranslationKeys {
     success: string;
     successDesc: string;
     processing: string;
+    successNextStep: string;
+    durationNote: string;
+    statusHint: string;
     errors: {
       notInVoice: string;
       notInVoiceDesc: string;

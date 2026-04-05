@@ -9,8 +9,8 @@ export const generalHelpCategory: CommandCategory = {
     {
       name: 'general',
       description: {
-        en: 'General utility and help commands',
-        ja: '一般ユーティリティとヘルプ',
+        en: 'Start here for help, quick checks, and bot overview',
+        ja: 'ヘルプ確認、簡単な動作確認、Bot概要の入口',
       },
       usage: '/general help, /general ping, /general about',
       requiredPermission: 'everyone',

@@ -24,6 +24,7 @@ export const ja: TranslationKeys = {
     confirmMessage: '本当に実行しますか？',
     timeout: 'この操作はタイムアウトしました。',
     cancelled: 'キャンセルしました。',
+    nextStep: '次のおすすめ',
   },
 
   units: {
@@ -141,7 +142,7 @@ export const ja: TranslationKeys = {
     noActivePollDesc: 'このチャンネルに有効な投票がありません。',
     errors: {
       notEnoughOptions: '投票には最低2つの選択肢が必要です。',
-      tooManyOptions: '投票の選択肢は最大10個までです。',
+      tooManyOptions: '投票の選択肢は最大5個までです。',
       questionTooLong: '質問は256文字以内にしてください。',
       optionTooLong: '各選択肢は100文字以内にしてください。',
       maxActivePolls: '投票数上限',
@@ -188,6 +189,8 @@ export const ja: TranslationKeys = {
       linked: 'DiscordアカウントがSteamに連携されました！',
       updated: '連携済みSteamアカウントが更新されました。',
       viewProfile: 'プロフィールを見る',
+      nextStep:
+        '`/steam user profile` でプロフィール確認、`/steam account whoami` で連携状況の再確認ができます。',
     },
     unregister: {
       title: 'アカウント連携解除',
@@ -197,6 +200,8 @@ export const ja: TranslationKeys = {
       confirmDesc: '現在の連携先: **{name}** (`{steamId}`)',
       unlinked: 'DiscordアカウントのSteam連携を解除しました。',
       removedAccount: '削除されたアカウント',
+      nextStep:
+        '別アカウントを連携したい場合は `/steam account register` を実行してください。',
     },
     whoami: {
       title: '連携アカウント',
@@ -205,6 +210,8 @@ export const ja: TranslationKeys = {
       info: '連携先: **{name}**\nSteam ID: `{steamId}`\n登録日: {date}',
       linkedSince: '連携日',
       viewProfile: 'プロフィールを見る',
+      nextStep:
+        '`/steam user recent` で最近の活動、`/steam stats ranking` でサーバーランキングを確認できます。',
     },
     ranking: {
       title: 'サーバーランキング',
@@ -295,6 +302,20 @@ export const ja: TranslationKeys = {
       meDisabled: 'ゲーム通知をオプトアウトしています。',
       meNowEnabled: 'ゲーム開始通知を受け取るようになりました。',
       meNowDisabled: 'ゲーム開始通知を受け取らなくなりました。',
+      setupHint:
+        '次は `/notification steam enable` でサーバー全体の配信を有効にできます。',
+      enableHint:
+        '次は `/notification steam status` で通知先チャンネルと現在の状態を確認できます。',
+      disableHint:
+        'チャンネル設定を残したまま再開したいときは `/notification steam enable` を使ってください。',
+      removeHint:
+        '最初から設定し直す場合は `/notification steam setup` を使ってください。',
+      meStatusHint:
+        'この場で切り替えるには `/notification steam me action:on` または `:off` を使えます。',
+      meEnableHint:
+        '現在の設定を見直すには `/notification steam me action:status` を使えます。',
+      meDisableHint:
+        '再度受け取りたくなったら `/notification steam me action:on` を使ってください。',
     },
     nowPlaying: {
       title: 'プレイ中',
@@ -394,7 +415,9 @@ export const ja: TranslationKeys = {
       errors: {
         noPermission: 'このコマンドには「ロールの管理」権限が必要です。',
         memberNotFound: 'メンバーが見つかりません。',
-        roleHierarchy: 'Botのロールより上位のロールは操作できません。',
+        botRoleHierarchy: 'Botの最高ロールより上位のロールは操作できません。',
+        actorRoleHierarchy:
+          '自分の最高ロールより上位のロールは操作できません。',
         alreadyHasRole: 'このメンバーは既にそのロールを持っています。',
         doesNotHaveRole: 'このメンバーはそのロールを持っていません。',
         failed: 'ロールの操作に失敗しました。',
@@ -429,6 +452,26 @@ export const ja: TranslationKeys = {
     },
   },
 
+  owner: {
+    errors: {
+      ownerOnly: 'このコマンドは Bot オーナーのみ使用できます。',
+    },
+    broadcast: {
+      confirm:
+        '以下のメッセージを最大 {count} 件のサーバーオーナーへ DM 送信します。\n\n{message}',
+      progress:
+        '一斉通知を送信中... {processed}/{total}{capNote} (成功 {sent}, 失敗 {failed})',
+      complete: '一斉通知が完了しました\n成功: {sent}\n失敗: {failed}{capNote}',
+      capNote: '\n\n注: {total} サーバー中、先頭 {limit} 件のみ処理しました。',
+    },
+    backup: {
+      confirm: '手動データベースバックアップを今すぐ作成します。続行しますか？',
+      complete:
+        'バックアップを作成しました。\n\n**ファイル名:** `{filename}`\n**サイズ:** {size} KB',
+      failed: 'バックアップに失敗しました: {error}',
+    },
+  },
+
   help: {
     title: 'コマンド一覧',
     description:
@@ -455,12 +498,18 @@ export const ja: TranslationKeys = {
       set: 'VC入退室通知を <#{channel}> に送信します',
       removedTitle: 'VC通知無効化',
       removed: 'VC入退室通知を無効にしました。',
+      nextStep: '`/notification status` で他の通知設定もまとめて確認できます。',
+      disabledHint:
+        'あとで再開する場合は `/notification voice set` で再設定してください。',
     },
     welcome: {
       setTitle: 'メンバー参加通知設定完了',
       set: 'メンバー参加通知を <#{channel}> に送信します',
       removedTitle: 'メンバー参加通知無効化',
       removed: 'メンバー参加通知を無効にしました。',
+      nextStep: '`/notification status` で他の通知設定もまとめて確認できます。',
+      disabledHint:
+        '参加通知を再開するには `/notification welcome set` を使ってください。',
     },
     status: {
       title: '通知設定',
@@ -502,6 +551,8 @@ export const ja: TranslationKeys = {
       notConfigured: '削除する通知設定がありません。',
       channelNotSendable:
         'Bot がそのチャンネルに送信できません。別のテキストチャンネルを選択してください。',
+      manageGuildRequired:
+        'サーバー通知設定の変更には「サーバーの管理」権限が必要です。',
     },
   },
 
@@ -512,6 +563,11 @@ export const ja: TranslationKeys = {
     success: '録音完了',
     successDesc: '過去{duration}の音声を録音しました。',
     processing: '録音ファイルを処理中...',
+    successNextStep:
+      '接続数や上限を確認したい場合は `/voice status` を使ってください。',
+    durationNote: 'ヒント: 録音時間は保持バッファと最大5分の制限を受けます。',
+    statusHint:
+      'この状態表示は自分だけに見えます。録音前の容量確認に使えます。',
     errors: {
       notInVoice: 'ボイスチャンネル未参加',
       notInVoiceDesc:

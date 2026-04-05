@@ -23,9 +23,9 @@ import {
 export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('steam')
-    .setDescription('Steam integration commands')
+    .setDescription('Steam profiles, playtime, account links, and rankings')
     .setDescriptionLocalizations({
-      ja: 'Steam連携コマンド',
+      ja: 'Steamプロフィール・連携・ランキング',
     })
     .addSubcommandGroup((group) =>
       group
@@ -151,9 +151,9 @@ export const command: Command = {
     .addSubcommandGroup((group) =>
       group
         .setName('stats')
-        .setDescription('Steam activity statistics')
+        .setDescription('Rankings, charts, and playtime trends')
         .setDescriptionLocalizations({
-          ja: 'Steamアクティビティ統計',
+          ja: 'ランキング・チャート・推移',
         })
         .addSubcommand((sub) =>
           sub
@@ -218,10 +218,26 @@ export const command: Command = {
                   ja: '期間',
                 })
                 .addChoices(
-                  { name: '7 Days', value: '7d' },
-                  { name: '30 Days', value: '30d' },
-                  { name: '90 Days', value: '90d' },
-                  { name: '1 Year', value: '1y' }
+                  {
+                    name: '7 days',
+                    name_localizations: { ja: '7日間' },
+                    value: '7d',
+                  },
+                  {
+                    name: '30 days',
+                    name_localizations: { ja: '30日間' },
+                    value: '30d',
+                  },
+                  {
+                    name: '90 days',
+                    name_localizations: { ja: '90日間' },
+                    value: '90d',
+                  },
+                  {
+                    name: '1 year',
+                    name_localizations: { ja: '1年間' },
+                    value: '1y',
+                  }
                 )
             )
         )
@@ -287,9 +303,9 @@ export const command: Command = {
     .addSubcommandGroup((group) =>
       group
         .setName('info')
-        .setDescription('Help and reference')
+        .setDescription('Usage guide and command reference')
         .setDescriptionLocalizations({
-          ja: 'ヘルプと参照',
+          ja: '使い方ガイドとコマンド一覧',
         })
         .addSubcommand((sub) =>
           sub

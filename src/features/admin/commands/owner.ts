@@ -5,9 +5,11 @@ import { executeOwnerCommand } from '../application/owner.js';
 export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('owner')
-    .setDescription('Bot owner tools (global statistics, backups, broadcast)')
+    .setDescription(
+      'Bot owner tools for system status, backups, and broadcasts'
+    )
     .setDescriptionLocalizations({
-      ja: 'Botオーナー向けツール（統計・バックアップ・一斉通知など）',
+      ja: 'Botオーナー向けの状態確認・バックアップ・一斉通知',
     })
     .setDMPermission(true)
     .addSubcommandGroup((group) =>
@@ -44,9 +46,11 @@ export const command: Command = {
         .addSubcommand((sub) =>
           sub
             .setName('broadcast')
-            .setDescription('Send a message to all server owners')
+            .setDescription(
+              'Send a message to all server owners after confirmation'
+            )
             .setDescriptionLocalizations({
-              ja: '全サーバーオーナーにメッセージを送信',
+              ja: '確認後に全サーバーオーナーへメッセージ送信',
             })
             .addStringOption((opt) =>
               opt

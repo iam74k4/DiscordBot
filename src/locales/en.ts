@@ -25,6 +25,7 @@ export const en: TranslationKeys = {
     confirmMessage: 'Are you sure you want to proceed?',
     timeout: 'This interaction has timed out.',
     cancelled: 'Action cancelled.',
+    nextStep: 'Next step',
   },
 
   units: {
@@ -141,7 +142,7 @@ export const en: TranslationKeys = {
     noActivePollDesc: 'You do not have an active poll in this channel.',
     errors: {
       notEnoughOptions: 'A poll needs at least 2 options.',
-      tooManyOptions: 'A poll can have at most 10 options.',
+      tooManyOptions: 'A poll can have at most 5 options.',
       questionTooLong: 'Question must be 256 characters or less.',
       optionTooLong: 'Each option must be 100 characters or less.',
       maxActivePolls: 'Poll Limit Reached',
@@ -187,6 +188,8 @@ export const en: TranslationKeys = {
       linked: 'Your Discord account is now linked to Steam!',
       updated: 'Your linked Steam account has been updated.',
       viewProfile: 'View Profile',
+      nextStep:
+        'Try `/steam user profile` to view your profile or `/steam account whoami` to confirm the link.',
     },
     unregister: {
       title: 'Account Unlinked',
@@ -196,6 +199,8 @@ export const en: TranslationKeys = {
       confirmDesc: 'Currently linked to: **{name}** (`{steamId}`)',
       unlinked: 'Your Discord account has been unlinked from Steam.',
       removedAccount: 'Removed Account',
+      nextStep:
+        'Use `/steam account register` whenever you want to link another account.',
     },
     whoami: {
       title: 'Linked Account',
@@ -204,6 +209,8 @@ export const en: TranslationKeys = {
       info: 'Linked to: **{name}**\nSteam ID: `{steamId}`\nRegistered: {date}',
       linkedSince: 'Linked Since',
       viewProfile: 'View Profile',
+      nextStep:
+        'Use `/steam user recent` for recent activity or `/steam stats ranking` for server rankings.',
     },
     ranking: {
       title: 'Server Ranking',
@@ -294,6 +301,20 @@ export const en: TranslationKeys = {
       meDisabled: 'You have opted out of game notifications.',
       meNowEnabled: 'You will now receive game start notifications.',
       meNowDisabled: 'You will no longer receive game start notifications.',
+      setupHint:
+        'Next step: run `/notification steam enable` to turn delivery on for the whole server.',
+      enableHint:
+        'Next step: use `/notification steam status` to review the channel and current server status.',
+      disableHint:
+        'Next step: use `/notification steam enable` to resume delivery without changing the channel.',
+      removeHint:
+        'Next step: use `/notification steam setup` if you want to configure a fresh channel again.',
+      meStatusHint:
+        'Tip: use `/notification steam me action:on` or `/notification steam me action:off` to change this immediately.',
+      meEnableHint:
+        'Tip: use `/notification steam me action:status` to confirm your current preference.',
+      meDisableHint:
+        'Tip: use `/notification steam me action:on` whenever you want to opt back in.',
     },
     nowPlaying: {
       title: 'Now Playing',
@@ -394,8 +415,10 @@ export const en: TranslationKeys = {
         noPermission:
           'You need the "Manage Roles" permission to use this command.',
         memberNotFound: 'Member not found.',
-        roleHierarchy:
+        botRoleHierarchy:
           "Cannot manage roles higher than the bot's highest role.",
+        actorRoleHierarchy:
+          'You can only manage roles lower than your highest role.',
         alreadyHasRole: 'This member already has that role.',
         doesNotHaveRole: 'This member does not have that role.',
         failed: 'Failed to modify role.',
@@ -430,6 +453,28 @@ export const en: TranslationKeys = {
     },
   },
 
+  owner: {
+    errors: {
+      ownerOnly: 'Only the bot owner can use this command.',
+    },
+    broadcast: {
+      confirm:
+        'This will DM the message below to up to {count} server owners.\n\n{message}',
+      progress:
+        'Broadcast in progress... {processed}/{total}{capNote} (sent {sent}, failed {failed})',
+      complete: 'Broadcast complete\nSent: {sent}\nFailed: {failed}{capNote}',
+      capNote:
+        '\n\nNote: only the first {limit} of {total} guilds were processed.',
+    },
+    backup: {
+      confirm:
+        'A manual database backup will be created immediately. Continue?',
+      complete:
+        'Backup created successfully.\n\n**Filename:** `{filename}`\n**Size:** {size} KB',
+      failed: 'Backup failed: {error}',
+    },
+  },
+
   help: {
     title: 'Command List',
     description:
@@ -456,12 +501,20 @@ export const en: TranslationKeys = {
       set: 'Voice channel notifications will be sent to <#{channel}>',
       removedTitle: 'VC Notifications Disabled',
       removed: 'Voice channel notifications have been disabled.',
+      nextStep:
+        'Next step: use `/notification status` to review all notification settings together.',
+      disabledHint:
+        'Next step: use `/notification voice set` to re-enable VC notifications later.',
     },
     welcome: {
       setTitle: 'Welcome Notifications Configured',
       set: 'Member join notifications will be sent to <#{channel}>',
       removedTitle: 'Welcome Notifications Disabled',
       removed: 'Member join notifications have been disabled.',
+      nextStep:
+        'Next step: use `/notification status` to review all notification settings together.',
+      disabledHint:
+        'Next step: use `/notification welcome set` to enable member join messages again.',
     },
     status: {
       title: 'Notification Settings',
@@ -504,6 +557,8 @@ export const en: TranslationKeys = {
       notConfigured: 'No notification settings to remove.',
       channelNotSendable:
         'The bot cannot send messages to that channel. Please choose another text channel.',
+      manageGuildRequired:
+        'You need the "Manage Server" permission to change server notification settings.',
     },
   },
 
@@ -514,6 +569,12 @@ export const en: TranslationKeys = {
     success: 'Recording Complete',
     successDesc: 'Recorded {duration} of past audio.',
     processing: 'Processing recording file...',
+    successNextStep:
+      'Need capacity details? Use `/voice status` to check active connections and the limit.',
+    durationNote:
+      'Tip: recordings are limited by the retained audio buffer and 5-minute maximum.',
+    statusHint:
+      'This status is shown only to you. Use it to check recorder capacity before starting a capture.',
     errors: {
       notInVoice: 'Not in Voice Channel',
       notInVoiceDesc: 'You must be in a voice channel to use this command.',

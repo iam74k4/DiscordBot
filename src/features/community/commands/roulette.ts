@@ -8,9 +8,9 @@ import {
 export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('community')
-    .setDescription('Community commands: poll and roulette')
+    .setDescription('Polls and VC roulette for quick community events')
     .setDescriptionLocalizations({
-      ja: 'コミュニティコマンド（投票・ルーレット）',
+      ja: '投票とVCルーレットのコミュニティ機能',
     })
     .addSubcommandGroup((group) =>
       group
@@ -73,41 +73,6 @@ export const command: Command = {
                 .setDescriptionLocalizations({ ja: '選択肢5' })
                 .setMaxLength(100)
             )
-            .addStringOption((option) =>
-              option
-                .setName('option6')
-                .setDescription('Sixth option')
-                .setDescriptionLocalizations({ ja: '選択肢6' })
-                .setMaxLength(100)
-            )
-            .addStringOption((option) =>
-              option
-                .setName('option7')
-                .setDescription('Seventh option')
-                .setDescriptionLocalizations({ ja: '選択肢7' })
-                .setMaxLength(100)
-            )
-            .addStringOption((option) =>
-              option
-                .setName('option8')
-                .setDescription('Eighth option')
-                .setDescriptionLocalizations({ ja: '選択肢8' })
-                .setMaxLength(100)
-            )
-            .addStringOption((option) =>
-              option
-                .setName('option9')
-                .setDescription('Ninth option')
-                .setDescriptionLocalizations({ ja: '選択肢9' })
-                .setMaxLength(100)
-            )
-            .addStringOption((option) =>
-              option
-                .setName('option10')
-                .setDescription('Tenth option')
-                .setDescriptionLocalizations({ ja: '選択肢10' })
-                .setMaxLength(100)
-            )
             .addIntegerOption((option) =>
               option
                 .setName('duration')
@@ -116,12 +81,36 @@ export const command: Command = {
                   ja: '投票の期間（分）',
                 })
                 .addChoices(
-                  { name: '5 minutes', value: 5 },
-                  { name: '10 minutes', value: 10 },
-                  { name: '30 minutes', value: 30 },
-                  { name: '1 hour', value: 60 },
-                  { name: '3 hours', value: 180 },
-                  { name: '24 hours', value: 1440 }
+                  {
+                    name: '5 minutes',
+                    name_localizations: { ja: '5分' },
+                    value: 5,
+                  },
+                  {
+                    name: '10 minutes',
+                    name_localizations: { ja: '10分' },
+                    value: 10,
+                  },
+                  {
+                    name: '30 minutes',
+                    name_localizations: { ja: '30分' },
+                    value: 30,
+                  },
+                  {
+                    name: '1 hour',
+                    name_localizations: { ja: '1時間' },
+                    value: 60,
+                  },
+                  {
+                    name: '3 hours',
+                    name_localizations: { ja: '3時間' },
+                    value: 180,
+                  },
+                  {
+                    name: '24 hours',
+                    name_localizations: { ja: '24時間' },
+                    value: 1440,
+                  }
                 )
             )
             .addBooleanOption((option) =>
@@ -145,9 +134,9 @@ export const command: Command = {
     .addSubcommandGroup((group) =>
       group
         .setName('roulette')
-        .setDescription('Random selection from voice channel members')
+        .setDescription('Pick members or split teams from your current VC')
         .setDescriptionLocalizations({
-          ja: 'ボイスチャンネルのメンバーからランダム選択',
+          ja: '現在のVCからメンバー抽選やチーム分け',
         })
         .addSubcommand((subcommand) =>
           subcommand
@@ -173,11 +162,31 @@ export const command: Command = {
                 })
                 .setRequired(true)
                 .addChoices(
-                  { name: '2 teams', value: 2 },
-                  { name: '3 teams', value: 3 },
-                  { name: '4 teams', value: 4 },
-                  { name: '5 teams', value: 5 },
-                  { name: '6 teams', value: 6 }
+                  {
+                    name: '2 teams',
+                    name_localizations: { ja: '2チーム' },
+                    value: 2,
+                  },
+                  {
+                    name: '3 teams',
+                    name_localizations: { ja: '3チーム' },
+                    value: 3,
+                  },
+                  {
+                    name: '4 teams',
+                    name_localizations: { ja: '4チーム' },
+                    value: 4,
+                  },
+                  {
+                    name: '5 teams',
+                    name_localizations: { ja: '5チーム' },
+                    value: 5,
+                  },
+                  {
+                    name: '6 teams',
+                    name_localizations: { ja: '6チーム' },
+                    value: 6,
+                  }
                 )
             )
         )

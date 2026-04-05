@@ -55,6 +55,10 @@ vi.mock('../../../config/env.js', () => ({
   isBotOwner: vi.fn((id: string) => id === '987654321098765432'),
 }));
 
+vi.mock('../../../shared/utils/confirm.js', () => ({
+  awaitConfirmation: vi.fn().mockResolvedValue(true),
+}));
+
 describe('Owner Command', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -162,9 +166,9 @@ describe('Owner Command', () => {
         await import('../../../features/admin/commands/owner.js');
       await command.execute(interaction);
 
-      expect(interaction.deferReply).toHaveBeenCalled();
       expect(interaction.editReply).toHaveBeenCalledWith(
         expect.objectContaining({
+          content: '',
           embeds: expect.arrayContaining([
             expect.objectContaining({
               data: expect.objectContaining({

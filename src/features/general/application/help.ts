@@ -116,15 +116,35 @@ function findCommand(name: string): CommandInfo | null {
   return null;
 }
 
+function getCommandLabel(
+  cmd: CommandInfo,
+  locale: string,
+  maxLength = 80
+): string {
+  const description = locale === 'ja' ? cmd.description.ja : cmd.description.en;
+  const preview =
+    description.length > maxLength
+      ? `${description.slice(0, maxLength - 1)}...`
+      : description;
+  return `${cmd.name} - ${preview}`;
+}
+
 export async function autocompleteHelpCommand(
   interaction: AutocompleteInteraction
 ): Promise<void> {
   const focused = interaction.options.getFocused().toLowerCase();
-  const commands = getVisibleCommandNames(interaction);
-  const filtered = commands.filter((c) => c.startsWith(focused));
+  const locale = mapDiscordLocale(interaction.locale);
+  const visibleNames = getVisibleCommandNames(interaction);
+  const filtered = visibleNames.filter((c) => c.startsWith(focused));
 
   await interaction.respond(
-    filtered.slice(0, 25).map((c) => ({ name: c, value: c }))
+    filtered.slice(0, 25).map((name) => {
+      const cmd = findCommand(name);
+      return {
+        name: cmd ? getCommandLabel(cmd, locale, 60) : name,
+        value: name,
+      };
+    })
   );
 }
 

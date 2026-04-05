@@ -94,7 +94,7 @@ export async function executeRoleCommand(
   if (!checkBotCanManageRole(interaction, role.id)) {
     const embed = createErrorEmbed(
       t('common.error', locale),
-      t('admin.role.errors.roleHierarchy', locale)
+      t('admin.role.errors.botRoleHierarchy', locale)
     );
     await interaction.reply({
       embeds: [embed],
@@ -106,7 +106,7 @@ export async function executeRoleCommand(
   if (!(await checkActorCanManageRole(interaction, role.id))) {
     const embed = createErrorEmbed(
       t('common.error', locale),
-      t('admin.role.errors.roleHierarchy', locale)
+      t('admin.role.errors.actorRoleHierarchy', locale)
     );
     await interaction.reply({
       embeds: [embed],
