@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 let db: Database.Database;
 
 async function runSteamDropMigration(): Promise<void> {
-  const { up } = await import('./005_drop_steam.js');
+  const { up } = await import('../migrations/005_drop_steam.js');
   up();
 }
 
