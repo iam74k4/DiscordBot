@@ -1,16 +1,49 @@
 import { database } from '../connection.js';
 
+const LEGACY_STEAM_TABLES = [
+  ['playtime_history', 'legacy_playtime_history'],
+  ['user_notification_prefs', 'legacy_user_notification_prefs'],
+  ['game_activity_cache', 'legacy_game_activity_cache'],
+  ['notification_settings', 'legacy_notification_settings'],
+  ['steam_users', 'legacy_steam_users'],
+] as const;
+
+function tableExists(tableName: string): boolean {
+  const row = database
+    .prepare(
+      "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1"
+    )
+    .get(tableName);
+  return row !== undefined;
+}
+
+function archiveAndDropTable(
+  tableName: string,
+  archiveTableName: string
+): void {
+  if (!tableExists(tableName)) {
+    return;
+  }
+
+  if (!tableExists(archiveTableName)) {
+    database.exec(`ALTER TABLE ${tableName} RENAME TO ${archiveTableName}`);
+    return;
+  }
+
+  database.exec(
+    `INSERT OR IGNORE INTO ${archiveTableName} SELECT * FROM ${tableName}`
+  );
+  database.exec(`DROP TABLE ${tableName}`);
+}
+
 /**
- * Drop legacy Steam-related tables introduced by 001_steam.ts and
- * 002_notifications.ts. The Steam feature has been removed from the bot;
- * this migration removes the unused tables on existing databases. Migrations
- * 001 and 002 are kept untouched so that fresh installs and existing
- * deployments converge on the same end state.
+ * Archive legacy Steam-related tables introduced by 001_steam.ts and
+ * 002_notifications.ts, then remove the old table names from the active schema.
+ * Migrations 001 and 002 are kept untouched so fresh installs and existing
+ * deployments converge without silently destroying historical Steam data.
  */
 export function up(): void {
-  database.exec(`DROP TABLE IF EXISTS playtime_history`);
-  database.exec(`DROP TABLE IF EXISTS user_notification_prefs`);
-  database.exec(`DROP TABLE IF EXISTS game_activity_cache`);
-  database.exec(`DROP TABLE IF EXISTS notification_settings`);
-  database.exec(`DROP TABLE IF EXISTS steam_users`);
+  for (const [tableName, archiveTableName] of LEGACY_STEAM_TABLES) {
+    archiveAndDropTable(tableName, archiveTableName);
+  }
 }
