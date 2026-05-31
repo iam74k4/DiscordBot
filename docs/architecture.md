@@ -82,11 +82,11 @@ The project uses feature-based architecture. Each feature owns its command entry
     │   │   ├── index.ts       # Barrel re-export
     │   │   └── migrations/    # DDL definitions
     │   │       ├── index.ts   # initializeDatabase()
-    │   │       ├── 001_steam.ts        # Legacy Steam tables (kept for upgrade path; tables are dropped by 005)
-    │   │       ├── 002_notifications.ts # Legacy Steam notification tables (dropped by 005)
+    │   │       ├── 001_steam.ts        # Legacy Steam tables (kept for upgrade/export path)
+    │   │       ├── 002_notifications.ts # Legacy Steam notification tables
     │   │       ├── 003_settings.ts
     │   │       ├── 004_notification.ts
-    │   │       └── 005_drop_steam.ts   # Drops legacy Steam tables on existing DBs
+    │   │       └── 005_drop_steam.ts   # Non-destructive Steam removal marker
     │   ├── audit/           # Audit log delivery/orchestration
     │   │   ├── index.ts
     │   │   ├── format.ts
@@ -153,7 +153,7 @@ flowchart LR
 
 - `infrastructure/database/` is **pure infrastructure**: connection management, `runTransaction()`, and migrations.
 - No business logic or feature-specific queries live here. All SQL lives in feature `repositories/`.
-- Migrations are numbered DDL files (`001_steam.ts`, `002_notifications.ts`, `003_settings.ts`, `004_notification.ts`, `005_drop_steam.ts`) applied by `initializeDatabase()`. The Steam feature has been removed; migrations 001 and 002 are kept untouched for a clean upgrade path, and `005_drop_steam.ts` drops the legacy Steam tables on existing databases.
+- Migrations are numbered DDL files (`001_steam.ts`, `002_notifications.ts`, `003_settings.ts`, `004_notification.ts`, `005_drop_steam.ts`) applied by `initializeDatabase()`. The Steam feature has been removed; migrations 001 and 002 are kept untouched for a clean upgrade/export path, and `005_drop_steam.ts` is non-destructive so existing operators can export or roll back legacy Steam data.
 
 ## Middleware
 
