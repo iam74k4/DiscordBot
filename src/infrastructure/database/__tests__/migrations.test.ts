@@ -82,7 +82,9 @@ afterEach(async () => {
 
 describe('database migrations', () => {
   it('preserves legacy Steam data when the Steam cleanup migration runs', async () => {
-    const migrations = await loadLegacySteamMigrations(createTestDatabasePath());
+    const migrations = await loadLegacySteamMigrations(
+      createTestDatabasePath()
+    );
     const {
       database,
       steamMigration,
