@@ -20,11 +20,11 @@ src/infrastructure/database/
 ├── transaction.ts  # runTransaction(fn) — synchronous transaction wrapper
 ├── migrations/
 │   ├── index.ts             # Runs all migrations in order at startup
-│   ├── 001_steam.ts         # Legacy Steam tables (kept for upgrade path; dropped by 005)
-│   ├── 002_notifications.ts # Legacy Steam notification tables (dropped by 005)
+│   ├── 001_steam.ts         # Legacy Steam tables (preserved for export/rollback)
+│   ├── 002_notifications.ts # Legacy Steam notification tables (preserved)
 │   ├── 003_settings.ts
 │   ├── 004_notification.ts
-│   └── 005_drop_steam.ts    # Drops legacy Steam tables on existing databases
+│   └── 005_drop_steam.ts    # Non-destructive Steam cleanup marker
 └── index.ts        # Public exports
 ```
 
@@ -146,13 +146,13 @@ All repositories live under `src/features/<feature>/repositories/`.
 
 Migrations live in `src/infrastructure/database/migrations/` and are run in order at startup:
 
-1. `001_steam.ts` — Legacy: steam_users, playtime_history (kept for upgrade path; tables are dropped by 005)
-2. `002_notifications.ts` — Legacy: notification_settings, user_notification_prefs, game_activity_cache (dropped by 005)
+1. `001_steam.ts` — Legacy: steam_users, playtime_history (preserved for export/rollback)
+2. `002_notifications.ts` — Legacy: notification_settings, user_notification_prefs, game_activity_cache (preserved)
 3. `003_settings.ts` — guild_settings, audit_logs
 4. `004_notification.ts` — notification_channels, voice_sessions
-5. `005_drop_steam.ts` — Drops the legacy Steam tables created by 001 and 002 on existing databases
+5. `005_drop_steam.ts` — Non-destructive marker for the removed Steam runtime feature
 
-`initializeDatabase()` runs all migrations inside a single transaction. It is safe to call multiple times; migrations use `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, and `DROP TABLE IF EXISTS`. Initialization is performed once per process.
+`initializeDatabase()` runs all migrations inside a single transaction. It is safe to call multiple times within a process; migrations use idempotent DDL such as `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS`. Because there is no persisted migration ledger, avoid destructive DDL in migrations unless it is explicitly guarded to preserve existing data. Initialization is performed once per process.
 
 ### Rollback Policy
 

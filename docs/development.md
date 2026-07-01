@@ -145,7 +145,7 @@ export function up(): void {
 }
 ```
 
-2. Use `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS` for idempotency — migrations can be run multiple times safely. Use `DROP TABLE IF EXISTS` for retiring legacy tables (see `005_drop_steam.ts`).
+2. Use `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS` for idempotency — migrations can be run multiple times safely. Avoid destructive DDL unless it is explicitly guarded to preserve existing data; there is no persisted migration ledger.
 
 ## Localization
 
