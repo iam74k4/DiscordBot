@@ -1,16 +1,10 @@
-import { database } from '../connection.js';
-
 /**
- * Drop legacy Steam-related tables introduced by 001_steam.ts and
- * 002_notifications.ts. The Steam feature has been removed from the bot;
- * this migration removes the unused tables on existing databases. Migrations
- * 001 and 002 are kept untouched so that fresh installs and existing
- * deployments converge on the same end state.
+ * Keep legacy Steam-related tables introduced by 001_steam.ts and
+ * 002_notifications.ts. The runtime Steam feature has been removed from the
+ * bot, but deployments may still need the historical data for export,
+ * rollback, or manual recovery.
  */
 export function up(): void {
-  database.exec(`DROP TABLE IF EXISTS playtime_history`);
-  database.exec(`DROP TABLE IF EXISTS user_notification_prefs`);
-  database.exec(`DROP TABLE IF EXISTS game_activity_cache`);
-  database.exec(`DROP TABLE IF EXISTS notification_settings`);
-  database.exec(`DROP TABLE IF EXISTS steam_users`);
+  // Intentionally no-op: dropping these tables would erase existing user data
+  // during startup because migrations are re-run against deployed databases.
 }
