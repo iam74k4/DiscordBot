@@ -34,12 +34,10 @@ describe('database migrations', () => {
     const connection = await import('../connection.js');
     closeDatabase = connection.closeDatabase;
     const { database } = connection;
-    const { up: createSteamTables } = await import(
-      '../migrations/001_steam.js'
-    );
-    const { up: createSteamNotificationTables } = await import(
-      '../migrations/002_notifications.js'
-    );
+    const { up: createSteamTables } =
+      await import('../migrations/001_steam.js');
+    const { up: createSteamNotificationTables } =
+      await import('../migrations/002_notifications.js');
     const { initializeDatabase } = await import('../migrations/index.js');
 
     createSteamTables();
