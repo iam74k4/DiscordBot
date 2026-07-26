@@ -43,6 +43,9 @@ describe('LocalStorage', () => {
       expect(validateBackupFilename('backup-2030-12-31T23-59-59.db')).toBe(
         true
       );
+      expect(
+        validateBackupFilename('backup-2024-01-01T00-00-00-a1b2c3.db')
+      ).toBe(true);
     });
 
     it('should reject path traversal attempts', () => {
