@@ -28,6 +28,11 @@ import { channelMixRingManager } from './channelMixRing.js';
 export class VoiceConnectionManager {
   private connections: Map<string, VoiceConnectionInfo> = new Map();
   private activeStreams: Map<string, Set<Readable>> = new Map();
+  /** In-flight connect promises keyed by channel id (dedupe concurrent joins). */
+  private readonly connecting = new Map<
+    string,
+    Promise<VoiceConnection | null>
+  >();
   private readonly maxConnections: number;
 
   constructor() {
@@ -47,7 +52,9 @@ export class VoiceConnectionManager {
   }
 
   /**
-   * Connect to a voice channel
+   * Connect to a voice channel.
+   * Concurrent callers for the same channel share one in-flight join.
+   * Limit checks include in-flight connects to avoid TOCTOU bypass.
    */
   async connect(
     guild: Guild,
@@ -55,28 +62,66 @@ export class VoiceConnectionManager {
   ): Promise<VoiceConnection | null> {
     const channelId = channel.id;
 
-    // Check if already connected
-    if (this.connections.has(channelId)) {
-      const info = this.connections.get(channelId)!;
-      if (info.state === VoiceConnectionState.Connected) {
-        logger.debug(`Already connected to channel ${channelId}`);
-        return info.connection;
-      }
+    const existing = this.connections.get(channelId);
+    if (existing) {
+      logger.debug(`Already connected/connecting to channel ${channelId}`);
+      return existing.connection;
     }
 
-    // Check connection limit
-    if (this.connections.size >= this.maxConnections) {
+    const inFlight = this.connecting.get(channelId);
+    if (inFlight) {
+      return inFlight;
+    }
+
+    // Reserve before any await (JS is single-threaded until await).
+    if (this.connections.size + this.connecting.size >= this.maxConnections) {
       logger.warn(
         `Connection limit reached (${this.maxConnections}). Cannot connect to channel ${channelId}`
       );
       return null;
     }
 
-    // Check permissions
+    const connectPromise = this.connectInternal(guild, channel);
+    this.connecting.set(channelId, connectPromise);
+    try {
+      return await connectPromise;
+    } finally {
+      this.connecting.delete(channelId);
+    }
+  }
+
+  private async connectInternal(
+    guild: Guild,
+    channel: VoiceChannel | StageChannel
+  ): Promise<VoiceConnection | null> {
+    const channelId = channel.id;
+
+    const existing = this.connections.get(channelId);
+    if (existing) {
+      return existing.connection;
+    }
+
     const hasPermission = await this.checkPermissions(channel);
     if (!hasPermission) {
       logger.warn(
         `Bot does not have permission to connect to channel ${channelId}`
+      );
+      return null;
+    }
+
+    // Another connect may have won while we awaited permissions
+    const raced = this.connections.get(channelId);
+    if (raced) {
+      return raced.connection;
+    }
+
+    // Other usage = established + in-flight minus this channel's reservation
+    if (
+      this.connections.size + this.connecting.size - 1 >=
+      this.maxConnections
+    ) {
+      logger.warn(
+        `Connection limit reached (${this.maxConnections}). Cannot connect to channel ${channelId}`
       );
       return null;
     }
