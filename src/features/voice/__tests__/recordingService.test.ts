@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   recordAudio,
+  generateFileName,
   pcmBufferHasAudibleSignal,
   RecordingNoAudibleAudioError,
 } from '../recording/recordingService.js';
@@ -89,5 +90,13 @@ describe('recordingService', () => {
         guildId: 'g1',
       })
     ).rejects.toBeInstanceOf(RecordingNoAudibleAudioError);
+  });
+
+  it('generateFileName is unique across channels in the same second', () => {
+    const a = generateFileName(30, 'channel-a');
+    const b = generateFileName(30, 'channel-b');
+    expect(a).not.toBe(b);
+    expect(a).toContain('channel-a');
+    expect(b).toContain('channel-b');
   });
 });
