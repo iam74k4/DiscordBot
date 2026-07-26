@@ -74,6 +74,22 @@ describe('ChannelMixRing', () => {
     const mid = out.length >> 1;
     expect(Math.abs(out.readInt16LE(mid))).toBeLessThan(100);
   });
+
+  it('preserves audio past the Int32 sample-index range (~12.4h @ 48kHz)', () => {
+    const ring = new ChannelMixRing(1);
+    // Past 2^31 samples at 48 kHz ≈ 12.4 hours from epoch
+    const lateEpoch = epoch;
+    ring.setEpoch(lateEpoch);
+
+    const pastInt32Ms = Math.ceil((2 ** 31 / 48_000) * 1000) + 1_000;
+    const endMs = lateEpoch + pastInt32Ms;
+    const pcm = Buffer.alloc(960 * 2);
+    pcm.writeInt16LE(9000, 0);
+    ring.addMonoPcmInt16(pcm, endMs);
+
+    const out = ring.extractLastSeconds(0.02, endMs);
+    expect(Math.abs(out.readInt16LE(0))).toBeGreaterThan(1000);
+  });
 });
 
 function maxAbsInt16(buf: Buffer): number {
