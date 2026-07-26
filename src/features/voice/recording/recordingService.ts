@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { createWriteStream } from 'fs';
 import { stat, mkdir } from 'fs/promises';
 import { join } from 'path';
@@ -115,13 +116,17 @@ function splitAudioBuffer(buffer: Buffer, maxSize: number): Buffer[] {
 }
 
 /**
- * Generate file name for recording
+ * Generate a unique file name for a recording.
+ * Includes channel id + nonce so concurrent recordings on different
+ * channels in the same second cannot overwrite each other.
  */
-function generateFileName(duration: number): string {
+export function generateFileName(duration: number, channelId: string): string {
   const now = new Date();
-  const dateStr = now.toISOString().replace(/[-:]/g, '').split('.')[0];
+  const dateStr = now.toISOString().replace(/[-:]/g, '').replace(/\./g, '-');
   const durationStr = `${duration}s`;
-  return `recording_${dateStr}_${durationStr}.wav`;
+  const safeChannelId = channelId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32);
+  const nonce = randomBytes(4).toString('hex');
+  return `recording_${dateStr}_${durationStr}_${safeChannelId}_${nonce}.wav`;
 }
 
 /**
@@ -205,7 +210,7 @@ export async function recordAudio(
         const filePaths: string[] = [];
 
         for (let i = 0; i < parts.length; i++) {
-          const fileName = generateFileName(duration).replace(
+          const fileName = generateFileName(duration, channelId).replace(
             '.wav',
             `_part${i + 1}.wav`
           );
@@ -223,7 +228,7 @@ export async function recordAudio(
           additionalFiles: filePaths.slice(1),
         };
       } else {
-        const fileName = generateFileName(duration);
+        const fileName = generateFileName(duration, channelId);
         const filePath = join(recordingsDir, fileName);
         await writeWavFile(filePath, audioData);
 
