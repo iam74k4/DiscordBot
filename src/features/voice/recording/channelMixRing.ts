@@ -11,14 +11,18 @@ const SAMPLE_RATE = AUDIO.SAMPLE_RATE;
 export class ChannelMixRing {
   private readonly sizeSamples: number;
   private readonly mix: Float32Array;
-  /** Global sample index last written per slot, or -1 if empty */
-  private readonly slotOwner: Int32Array;
+  /**
+   * Global sample index last written per slot, or -1 if empty.
+   * Float64 (not Int32): at 48 kHz, Int32 overflows after ~12.4h and
+   * `slotOwner[idx] === g` fails, so extract returns silence.
+   */
+  private readonly slotOwner: Float64Array;
   private epochMs: number;
 
   constructor(bufferDurationSeconds: number) {
     this.sizeSamples = Math.ceil(SAMPLE_RATE * bufferDurationSeconds);
     this.mix = new Float32Array(this.sizeSamples);
-    this.slotOwner = new Int32Array(this.sizeSamples);
+    this.slotOwner = new Float64Array(this.sizeSamples);
     this.slotOwner.fill(-1);
     this.epochMs = Date.now();
   }
