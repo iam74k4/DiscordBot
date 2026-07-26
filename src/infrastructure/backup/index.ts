@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import * as fsp from 'fs/promises';
 import * as path from 'path';
 import * as cron from 'node-cron';
@@ -39,6 +40,8 @@ class BackupService {
   private backupDir: string;
   private storage: IBackupStorage;
   private initialized: Promise<void>;
+  /** Serialize backups so cron + manual cannot share a path mid-write. */
+  private backupChain: Promise<void> = Promise.resolve();
 
   constructor() {
     this.backupDir = env.BACKUP_DIR;
@@ -58,18 +61,28 @@ class BackupService {
   }
 
   /**
-   * Generate backup filename
+   * Generate a unique backup filename (second + nonce).
    */
   private generateFilename(): string {
     const now = new Date();
     const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    return `backup-${timestamp}.db`;
+    const nonce = randomBytes(3).toString('hex');
+    return `backup-${timestamp}-${nonce}.db`;
   }
 
   /**
    * Run a database backup
    */
   async runBackup(): Promise<BackupResult> {
+    const run = this.backupChain.then(() => this.runBackupExclusive());
+    this.backupChain = run.then(
+      () => undefined,
+      () => undefined
+    );
+    return run;
+  }
+
+  private async runBackupExclusive(): Promise<BackupResult> {
     await this.initialized;
     const filename = this.generateFilename();
     const backupPath = path.join(this.backupDir, filename);
