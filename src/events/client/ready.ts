@@ -1,6 +1,6 @@
 import { Events } from 'discord.js';
 import { Event } from '../../shared/types/index.js';
-import { logger } from '../../shared/utils/logger.js';
+import { getErrorMessage, logger } from '../../shared/utils/logger.js';
 import { registerCommands } from '../../handlers/commandHandler.js';
 
 /**
@@ -21,9 +21,19 @@ export const event: Event<typeof Events.ClientReady> = {
       status: 'online',
     });
 
-    await registerCommands(client);
-
+    // Enable interaction/event handlers before Discord REST registration.
+    // A transient registration failure must not soft-lock the entire bot.
     client.isFullyReady = true;
+
+    try {
+      await registerCommands(client);
+    } catch (error) {
+      logger.error(
+        'Slash command registration failed; continuing with loaded command handlers:',
+        getErrorMessage(error)
+      );
+    }
+
     logger.info('Bot is ready!');
   },
 };
