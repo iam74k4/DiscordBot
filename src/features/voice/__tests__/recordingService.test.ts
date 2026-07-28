@@ -34,6 +34,7 @@ describe('recordingService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockExtractLastSeconds.mockReturnValue(Buffer.alloc(0));
+    vi.mocked(mkdir).mockImplementation(() => Promise.resolve(undefined));
   });
 
   it('throws for duration <= 0', async () => {
@@ -48,9 +49,10 @@ describe('recordingService', () => {
   });
 
   it('throws when recording already in progress', async () => {
-    mockExtractLastSeconds.mockImplementation(
-      () => new Promise<Buffer>(() => {})
-    );
+    const audible = Buffer.alloc(4);
+    audible.writeInt16LE(1000, 0);
+    mockExtractLastSeconds.mockReturnValue(audible);
+    vi.mocked(mkdir).mockImplementation(() => new Promise(() => {}));
 
     const p1 = recordAudio({
       channelId: 'ch1',
@@ -58,6 +60,10 @@ describe('recordingService', () => {
       userId: 'u1',
       guildId: 'g1',
     });
+
+    // Allow the deferred recording work to start and park on mkdir.
+    await Promise.resolve();
+    await Promise.resolve();
 
     await expect(
       recordAudio({
