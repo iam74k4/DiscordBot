@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { mkdir } from 'fs/promises';
 import {
   recordAudio,
   generateFileName,
@@ -85,6 +86,30 @@ describe('recordingService', () => {
     await expect(
       recordAudio({
         channelId: 'ch-silent',
+        duration: 1,
+        userId: 'u1',
+        guildId: 'g1',
+      })
+    ).rejects.toBeInstanceOf(RecordingNoAudibleAudioError);
+  });
+
+  it('clears the queue after a silent-window failure so retries can proceed', async () => {
+    const silent = Buffer.alloc(96000);
+    mockExtractLastSeconds.mockReturnValue(silent);
+
+    await expect(
+      recordAudio({
+        channelId: 'ch-retry',
+        duration: 1,
+        userId: 'u1',
+        guildId: 'g1',
+      })
+    ).rejects.toBeInstanceOf(RecordingNoAudibleAudioError);
+
+    // A second call must not report "already in progress" after the sync throw.
+    await expect(
+      recordAudio({
+        channelId: 'ch-retry',
         duration: 1,
         userId: 'u1',
         guildId: 'g1',

@@ -248,7 +248,13 @@ export class VoiceConnectionManager {
           ]);
           // Reconnecting to a new channel - ignore disconnect
         } catch {
-          // Real disconnect - clean up
+          // Real disconnect - clean up only if this connection is still tracked.
+          // A replacement join for the same channel must not be destroyed by a
+          // stale handler from the previous VoiceConnection instance.
+          const current = this.connections.get(channelId);
+          if (current?.connection !== connection) {
+            return;
+          }
           this.destroyStreamsForChannel(channelId);
           connection.destroy();
           this.connections.delete(channelId);
@@ -259,10 +265,11 @@ export class VoiceConnectionManager {
 
       connection.on(VoiceConnectionStatus.Ready, () => {
         const connInfo = this.connections.get(channelId);
-        if (connInfo) {
-          connInfo.state = VoiceConnectionState.Connected;
-          connInfo.connectedAt = Date.now();
+        if (connInfo?.connection !== connection) {
+          return;
         }
+        connInfo.state = VoiceConnectionState.Connected;
+        connInfo.connectedAt = Date.now();
         logger.info(`Connected to voice channel ${channelId}`);
       });
 

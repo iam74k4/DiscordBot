@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PermissionFlagsBits } from 'discord.js';
 import { VoiceConnectionManager } from '../recording/connectionManager.js';
+import { channelMixRingManager } from '../recording/channelMixRing.js';
 
 const joinVoiceChannel = vi.hoisted(() => vi.fn());
+const entersState = vi.hoisted(() => vi.fn((c: unknown) => Promise.resolve(c)));
 
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel,
@@ -14,7 +16,7 @@ vi.mock('@discordjs/voice', () => ({
     Connecting: 'connecting',
   },
   EndBehaviorType: { AfterSilence: 'after-silence' },
-  entersState: vi.fn((c: unknown) => Promise.resolve(c)),
+  entersState,
 }));
 
 vi.mock('prism-media', () => ({
@@ -108,5 +110,49 @@ describe('VoiceConnectionManager.connect concurrency', () => {
     const successes = results.filter((r) => r !== null);
     expect(successes).toHaveLength(1);
     expect(joinVoiceChannel).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not let a stale disconnect handler destroy a replacement connection', async () => {
+    const manager = new VoiceConnectionManager();
+    const channel = makeChannel('ch-replace');
+
+    const connA = makeConnectionMock();
+    const connB = makeConnectionMock();
+    joinVoiceChannel
+      .mockImplementationOnce(() => connA)
+      .mockImplementationOnce(() => connB);
+
+    // Keep the first disconnect handler parked in recovery until we reconnect.
+    let rejectRecovery!: (reason?: unknown) => void;
+    entersState.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectRecovery = reject;
+        })
+    );
+
+    await manager.connect({} as never, channel as never);
+    expect(manager.getConnection('ch-replace')?.connection).toBe(connA);
+
+    const disconnectedHandler = connA.on.mock.calls.find(
+      (call) => call[0] === 'disconnected'
+    )?.[1] as (() => Promise<void>) | undefined;
+    expect(disconnectedHandler).toBeTypeOf('function');
+
+    const staleCleanup = disconnectedHandler!();
+    await manager.disconnect('ch-replace');
+    expect(manager.getConnection('ch-replace')).toBeUndefined();
+
+    // Allow a new join while the old handler is still awaiting recovery.
+    entersState.mockImplementation((c: unknown) => Promise.resolve(c));
+    await manager.connect({} as never, channel as never);
+    expect(manager.getConnection('ch-replace')?.connection).toBe(connB);
+
+    rejectRecovery(new Error('recovery timed out'));
+    await staleCleanup;
+
+    expect(manager.getConnection('ch-replace')?.connection).toBe(connB);
+    expect(channelMixRingManager.remove).toHaveBeenCalledTimes(1);
+    expect(connB.destroy).not.toHaveBeenCalled();
   });
 });
