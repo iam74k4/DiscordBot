@@ -190,8 +190,7 @@ export async function recordAudio(
   // Defer work so the queue entry is registered before any sync throw
   // (e.g. RecordingNoAudibleAudioError). Otherwise finally runs before
   // set() and the rejected promise stays forever, blocking the channel.
-  let recordingPromise!: Promise<RecordingResult>;
-  recordingPromise = Promise.resolve().then(async () => {
+  const recordingPromise = Promise.resolve().then(async () => {
     try {
       const audioData = channelMixRingManager.extractLastSeconds(
         channelId,
