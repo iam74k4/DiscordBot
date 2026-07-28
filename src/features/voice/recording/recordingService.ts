@@ -187,7 +187,11 @@ export async function recordAudio(
     );
   }
 
-  const recordingPromise = (async (): Promise<RecordingResult> => {
+  // Defer work so the queue entry is registered before any sync throw
+  // (e.g. RecordingNoAudibleAudioError). Otherwise finally runs before
+  // set() and the rejected promise stays forever, blocking the channel.
+  let recordingPromise!: Promise<RecordingResult>;
+  recordingPromise = Promise.resolve().then(async () => {
     try {
       const audioData = channelMixRingManager.extractLastSeconds(
         channelId,
@@ -242,9 +246,11 @@ export async function recordAudio(
         };
       }
     } finally {
-      recordingQueues.delete(channelId);
+      if (recordingQueues.get(channelId) === recordingPromise) {
+        recordingQueues.delete(channelId);
+      }
     }
-  })();
+  });
 
   recordingQueues.set(channelId, recordingPromise);
 
