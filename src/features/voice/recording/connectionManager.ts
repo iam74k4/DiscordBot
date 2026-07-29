@@ -33,6 +33,12 @@ export class VoiceConnectionManager {
     string,
     Promise<VoiceConnection | null>
   >();
+  /**
+   * Guild ids with an in-flight connect. Discord allows one voice connection
+   * per guild; tracking this prevents a second channel join from reusing the
+   * live VoiceConnection under a different channelId (mix-ring cross-talk).
+   */
+  private readonly connectingGuilds = new Map<string, string>();
   private readonly maxConnections: number;
 
   constructor() {
@@ -52,20 +58,52 @@ export class VoiceConnectionManager {
   }
 
   /**
+   * True when this guild already has a tracked or in-flight connection on a
+   * different channel. `@discordjs/voice` keys connections by guildId and will
+   * move/reuse the existing VoiceConnection — registering it again under a
+   * second channelId wires both mix rings to the same receiver.
+   */
+  private hasOtherChannelInGuild(
+    guildId: string,
+    channelId: string
+  ): string | undefined {
+    for (const [otherChannelId, info] of this.connections) {
+      if (info.guildId === guildId && otherChannelId !== channelId) {
+        return otherChannelId;
+      }
+    }
+    const inFlightChannelId = this.connectingGuilds.get(guildId);
+    if (inFlightChannelId && inFlightChannelId !== channelId) {
+      return inFlightChannelId;
+    }
+    return undefined;
+  }
+
+  /**
    * Connect to a voice channel.
    * Concurrent callers for the same channel share one in-flight join.
    * Limit checks include in-flight connects to avoid TOCTOU bypass.
+   * At most one channel per guild is allowed (Discord voice constraint).
    */
   async connect(
     guild: Guild,
     channel: VoiceChannel | StageChannel
   ): Promise<VoiceConnection | null> {
     const channelId = channel.id;
+    const guildId = guild.id;
 
     const existing = this.connections.get(channelId);
     if (existing) {
       logger.debug(`Already connected/connecting to channel ${channelId}`);
       return existing.connection;
+    }
+
+    const otherChannelId = this.hasOtherChannelInGuild(guildId, channelId);
+    if (otherChannelId) {
+      logger.warn(
+        `Already connected in guild ${guildId} (channel ${otherChannelId}). Cannot connect to ${channelId} — Discord allows one voice connection per guild.`
+      );
+      return null;
     }
 
     const inFlight = this.connecting.get(channelId);
@@ -83,10 +121,14 @@ export class VoiceConnectionManager {
 
     const connectPromise = this.connectInternal(guild, channel);
     this.connecting.set(channelId, connectPromise);
+    this.connectingGuilds.set(guildId, channelId);
     try {
       return await connectPromise;
     } finally {
       this.connecting.delete(channelId);
+      if (this.connectingGuilds.get(guildId) === channelId) {
+        this.connectingGuilds.delete(guildId);
+      }
     }
   }
 
@@ -95,6 +137,7 @@ export class VoiceConnectionManager {
     channel: VoiceChannel | StageChannel
   ): Promise<VoiceConnection | null> {
     const channelId = channel.id;
+    const guildId = guild.id;
 
     const existing = this.connections.get(channelId);
     if (existing) {
@@ -113,6 +156,14 @@ export class VoiceConnectionManager {
     const raced = this.connections.get(channelId);
     if (raced) {
       return raced.connection;
+    }
+
+    const otherChannelId = this.hasOtherChannelInGuild(guildId, channelId);
+    if (otherChannelId) {
+      logger.warn(
+        `Already connected in guild ${guildId} (channel ${otherChannelId}). Cannot connect to ${channelId} — Discord allows one voice connection per guild.`
+      );
+      return null;
     }
 
     // Other usage = established + in-flight minus this channel's reservation

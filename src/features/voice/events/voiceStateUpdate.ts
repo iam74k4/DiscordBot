@@ -61,6 +61,18 @@ async function handleUserJoined(
     return;
   }
 
+  // Discord allows one voice connection per guild. Staying on the current
+  // channel avoids joinVoiceChannel moving the shared connection and
+  // cross-wiring per-channel mix rings.
+  for (const info of connectionManager.getAllConnections().values()) {
+    if (info.guildId === guild.id) {
+      logger.debug(
+        `Already connected in guild ${guild.id} (channel ${info.channelId}); skipping auto-join of ${channel.name} (${channel.id})`
+      );
+      return;
+    }
+  }
+
   // Check connection limit
   if (connectionManager.isAtLimit()) {
     logger.warn(

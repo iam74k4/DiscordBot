@@ -37,7 +37,7 @@ vi.mock('prism-media', () => ({
 
 vi.mock('../../../config/index.js', () => ({
   env: {
-    MAX_CONCURRENT_VC_CONNECTIONS: 1,
+    MAX_CONCURRENT_VC_CONNECTIONS: 2,
   },
   AUDIO: {
     SAMPLE_RATE: 48000,
@@ -51,13 +51,13 @@ vi.mock('../recording/channelMixRing.js', () => ({
   },
 }));
 
-function makeChannel(id: string) {
+function makeChannel(id: string, guildId = 'guild-1') {
   return {
     id,
     name: `channel-${id}`,
     guild: {
-      id: 'guild-1',
-      name: 'guild',
+      id: guildId,
+      name: `guild-${guildId}`,
       voiceAdapterCreator: vi.fn(),
       members: { me: {} },
     },
@@ -65,6 +65,10 @@ function makeChannel(id: string) {
       has: (flag: bigint) => flag === PermissionFlagsBits.Connect,
     })),
   };
+}
+
+function makeGuild(channel: ReturnType<typeof makeChannel>) {
+  return channel.guild;
 }
 
 function makeConnectionMock() {
@@ -88,9 +92,10 @@ describe('VoiceConnectionManager.connect concurrency', () => {
   it('dedupes concurrent connect calls for the same channel', async () => {
     const manager = new VoiceConnectionManager();
     const channel = makeChannel('ch-same');
+    const guild = makeGuild(channel);
 
-    const p1 = manager.connect({} as never, channel as never);
-    const p2 = manager.connect({} as never, channel as never);
+    const p1 = manager.connect(guild as never, channel as never);
+    const p2 = manager.connect(guild as never, channel as never);
 
     const [c1, c2] = await Promise.all([p1, p2]);
     expect(c1).not.toBeNull();
@@ -98,15 +103,47 @@ describe('VoiceConnectionManager.connect concurrency', () => {
     expect(joinVoiceChannel).toHaveBeenCalledTimes(1);
   });
 
-  it('enforces MAX_CONCURRENT_VC_CONNECTIONS across concurrent channel joins', async () => {
+  it('enforces MAX_CONCURRENT_VC_CONNECTIONS across concurrent guild joins', async () => {
     const manager = new VoiceConnectionManager();
-    const ch1 = makeChannel('ch-1');
-    const ch2 = makeChannel('ch-2');
+    // Limit is 2 in the mock; three different guilds => one refusal.
+    const ch1 = makeChannel('ch-1', 'guild-a');
+    const ch2 = makeChannel('ch-2', 'guild-b');
+    const ch3 = makeChannel('ch-3', 'guild-c');
 
-    const p1 = manager.connect({} as never, ch1 as never);
-    const p2 = manager.connect({} as never, ch2 as never);
+    const results = await Promise.all([
+      manager.connect(makeGuild(ch1) as never, ch1 as never),
+      manager.connect(makeGuild(ch2) as never, ch2 as never),
+      manager.connect(makeGuild(ch3) as never, ch3 as never),
+    ]);
+    const successes = results.filter((r) => r !== null);
+    expect(successes).toHaveLength(2);
+    expect(joinVoiceChannel).toHaveBeenCalledTimes(2);
+  });
 
-    const results = await Promise.all([p1, p2]);
+  it('refuses a second channel in the same guild to prevent mix-ring cross-talk', async () => {
+    const manager = new VoiceConnectionManager();
+    const chA = makeChannel('ch-a', 'guild-shared');
+    const chB = makeChannel('ch-b', 'guild-shared');
+
+    const first = await manager.connect(makeGuild(chA) as never, chA as never);
+    const second = await manager.connect(makeGuild(chB) as never, chB as never);
+
+    expect(first).not.toBeNull();
+    expect(second).toBeNull();
+    expect(joinVoiceChannel).toHaveBeenCalledTimes(1);
+    expect(manager.getConnection('ch-a')).toBeDefined();
+    expect(manager.getConnection('ch-b')).toBeUndefined();
+  });
+
+  it('refuses concurrent joins to different channels in the same guild', async () => {
+    const manager = new VoiceConnectionManager();
+    const chA = makeChannel('ch-a2', 'guild-race');
+    const chB = makeChannel('ch-b2', 'guild-race');
+
+    const results = await Promise.all([
+      manager.connect(makeGuild(chA) as never, chA as never),
+      manager.connect(makeGuild(chB) as never, chB as never),
+    ]);
     const successes = results.filter((r) => r !== null);
     expect(successes).toHaveLength(1);
     expect(joinVoiceChannel).toHaveBeenCalledTimes(1);
@@ -115,6 +152,7 @@ describe('VoiceConnectionManager.connect concurrency', () => {
   it('does not let a stale disconnect handler destroy a replacement connection', async () => {
     const manager = new VoiceConnectionManager();
     const channel = makeChannel('ch-replace');
+    const guild = makeGuild(channel);
 
     const connA = makeConnectionMock();
     const connB = makeConnectionMock();
@@ -131,7 +169,7 @@ describe('VoiceConnectionManager.connect concurrency', () => {
         })
     );
 
-    await manager.connect({} as never, channel as never);
+    await manager.connect(guild as never, channel as never);
     expect(manager.getConnection('ch-replace')?.connection).toBe(connA);
 
     const disconnectedHandler = connA.on.mock.calls.find(
@@ -145,7 +183,7 @@ describe('VoiceConnectionManager.connect concurrency', () => {
 
     // Allow a new join while the old handler is still awaiting recovery.
     entersState.mockImplementation((c: unknown) => Promise.resolve(c));
-    await manager.connect({} as never, channel as never);
+    await manager.connect(guild as never, channel as never);
     expect(manager.getConnection('ch-replace')?.connection).toBe(connB);
 
     rejectRecovery(new Error('recovery timed out'));
