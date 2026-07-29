@@ -80,6 +80,22 @@ export class VoiceConnectionManager {
   }
 
   /**
+   * Established connections plus in-flight joins that have not landed yet.
+   * Channels present in both maps (between `connections.set` and `connecting`
+   * cleanup) are counted once so max>1 is not under-admitted.
+   */
+  private usageCount(excludeChannelId?: string): number {
+    let inFlightOnly = 0;
+    for (const channelId of this.connecting.keys()) {
+      if (channelId === excludeChannelId) continue;
+      if (!this.connections.has(channelId)) {
+        inFlightOnly++;
+      }
+    }
+    return this.connections.size + inFlightOnly;
+  }
+
+  /**
    * Connect to a voice channel.
    * Concurrent callers for the same channel share one in-flight join.
    * Limit checks include in-flight connects to avoid TOCTOU bypass.
@@ -112,7 +128,7 @@ export class VoiceConnectionManager {
     }
 
     // Reserve before any await (JS is single-threaded until await).
-    if (this.connections.size + this.connecting.size >= this.maxConnections) {
+    if (this.usageCount() >= this.maxConnections) {
       logger.warn(
         `Connection limit reached (${this.maxConnections}). Cannot connect to channel ${channelId}`
       );
@@ -166,11 +182,8 @@ export class VoiceConnectionManager {
       return null;
     }
 
-    // Other usage = established + in-flight minus this channel's reservation
-    if (
-      this.connections.size + this.connecting.size - 1 >=
-      this.maxConnections
-    ) {
+    // Other usage = established + other in-flight (exclude this reservation)
+    if (this.usageCount(channelId) >= this.maxConnections) {
       logger.warn(
         `Connection limit reached (${this.maxConnections}). Cannot connect to channel ${channelId}`
       );
