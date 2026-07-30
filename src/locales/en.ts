@@ -176,6 +176,10 @@ export const en: TranslationKeys = {
           "Cannot manage roles higher than the bot's highest role.",
         actorRoleHierarchy:
           'You can only manage roles lower than your highest role.',
+        targetMemberHierarchy:
+          'You can only manage members with a lower highest role than yours.',
+        botTargetMemberHierarchy:
+          "Cannot manage members at or above the bot's highest role.",
         alreadyHasRole: 'This member already has that role.',
         doesNotHaveRole: 'This member does not have that role.',
         failed: 'Failed to modify role.',

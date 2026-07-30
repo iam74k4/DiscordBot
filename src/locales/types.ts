@@ -228,6 +228,8 @@ export interface TranslationKeys {
         memberNotFound: string;
         botRoleHierarchy: string;
         actorRoleHierarchy: string;
+        targetMemberHierarchy: string;
+        botTargetMemberHierarchy: string;
         alreadyHasRole: string;
         doesNotHaveRole: string;
         failed: string;

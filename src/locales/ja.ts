@@ -174,6 +174,10 @@ export const ja: TranslationKeys = {
         botRoleHierarchy: 'Botの最高ロールより上位のロールは操作できません。',
         actorRoleHierarchy:
           '自分の最高ロールより上位のロールは操作できません。',
+        targetMemberHierarchy:
+          '自分より上位または同等の最高ロールを持つメンバーは操作できません。',
+        botTargetMemberHierarchy:
+          'Botの最高ロール以上のメンバーは操作できません。',
         alreadyHasRole: 'このメンバーは既にそのロールを持っています。',
         doesNotHaveRole: 'このメンバーはそのロールを持っていません。',
         failed: 'ロールの操作に失敗しました。',
