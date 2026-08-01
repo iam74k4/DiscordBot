@@ -1,12 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const closeAllStaleSessions = vi.fn();
+const reconcileActiveVoiceSessions = vi.fn();
+const endAllSessions = vi.fn();
 const cleanupOldSessions = vi.fn(() => 3);
 const loggerInfo = vi.fn();
 
 vi.mock('../tracking/voiceTracker.js', () => ({
   voiceTracker: {
     closeAllStaleSessions,
+    reconcileActiveVoiceSessions,
+    endAllSessions,
   },
 }));
 
@@ -47,6 +51,8 @@ describe('notification feature lifecycle', () => {
     start(client);
 
     expect(closeAllStaleSessions).toHaveBeenCalledTimes(1);
+    expect(reconcileActiveVoiceSessions).toHaveBeenCalledTimes(1);
+    expect(reconcileActiveVoiceSessions).toHaveBeenCalledWith(client);
     expect(cleanupOldSessions).toHaveBeenCalledTimes(1);
     expect(cleanupOldSessions).toHaveBeenCalledWith(30);
 
@@ -54,6 +60,7 @@ describe('notification feature lifecycle', () => {
     expect(cleanupOldSessions).toHaveBeenCalledTimes(2);
 
     stop();
+    expect(endAllSessions).toHaveBeenCalledTimes(1);
     vi.advanceTimersByTime(24 * 60 * 60 * 1000);
     expect(cleanupOldSessions).toHaveBeenCalledTimes(2);
   });

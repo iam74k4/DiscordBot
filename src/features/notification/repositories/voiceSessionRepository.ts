@@ -42,20 +42,22 @@ function endSession(sessionId: number): void {
 }
 
 function closeStaleSessionsForGuild(guildId: string): number {
-  const now = Date.now();
+  // Crash / hard-kill leftovers have no trustworthy end time. Attribute zero
+  // duration instead of charging the entire offline window to the user.
   const stmt = database.prepare(
-    'UPDATE voice_sessions SET left_at = ?, duration_ms = ? - joined_at WHERE guild_id = ? AND left_at IS NULL'
+    'UPDATE voice_sessions SET left_at = joined_at, duration_ms = 0 WHERE guild_id = ? AND left_at IS NULL'
   );
-  const result = stmt.run(now, now, guildId);
+  const result = stmt.run(guildId);
   return result.changes;
 }
 
 function closeAllStaleSessions(): number {
-  const now = Date.now();
+  // Crash / hard-kill leftovers have no trustworthy end time. Attribute zero
+  // duration instead of charging the entire offline window to the user.
   const stmt = database.prepare(
-    'UPDATE voice_sessions SET left_at = ?, duration_ms = ? - joined_at WHERE left_at IS NULL'
+    'UPDATE voice_sessions SET left_at = joined_at, duration_ms = 0 WHERE left_at IS NULL'
   );
-  const result = stmt.run(now, now);
+  const result = stmt.run();
   return result.changes;
 }
 

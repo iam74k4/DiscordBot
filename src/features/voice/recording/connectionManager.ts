@@ -40,7 +40,10 @@ export class VoiceConnectionManager {
   private async checkPermissions(
     channel: VoiceChannel | StageChannel
   ): Promise<boolean> {
-    const permissions = channel.permissionsFor(channel.guild.members.me!);
+    const me = channel.guild.members.me;
+    if (!me) return false;
+
+    const permissions = channel.permissionsFor(me);
     if (!permissions) return false;
 
     return permissions.has(PermissionFlagsBits.Connect);
