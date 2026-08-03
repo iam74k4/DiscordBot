@@ -102,7 +102,7 @@ export async function handlePollVote(
   const messageId = interaction.message.id;
   const poll = pollStore.get(messageId);
 
-  if (!poll) {
+  if (!poll || poll.ended) {
     const locale = mapDiscordLocale(interaction.locale);
     await interaction.reply({
       content: t('poll.errors.pollEndedDesc', locale),
@@ -151,6 +151,12 @@ export async function handlePollVote(
     ephemeral: true,
   });
 
+  // Finalization may have started while we awaited the vote ack — do not
+  // overwrite the ended embed / re-open the live tally view.
+  if (poll.ended || !pollStore.has(messageId)) {
+    return;
+  }
+
   const embed = buildPollResultEmbed(poll);
   await interaction.message
     .edit({ embeds: [embed] })
@@ -171,26 +177,40 @@ export async function endPoll(
     poll.timeout = undefined;
   }
 
+  // Block further votes before any await so late clicks cannot mutate the
+  // tally after finalization has begun (and cannot race-edit the message).
+  poll.ended = true;
+
   const discordClient = client ?? poll.client;
 
   try {
     const channel = discordClient?.channels.cache.get(poll.channelId);
     if (channel && channel.isTextBased() && 'messages' in channel) {
       const message = await channel.messages.fetch(messageId).catch(() => null);
-      if (message) {
-        const embed = buildPollResultEmbed(poll, true);
-        const disabledButtons = buildPollButtons(poll, true);
-        await message.edit({
-          embeds: [embed],
-          components: disabledButtons,
-        });
-        logger.info(`Poll ended: ${poll.question} (${poll.votes.size} votes)`);
+      if (!message) {
+        // Message is gone — nothing left to publish; drop the store entry.
+        pollStore.delete(messageId);
+        return;
       }
+
+      const embed = buildPollResultEmbed(poll, true);
+      const disabledButtons = buildPollButtons(poll, true);
+      await message.edit({
+        embeds: [embed],
+        components: disabledButtons,
+      });
+      logger.info(`Poll ended: ${poll.question} (${poll.votes.size} votes)`);
+      pollStore.delete(messageId);
+      return;
     }
-    pollStore.delete(messageId);
+
+    // Keep the ended poll so a later retry (manual /poll end) can publish
+    // results instead of silently discarding the only copy of the votes.
+    logger.warn(
+      `Poll end deferred; channel not available for message ${messageId}`
+    );
   } catch (error) {
     logger.error('Error ending poll:', getErrorMessage(error));
-    pollStore.delete(messageId);
   }
 }
 
