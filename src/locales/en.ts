@@ -354,6 +354,9 @@ export const en: TranslationKeys = {
       recordingInProgress: 'Recording In Progress',
       recordingInProgressDesc:
         'Recording is already in progress for this channel.',
+      deliveryIncomplete: 'Recording Delivery Incomplete',
+      deliveryIncompleteDesc:
+        'Could not deliver split recording part(s) {parts} of {total}. Retry `/record` for the full audio.',
       failed: 'Recording Failed',
       failedDesc: 'An error occurred while processing the recording: {error}',
     },

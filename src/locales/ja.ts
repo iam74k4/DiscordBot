@@ -346,6 +346,9 @@ export const ja: TranslationKeys = {
       connectionLimitDesc: '同時接続数の上限に達しています。',
       recordingInProgress: '録音中',
       recordingInProgressDesc: 'このチャンネルで既に録音が進行中です。',
+      deliveryIncomplete: '録音配信が不完全です',
+      deliveryIncompleteDesc:
+        '分割録音のパート {parts}（全{total}件中）を配信できませんでした。完全な音声が必要な場合は `/record` を再実行してください。',
       failed: '録音失敗',
       failedDesc: '録音の処理中にエラーが発生しました: {error}',
     },

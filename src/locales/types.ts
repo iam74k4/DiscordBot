@@ -390,6 +390,8 @@ export interface TranslationKeys {
       connectionLimitDesc: string;
       recordingInProgress: string;
       recordingInProgressDesc: string;
+      deliveryIncomplete: string;
+      deliveryIncompleteDesc: string;
       failed: string;
       failedDesc: string;
     };
