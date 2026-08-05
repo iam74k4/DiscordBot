@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { VoiceState } from 'discord.js';
-import { createMockClient, createMockGuild, createMockUser } from '../../../__tests__/helpers/discord.js';
+import {
+  createMockClient,
+  createMockGuild,
+  createMockUser,
+} from '../../../__tests__/helpers/discord.js';
 
 const startSession = vi.fn();
 const endSession = vi.fn();
