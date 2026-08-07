@@ -109,13 +109,6 @@ function validateEnv(): void {
     );
   }
 
-  // Warn about optional but recommended variables
-  if (!process.env.STEAM_API_KEY) {
-    logger.warn(
-      'STEAM_API_KEY is not set. Steam-related commands will not work.'
-    );
-  }
-
   // Validate webhook URL format if provided
   if (process.env.ALERT_WEBHOOK_URL) {
     try {
@@ -175,11 +168,6 @@ function validateNumericalConfig(): void {
     7,
     'BACKUP_RETENTION_DAYS'
   );
-  const playtimeRetentionDays = parseNumber(
-    process.env.PLAYTIME_HISTORY_RETENTION_DAYS,
-    365,
-    'PLAYTIME_HISTORY_RETENTION_DAYS'
-  );
   const voiceSessionRetentionDays = parseNumber(
     process.env.VOICE_SESSION_RETENTION_DAYS,
     30,
@@ -189,11 +177,6 @@ function validateNumericalConfig(): void {
     process.env.AUDIT_LOG_RETENTION_DAYS,
     90,
     'AUDIT_LOG_RETENTION_DAYS'
-  );
-  const steamRankingBatch = parseNumber(
-    process.env.STEAM_RANKING_BATCH_SIZE,
-    8,
-    'STEAM_RANKING_BATCH_SIZE'
   );
   const shutdownTimeout = parseNumber(
     process.env.SHUTDOWN_TIMEOUT_MS,
@@ -228,17 +211,11 @@ function validateNumericalConfig(): void {
   if (backupDays <= 0) {
     errors.push('BACKUP_RETENTION_DAYS must be > 0');
   }
-  if (playtimeRetentionDays <= 0) {
-    errors.push('PLAYTIME_HISTORY_RETENTION_DAYS must be > 0');
-  }
   if (voiceSessionRetentionDays <= 0) {
     errors.push('VOICE_SESSION_RETENTION_DAYS must be > 0');
   }
   if (auditLogRetentionDays <= 0) {
     errors.push('AUDIT_LOG_RETENTION_DAYS must be > 0');
-  }
-  if (steamRankingBatch <= 0 || steamRankingBatch > 20) {
-    errors.push('STEAM_RANKING_BATCH_SIZE must be between 1 and 20');
   }
   if (shutdownTimeout < 5_000 || shutdownTimeout > 120_000) {
     errors.push('SHUTDOWN_TIMEOUT_MS must be between 5000 and 120000');
@@ -315,16 +292,6 @@ export const env = {
   /** Discord guild ID for development (optional) */
   DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID || null,
 
-  /** Steam Web API key (optional — Steam commands require this) */
-  STEAM_API_KEY: process.env.STEAM_API_KEY || '',
-
-  /** Steam ranking API batch size (default: 8) */
-  STEAM_RANKING_BATCH_SIZE: parseNumber(
-    process.env.STEAM_RANKING_BATCH_SIZE,
-    8,
-    'STEAM_RANKING_BATCH_SIZE'
-  ),
-
   /** Bot owner IDs (comma-separated) */
   BOT_OWNER_IDS: parseOwnerIds(process.env.BOT_OWNER_IDS),
 
@@ -377,12 +344,6 @@ export const env = {
     process.env.RECORDING_RETENTION_HOURS,
     24,
     'RECORDING_RETENTION_HOURS'
-  ),
-  /** Steam playtime history retention days (default: 365) */
-  PLAYTIME_HISTORY_RETENTION_DAYS: parseNumber(
-    process.env.PLAYTIME_HISTORY_RETENTION_DAYS,
-    365,
-    'PLAYTIME_HISTORY_RETENTION_DAYS'
   ),
   /** Voice session retention days (default: 30) */
   VOICE_SESSION_RETENTION_DAYS: parseNumber(
