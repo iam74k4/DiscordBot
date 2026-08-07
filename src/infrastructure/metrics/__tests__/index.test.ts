@@ -35,12 +35,12 @@ describe('metrics service', () => {
     });
 
     it('tracks errors by command name with :error suffix when name provided', () => {
-      metrics.incrementError('steam');
-      metrics.incrementError('steam');
+      metrics.incrementError('voice');
+      metrics.incrementError('voice');
       metrics.incrementError('poll');
 
       const snapshot = metrics.getSnapshot();
-      expect(snapshot.commands.byName['steam:error']).toBe(2);
+      expect(snapshot.commands.byName['voice:error']).toBe(2);
       expect(snapshot.commands.byName['poll:error']).toBe(1);
     });
 
@@ -50,27 +50,6 @@ describe('metrics service', () => {
       const snapshot = metrics.getSnapshot();
       expect(snapshot.commands.errors).toBe(1);
       expect(Object.keys(snapshot.commands.byName)).toHaveLength(0);
-    });
-  });
-
-  describe('incrementSteamCall', () => {
-    it('increments api.steamCalls', () => {
-      metrics.incrementSteamCall();
-      expect(metrics.getSnapshot().api.steamCalls).toBe(1);
-
-      metrics.incrementSteamCall();
-      metrics.incrementSteamCall();
-      expect(metrics.getSnapshot().api.steamCalls).toBe(3);
-    });
-  });
-
-  describe('incrementSteamError', () => {
-    it('increments api.steamErrors', () => {
-      metrics.incrementSteamError();
-      expect(metrics.getSnapshot().api.steamErrors).toBe(1);
-
-      metrics.incrementSteamError();
-      expect(metrics.getSnapshot().api.steamErrors).toBe(2);
     });
   });
 
@@ -103,8 +82,6 @@ describe('metrics service', () => {
     it('returns correct structure with all required fields', () => {
       metrics.incrementCommand('test');
       metrics.incrementError('test');
-      metrics.incrementSteamCall();
-      metrics.incrementSteamError();
       metrics.recordVoiceRecording(120);
 
       const snapshot = metrics.getSnapshot();
@@ -117,10 +94,6 @@ describe('metrics service', () => {
             test: 1,
             'test:error': 1,
           }),
-        },
-        api: {
-          steamCalls: 1,
-          steamErrors: 1,
         },
         voice: {
           recordings: 1,
@@ -145,8 +118,6 @@ describe('metrics service', () => {
     it('clears all counters', () => {
       metrics.incrementCommand('ping');
       metrics.incrementError('ping');
-      metrics.incrementSteamCall();
-      metrics.incrementSteamError();
       metrics.recordVoiceRecording(60);
 
       metrics.reset();
@@ -155,8 +126,6 @@ describe('metrics service', () => {
       expect(snapshot.commands.executed).toBe(0);
       expect(snapshot.commands.errors).toBe(0);
       expect(Object.keys(snapshot.commands.byName)).toHaveLength(0);
-      expect(snapshot.api.steamCalls).toBe(0);
-      expect(snapshot.api.steamErrors).toBe(0);
       expect(snapshot.voice.recordings).toBe(0);
       expect(snapshot.voice.totalSeconds).toBe(0);
     });
@@ -165,7 +134,6 @@ describe('metrics service', () => {
       metrics.incrementCommand('test');
       const before = metrics.getSnapshot().startTime;
 
-      // Small delay to ensure startTime changes
       const start = Date.now();
       while (Date.now() - start < 10) {
         // busy wait ~10ms
@@ -195,16 +163,6 @@ describe('metrics service', () => {
       expect(output).toContain('ping: 1');
     });
 
-    it('includes Steam API section', () => {
-      metrics.incrementSteamCall();
-      metrics.incrementSteamError();
-      const output = metrics.formatForDisplay();
-
-      expect(output).toContain('**Steam API**');
-      expect(output).toContain('Calls: 1');
-      expect(output).toContain('Errors: 1');
-    });
-
     it('includes voice section with duration in minutes', () => {
       metrics.recordVoiceRecording(120);
       const output = metrics.formatForDisplay();
@@ -220,12 +178,12 @@ describe('metrics service', () => {
     });
 
     it('excludes :error keys from top commands', () => {
-      metrics.incrementError('steam');
+      metrics.incrementError('voice');
       metrics.incrementCommand('ping');
       const output = metrics.formatForDisplay();
 
       expect(output).toContain('ping: 1');
-      expect(output).not.toContain('steam:error');
+      expect(output).not.toContain('voice:error');
     });
   });
 });

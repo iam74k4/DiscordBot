@@ -14,14 +14,6 @@ export const COLORS = {
   WARNING: 0xfee75c as ColorResolvable,
   /** Blue - Info messages */
   INFO: 0x5865f2 as ColorResolvable,
-  /** Steam brand color */
-  STEAM: 0x1b2838 as ColorResolvable,
-  /** Steam online color */
-  STEAM_ONLINE: 0x57cbde as ColorResolvable,
-  /** Steam offline color */
-  STEAM_OFFLINE: 0x898989 as ColorResolvable,
-  /** Steam in-game color */
-  STEAM_INGAME: 0x90ba3c as ColorResolvable,
 } as const;
 
 /**
