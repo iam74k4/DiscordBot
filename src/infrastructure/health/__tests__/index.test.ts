@@ -38,12 +38,12 @@ describe('health service', () => {
     });
 
     it('tracks multiple services independently', () => {
-      setServiceStatus('steam', true);
-      setServiceStatus('voice', false);
+      setServiceStatus('voice', true);
+      setServiceStatus('notification', false);
       const health = getHealthStatus(createMockClient());
 
-      expect(health.services).toHaveProperty('steam', true);
-      expect(health.services).toHaveProperty('voice', false);
+      expect(health.services).toHaveProperty('voice', true);
+      expect(health.services).toHaveProperty('notification', false);
     });
   });
 
@@ -164,10 +164,10 @@ describe('health service', () => {
     it('formats tracked services with labels and status', () => {
       const formatted = formatHealthStatus({
         ...baseHealth,
-        services: { steamClient: true, voiceManager: false },
+        services: { voiceManager: true, notificationService: false },
       });
-      expect(formatted).toContain('Steam Client: ✅');
-      expect(formatted).toContain('Voice Manager: ❌');
+      expect(formatted).toContain('Voice Manager: ✅');
+      expect(formatted).toContain('Notification Service: ❌');
     });
   });
 
