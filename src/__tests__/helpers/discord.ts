@@ -160,7 +160,6 @@ export function mockEnv(overrides: Record<string, string> = {}): void {
   const defaults = {
     DISCORD_TOKEN: 'test-token',
     DISCORD_CLIENT_ID: '123456789012345678',
-    STEAM_API_KEY: 'ABCDEF1234567890ABCDEF1234567890',
     BOT_OWNER_IDS: '987654321098765432',
     NODE_ENV: 'test',
   };

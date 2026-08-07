@@ -1,8 +1,6 @@
 import { database } from '../../../infrastructure/database/connection.js';
 
 export type AuditAction =
-  | 'STEAM_REGISTER'
-  | 'STEAM_UNREGISTER'
   | 'NOTIFY_SETUP'
   | 'NOTIFY_ENABLE'
   | 'NOTIFY_DISABLE'
