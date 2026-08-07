@@ -5,6 +5,27 @@ import { env } from '../../../config/index.js';
 const SAMPLE_RATE = AUDIO.SAMPLE_RATE;
 
 /**
+ * Choose end-wall time for a PCM chunk so catch-up drains after an event-loop
+ * stall do not collapse multiple frames onto the same millisecond.
+ * Prefers wall clock when it does not overlap the previous chunk.
+ */
+export function resolveChunkEndWallMs(
+  nowMs: number,
+  lastEndWallMs: number | null,
+  durationMs: number
+): number {
+  if (
+    lastEndWallMs !== null &&
+    Number.isFinite(durationMs) &&
+    durationMs > 0 &&
+    nowMs < lastEndWallMs + durationMs
+  ) {
+    return lastEndWallMs + durationMs;
+  }
+  return nowMs;
+}
+
+/**
  * Wall-clock–aligned ring buffer: multiple users' PCM is summed per sample with
  * slot ownership to handle ring wrap. Output uses soft limiting.
  */

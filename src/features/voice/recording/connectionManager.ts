@@ -20,7 +20,10 @@ import {
   VoiceConnectionInfo,
   VoiceConnectionState,
 } from '../../../shared/types/voice.js';
-import { channelMixRingManager } from './channelMixRing.js';
+import {
+  channelMixRingManager,
+  resolveChunkEndWallMs,
+} from './channelMixRing.js';
 
 /**
  * Voice connection manager
@@ -147,6 +150,11 @@ export class VoiceConnectionManager {
         };
 
         let chunkCount = 0;
+        // Per-subscribe stream clock: after an event-loop stall, buffered PCM
+        // 'data' handlers can fire in the same Date.now() millisecond. Using
+        // raw wall clock then maps every frame onto one 20ms window and
+        // destroys the catch-up audio (same-user samples sum / later speech lost).
+        let lastEndWallMs: number | null = null;
         pcmStream.on('data', (chunk: Buffer) => {
           if (!this.connections.has(channelId)) return;
           chunkCount++;
@@ -165,7 +173,14 @@ export class VoiceConnectionManager {
             monoChunk.writeInt16LE(mono, i * 2);
           }
 
-          mixRing.addMonoPcmInt16(monoChunk, Date.now());
+          const durationMs = (monoSamples / AUDIO.SAMPLE_RATE) * 1000;
+          const endWallMs = resolveChunkEndWallMs(
+            Date.now(),
+            lastEndWallMs,
+            durationMs
+          );
+          lastEndWallMs = endWallMs;
+          mixRing.addMonoPcmInt16(monoChunk, endWallMs);
         });
 
         pcmStream.on('error', (error) => {
