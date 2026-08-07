@@ -23,17 +23,14 @@ A modular Discord bot built with TypeScript and discord.js v14.
 ## Features
 
 - Slash command support with automatic registration
-- Steam integration (profile, playtime, game library, ranking)
-- Game start notifications
-- Playtime history tracking
-- GitHub integration (PR, issue, and repository actions)
 - **Voice channel recording** (restricted past-audio recording with `/voice record`)
+- VC join/leave and member-join notifications, plus per-user VC time stats
 - Community features (polls, roulette)
 - Admin system (`/admin` server settings, `/owner` bot-owner tools)
 - Audit logging for admin actions
 - Middleware system (permissions, cooldown)
-- SQLite database for user data persistence
-- Modular architecture for easy extension
+- SQLite database for persistence
+- Modular feature-based architecture for easy extension
 - TypeScript with strict type checking
 - ESLint + Prettier for code quality
 
@@ -60,7 +57,6 @@ A modular Discord bot built with TypeScript and discord.js v14.
 - Node.js 22.12.0 or higher
 - Discord Bot Token
 - Discord Application Client ID
-- Steam Web API Key (optional — required for `/steam` commands)
 
 ## Setup
 
@@ -91,12 +87,6 @@ For **production** (`NODE_ENV=production`), also set at least one bot owner ID (
 BOT_OWNER_IDS=your_discord_user_id
 ```
 
-Optional (for Steam features):
-
-```env
-STEAM_API_KEY=your_steam_api_key
-```
-
 See [.env.example](.env.example) for all configuration options and [docs/deployment.md](docs/deployment.md) for the full environment variable reference.
 
 ### 3. Get Discord Credentials
@@ -110,12 +100,6 @@ See [.env.example](.env.example) for all configuration options and [docs/deploym
    - Select scopes: `bot`, `applications.commands`
    - Select bot permissions: `Send Messages`, `Use Slash Commands`, `Embed Links`
    - Use the generated URL to invite the bot to your server
-
-### 4. Get Steam API Key
-
-1. Go to [Steam Web API Key](https://steamcommunity.com/dev/apikey)
-2. Register for an API key
-3. Add the key to your `.env` file
 
 ## Usage
 
@@ -146,40 +130,16 @@ npm start
 | `/general help`  | Show command list and help |
 | `/general about` | Show bot overview          |
 
-### Steam (`/steam`)
-
-| Command                             | Description                               |
-| ----------------------------------- | ----------------------------------------- |
-| `/steam user profile`               | View Steam profile information            |
-| `/steam user playtime [game]`       | View playtime statistics                  |
-| `/steam user games`                 | Browse game library with pagination       |
-| `/steam user recent`                | View recently played games (last 2 weeks) |
-| `/steam stats ranking`              | Server-wide playtime ranking              |
-| `/steam stats history`              | Playtime history over time                |
-| `/steam stats chart`                | View playtime bar chart                   |
-| `/steam stats history-graph`        | View playtime history graph               |
-| `/steam account register <steamid>` | Link your Steam account                   |
-| `/steam account unregister`         | Unlink your Steam account                 |
-| `/steam account whoami`             | Show your linked account                  |
-| `/steam server stats`               | View server statistics                    |
-| `/steam info help`                  | Show Steam command help                   |
-
 ### Notification (`/notification`)
 
-| Command                               | Description                              |
-| ------------------------------------- | ---------------------------------------- |
-| `/notification voice set <channel>`   | Set VC join/leave notification channel   |
-| `/notification voice disable`         | Disable VC join/leave notifications      |
-| `/notification welcome set <channel>` | Set member join notification channel     |
-| `/notification welcome disable`       | Disable member join notifications        |
-| `/notification status`                | Show current notification settings       |
-| `/notification stats [period]`        | Show your VC time statistics             |
-| `/notification steam setup <channel>` | Set Steam game notification channel      |
-| `/notification steam status`          | Show Steam notification settings         |
-| `/notification steam enable`          | Enable Steam notifications               |
-| `/notification steam disable`         | Disable Steam notifications              |
-| `/notification steam remove`          | Remove Steam notification settings       |
-| `/notification steam me [action]`     | Toggle your personal Steam notifications |
+| Command                               | Description                            |
+| ------------------------------------- | -------------------------------------- |
+| `/notification voice set <channel>`   | Set VC join/leave notification channel |
+| `/notification voice disable`         | Disable VC join/leave notifications    |
+| `/notification welcome set <channel>` | Set member join notification channel   |
+| `/notification welcome disable`       | Disable member join notifications      |
+| `/notification status`                | Show current notification settings     |
+| `/notification stats [period]`        | Show your VC time statistics           |
 
 ### Admin (`/admin`)
 
@@ -257,7 +217,6 @@ Only users listed in `BOT_OWNER_IDS` can run these commands (can be used in DMs 
 The bot keeps operational data for limited periods and cleans it up automatically.
 
 - `RECORDING_RETENTION_HOURS`: recording files in `data/recordings/` (default: 24 hours)
-- `PLAYTIME_HISTORY_RETENTION_DAYS`: Steam playtime history rows (default: 365 days)
 - `VOICE_SESSION_RETENTION_DAYS`: completed VC session rows (default: 30 days)
 - `AUDIT_LOG_RETENTION_DAYS`: audit log rows (default: 90 days)
 - `BACKUP_RETENTION_DAYS`: database backup files (default: 7 days)
