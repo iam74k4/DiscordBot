@@ -16,15 +16,6 @@ export const notificationHelpCategory: CommandCategory = {
       requiredPermission: 'everyone',
     },
     {
-      name: 'notification steam me',
-      description: {
-        en: 'Check or change your personal Steam notification preference',
-        ja: '自分用のSteam通知設定を確認・変更',
-      },
-      usage: '/notification steam me [action]',
-      requiredPermission: 'everyone',
-    },
-    {
       name: 'notification status',
       description: {
         en: 'Show the server notification settings panel',
@@ -67,51 +58,6 @@ export const notificationHelpCategory: CommandCategory = {
         ja: 'メンバー参加通知を無効化',
       },
       usage: '/notification welcome disable',
-      requiredPermission: 'manageGuild',
-    },
-    {
-      name: 'notification steam setup',
-      description: {
-        en: 'Set the Steam game notification channel',
-        ja: 'Steamゲーム通知チャンネルを設定',
-      },
-      usage: '/notification steam setup <channel>',
-      requiredPermission: 'manageGuild',
-    },
-    {
-      name: 'notification steam status',
-      description: {
-        en: 'Show Steam notification settings for this server',
-        ja: 'このサーバーのSteam通知設定を表示',
-      },
-      usage: '/notification steam status',
-      requiredPermission: 'manageGuild',
-    },
-    {
-      name: 'notification steam enable',
-      description: {
-        en: 'Enable Steam notifications for this server',
-        ja: 'このサーバーのSteam通知を有効化',
-      },
-      usage: '/notification steam enable',
-      requiredPermission: 'manageGuild',
-    },
-    {
-      name: 'notification steam disable',
-      description: {
-        en: 'Disable Steam notifications for this server',
-        ja: 'このサーバーのSteam通知を無効化',
-      },
-      usage: '/notification steam disable',
-      requiredPermission: 'manageGuild',
-    },
-    {
-      name: 'notification steam remove',
-      description: {
-        en: 'Delete Steam notification settings for this server',
-        ja: 'このサーバーのSteam通知設定を完全に削除',
-      },
-      usage: '/notification steam remove',
       requiredPermission: 'manageGuild',
     },
   ],
