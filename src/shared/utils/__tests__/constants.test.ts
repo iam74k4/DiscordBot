@@ -14,10 +14,6 @@ describe('COLORS', () => {
     expect(COLORS.ERROR).toBeDefined();
     expect(COLORS.WARNING).toBeDefined();
     expect(COLORS.INFO).toBeDefined();
-    expect(COLORS.STEAM).toBeDefined();
-    expect(COLORS.STEAM_ONLINE).toBeDefined();
-    expect(COLORS.STEAM_OFFLINE).toBeDefined();
-    expect(COLORS.STEAM_INGAME).toBeDefined();
   });
 
   it('should have valid color values (numbers)', () => {
@@ -40,16 +36,10 @@ describe('BOT_INFO', () => {
 
 describe('TITLES', () => {
   it('should have all required titles', () => {
-    expect(TITLES.PROFILE).toBeDefined();
-    expect(TITLES.PLAYTIME).toBeDefined();
-    expect(TITLES.GAMES).toBeDefined();
-    expect(TITLES.RECENT).toBeDefined();
-    expect(TITLES.RANKING).toBeDefined();
-    expect(TITLES.HISTORY).toBeDefined();
-    expect(TITLES.CHART).toBeDefined();
-    expect(TITLES.HISTORY_GRAPH).toBeDefined();
     expect(TITLES.ERROR).toBeDefined();
     expect(TITLES.WARNING).toBeDefined();
+    expect(TITLES.NOT_FOUND).toBeDefined();
+    expect(TITLES.LOADING).toBeDefined();
   });
 });
 

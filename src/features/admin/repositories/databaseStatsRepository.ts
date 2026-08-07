@@ -1,15 +1,11 @@
 import { database } from '../../../infrastructure/database/connection.js';
-import { steamUserRepository } from '../../steam/repositories/steamUserRepository.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 
 const ALLOWED_TABLES = new Set([
-  'steam_users',
-  'playtime_history',
-  'game_activity_cache',
   'guild_settings',
-  'notification_settings',
-  'user_notification_prefs',
   'audit_logs',
+  'notification_channels',
+  'voice_sessions',
 ]);
 
 /**
@@ -34,6 +30,5 @@ function getTableRowCount(tableName: string): number | null {
 }
 
 export const databaseStatsRepository = {
-  getRegisteredUsersCount: () => steamUserRepository.getCount(),
   getTableRowCount,
 };
