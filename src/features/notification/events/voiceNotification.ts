@@ -24,10 +24,12 @@ export const event: Event<typeof Events.VoiceStateUpdate> = {
 
     if (!oldState.channel && newState.channel) {
       await handleJoin(guildId, newState);
+      return;
     }
 
     if (oldState.channel && !newState.channel) {
       await handleLeave(guildId, oldState);
+      return;
     }
 
     if (
@@ -35,67 +37,77 @@ export const event: Event<typeof Events.VoiceStateUpdate> = {
       newState.channel &&
       oldState.channel.id !== newState.channel.id
     ) {
-      await handleLeave(guildId, oldState);
-      await handleJoin(guildId, newState);
+      await handleMove(guildId, oldState, newState);
     }
   },
 };
 
-async function handleJoin(guildId: string, state: VoiceState): Promise<void> {
+function startSessionFromState(guildId: string, state: VoiceState): void {
   if (!state.member || !state.channel) return;
+  voiceTracker.startSession(
+    guildId,
+    state.member.user.id,
+    state.channel.id,
+    state.channel.name
+  );
+}
 
-  const userId = state.member.user.id;
-  const channel = state.channel;
+function endSessionFromState(guildId: string, state: VoiceState): void {
+  if (!state.member) return;
+  voiceTracker.endSession(guildId, state.member.user.id);
+}
 
+async function handleJoin(guildId: string, state: VoiceState): Promise<void> {
   try {
-    voiceTracker.startSession(guildId, userId, channel.id, channel.name);
+    startSessionFromState(guildId, state);
   } catch (error) {
     logger.error(`Failed to start voice session: ${getErrorMessage(error)}`);
   }
 
-  const notifyChannelId = notificationChannelRepository.getEnabled(
-    guildId,
-    'voice'
-  );
-  if (!notifyChannelId) return;
-
-  try {
-    const textChannel = await getSendableTextChannel(
-      state.guild,
-      notifyChannelId
-    );
-    if (!textChannel) return;
-
-    const locale = mapDiscordLocale(state.guild.preferredLocale);
-    const embed = createEmbed({
-      description: t('notification.events.voiceJoin', locale, {
-        name: state.member.displayName,
-        channel: channel.id,
-      }),
-      color: COLORS.SUCCESS,
-      timestamp: true,
-    });
-
-    await textChannel.send({ embeds: [embed] });
-  } catch (error) {
-    logger.warn(
-      `Failed to send voice join notification: ${getErrorMessage(error)}`
-    );
-  }
+  await sendVoiceNotification(guildId, state, 'join');
 }
 
 async function handleLeave(guildId: string, state: VoiceState): Promise<void> {
-  if (!state.member || !state.channel) return;
-
-  const userId = state.member.user.id;
-  const channel = state.channel;
-
   try {
-    voiceTracker.endSession(guildId, userId);
+    endSessionFromState(guildId, state);
   } catch (error) {
     logger.error(`Failed to end voice session: ${getErrorMessage(error)}`);
   }
 
+  await sendVoiceNotification(guildId, state, 'leave');
+}
+
+/**
+ * Move must finish the session transition before any Discord I/O.
+ * Event listeners are not awaited by the dispatcher, so a concurrent leave
+ * during leave-notify can otherwise race ahead of startSession and leave a
+ * ghost open session for a channel the user already left.
+ */
+async function handleMove(
+  guildId: string,
+  oldState: VoiceState,
+  newState: VoiceState
+): Promise<void> {
+  try {
+    endSessionFromState(guildId, oldState);
+    startSessionFromState(guildId, newState);
+  } catch (error) {
+    logger.error(
+      `Failed to transition voice session on move: ${getErrorMessage(error)}`
+    );
+  }
+
+  await sendVoiceNotification(guildId, oldState, 'leave');
+  await sendVoiceNotification(guildId, newState, 'join');
+}
+
+async function sendVoiceNotification(
+  guildId: string,
+  state: VoiceState,
+  kind: 'join' | 'leave'
+): Promise<void> {
+  if (!state.member || !state.channel) return;
+
   const notifyChannelId = notificationChannelRepository.getEnabled(
     guildId,
     'voice'
@@ -111,18 +123,24 @@ async function handleLeave(guildId: string, state: VoiceState): Promise<void> {
 
     const locale = mapDiscordLocale(state.guild.preferredLocale);
     const embed = createEmbed({
-      description: t('notification.events.voiceLeave', locale, {
-        name: state.member.displayName,
-        channel: channel.id,
-      }),
-      color: COLORS.ERROR,
+      description: t(
+        kind === 'join'
+          ? 'notification.events.voiceJoin'
+          : 'notification.events.voiceLeave',
+        locale,
+        {
+          name: state.member.displayName,
+          channel: state.channel.id,
+        }
+      ),
+      color: kind === 'join' ? COLORS.SUCCESS : COLORS.ERROR,
       timestamp: true,
     });
 
     await textChannel.send({ embeds: [embed] });
   } catch (error) {
     logger.warn(
-      `Failed to send voice leave notification: ${getErrorMessage(error)}`
+      `Failed to send voice ${kind} notification: ${getErrorMessage(error)}`
     );
   }
 }
