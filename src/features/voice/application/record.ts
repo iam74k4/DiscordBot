@@ -224,14 +224,17 @@ export async function executeRecordCommand(
       }
     }
 
+    const failedParts: number[] = [];
+
     for (let i = 0; i < additionalFiles.length; i++) {
       retryCount = 0;
       success = false;
+      const partNumber = i + 2;
 
       while (retryCount <= maxRetries && !success) {
         try {
           await interaction.followUp({
-            content: `Part ${i + 2}/${totalFiles}`,
+            content: `Part ${partNumber}/${totalFiles}`,
             files: [additionalFiles[i]],
             flags: MessageFlags.Ephemeral,
           });
@@ -240,8 +243,9 @@ export async function executeRecordCommand(
           retryCount++;
           if (retryCount > maxRetries) {
             logger.error(
-              `Failed to send split file part ${i + 2} after ${maxRetries} attempts`
+              `Failed to send split file part ${partNumber} after ${maxRetries} attempts`
             );
+            failedParts.push(partNumber);
             break;
           }
 
@@ -249,6 +253,26 @@ export async function executeRecordCommand(
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
+    }
+
+    if (failedParts.length > 0) {
+      const partsLabel = failedParts.join(', ');
+      logger.error(
+        `Recording delivery incomplete for channel ${voiceChannel.id}: failed parts ${partsLabel}`
+      );
+      await interaction.followUp({
+        embeds: [
+          createErrorEmbed(
+            t('record.errors.deliveryIncomplete', locale),
+            t('record.errors.deliveryIncompleteDesc', locale, {
+              parts: partsLabel,
+              total: totalFiles,
+            })
+          ),
+        ],
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
     }
 
     logger.info(

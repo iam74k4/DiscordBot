@@ -11,6 +11,8 @@ export interface PollData {
   anonymous: boolean;
   endsAt?: number;
   timeout?: NodeJS.Timeout;
+  /** Set synchronously when finalization begins; blocks further votes. */
+  ended?: boolean;
   channelId: string;
   guildId: string;
   client?: Client;
