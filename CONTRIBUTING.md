@@ -24,12 +24,12 @@ type(scope): subject
 ```
 
 - **type**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
-- **scope**: optional (e.g. `auth`, `steam`, `voice`)
+- **scope**: optional (e.g. `auth`, `notification`, `voice`)
 - **subject**: lowercase, imperative, no period, max 50 chars
 
 Examples:
 
-- `feat(steam): add profile comparison command`
+- `feat(community): add profile comparison command`
 - `fix(voice): handle disconnect during recording`
 - `docs: update database schema documentation`
 

@@ -27,13 +27,10 @@ type AdminPanelView =
 
 const PANEL_TIMEOUT = 120_000;
 const DB_STATS_TABLES = [
-  'steam_users',
-  'playtime_history',
-  'notification_settings',
-  'user_notification_prefs',
-  'game_activity_cache',
   'guild_settings',
   'audit_logs',
+  'notification_channels',
+  'voice_sessions',
 ];
 
 function buildMainRow(
@@ -155,7 +152,6 @@ function buildStatsEmbed(
 }
 
 function buildDbEmbed(locale: Locale) {
-  const registeredUsers = databaseStatsRepository.getRegisteredUsersCount();
   const tableCounts = DB_STATS_TABLES.map((table) => ({
     name: table,
     count: databaseStatsRepository.getTableRowCount(table),
@@ -167,11 +163,6 @@ function buildDbEmbed(locale: Locale) {
     title: t('admin.panel.dbTitle', locale),
     color: COLORS.INFO,
     fields: [
-      {
-        name: t('admin.panel.registeredUsersLabel', locale),
-        value: registeredUsers.toLocaleString(),
-        inline: true,
-      },
       {
         name: t('admin.panel.tablesLabel', locale),
         value:
