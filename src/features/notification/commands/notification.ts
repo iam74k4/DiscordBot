@@ -14,13 +14,12 @@ import {
   handleStats,
 } from '../application/index.js';
 import { interactionHasGuildPermission } from '../../../shared/utils/discord.js';
-import { executeSteamNotificationCommand } from '../steam/index.js';
 
 export const command: Command = {
   data: new SlashCommandBuilder()
     .setName('notification')
-    .setDescription('Notification settings, Steam alerts, and VC time stats')
-    .setDescriptionLocalizations({ ja: '通知設定・Steam通知・VC統計' })
+    .setDescription('Notification settings and VC time stats')
+    .setDescriptionLocalizations({ ja: '通知設定・VC統計' })
     .setDMPermission(false)
     .addSubcommandGroup((group) =>
       group
@@ -119,110 +118,14 @@ export const command: Command = {
               }
             )
         )
-    )
-    .addSubcommandGroup((group) =>
-      group
-        .setName('steam')
-        .setDescription('Steam game start notification settings')
-        .setDescriptionLocalizations({ ja: 'Steamゲーム開始通知の設定' })
-        .addSubcommand((sub) =>
-          sub
-            .setName('setup')
-            .setDescription('Set the Steam notification channel')
-            .setDescriptionLocalizations({
-              ja: 'Steam通知チャンネルを設定',
-            })
-            .addChannelOption((opt) =>
-              opt
-                .setName('channel')
-                .setDescription('Channel to send Steam notifications to')
-                .setDescriptionLocalizations({
-                  ja: 'Steam通知を送信するチャンネル',
-                })
-                .addChannelTypes(ChannelType.GuildText)
-                .setRequired(true)
-            )
-        )
-        .addSubcommand((sub) =>
-          sub
-            .setName('status')
-            .setDescription('Check Steam notification settings')
-            .setDescriptionLocalizations({
-              ja: 'Steam通知設定を確認',
-            })
-        )
-        .addSubcommand((sub) =>
-          sub
-            .setName('enable')
-            .setDescription('Enable Steam notifications')
-            .setDescriptionLocalizations({
-              ja: 'Steam通知を有効化',
-            })
-        )
-        .addSubcommand((sub) =>
-          sub
-            .setName('disable')
-            .setDescription('Disable Steam notifications')
-            .setDescriptionLocalizations({
-              ja: 'Steam通知を無効化',
-            })
-        )
-        .addSubcommand((sub) =>
-          sub
-            .setName('remove')
-            .setDescription('Delete Steam notification settings entirely')
-            .setDescriptionLocalizations({
-              ja: 'Steam通知設定を完全に削除',
-            })
-        )
-        .addSubcommand((sub) =>
-          sub
-            .setName('me')
-            .setDescription(
-              'Check or change your own Steam notification status'
-            )
-            .setDescriptionLocalizations({
-              ja: '自分のSteam通知設定を確認・変更',
-            })
-            .addStringOption((opt) =>
-              opt
-                .setName('action')
-                .setDescription('What do you want to do?')
-                .setDescriptionLocalizations({
-                  ja: '何をしますか？',
-                })
-                .addChoices(
-                  {
-                    name: 'Check status',
-                    name_localizations: { ja: '状態を確認' },
-                    value: 'status',
-                  },
-                  {
-                    name: 'Turn on notifications',
-                    name_localizations: { ja: '通知をオン' },
-                    value: 'on',
-                  },
-                  {
-                    name: 'Turn off notifications',
-                    name_localizations: { ja: '通知をオフ' },
-                    value: 'off',
-                  }
-                )
-            )
-        )
     ) as SlashCommandBuilder,
 
   async execute(interaction) {
     const group = interaction.options.getSubcommandGroup(false);
     const subcommand = interaction.options.getSubcommand();
 
-    // stats is available to everyone
     if (subcommand === 'stats') return handleStats(interaction);
-    if (group === 'steam' && subcommand === 'me') {
-      return executeSteamNotificationCommand(interaction);
-    }
 
-    // All other subcommands require ManageGuild
     if (
       !interactionHasGuildPermission(
         interaction,
@@ -253,10 +156,6 @@ export const command: Command = {
     if (group === 'welcome') {
       if (subcommand === 'set') return handleWelcomeSet(interaction);
       if (subcommand === 'disable') return handleWelcomeRemove(interaction);
-    }
-
-    if (group === 'steam') {
-      return executeSteamNotificationCommand(interaction);
     }
 
     if (subcommand === 'status') return handleStatus(interaction);

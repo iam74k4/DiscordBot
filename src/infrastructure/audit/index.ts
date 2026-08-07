@@ -11,8 +11,6 @@ import { formatAuditTarget } from './format.js';
 export type { AuditAction } from '../../features/admin/repositories/index.js';
 
 const ACTION_NAMES: Record<AuditAction, string> = {
-  STEAM_REGISTER: 'Steam Account Linked',
-  STEAM_UNREGISTER: 'Steam Account Unlinked',
   NOTIFY_SETUP: 'Notification Setup',
   NOTIFY_ENABLE: 'Notifications Enabled',
   NOTIFY_DISABLE: 'Notifications Disabled',
@@ -22,8 +20,6 @@ const ACTION_NAMES: Record<AuditAction, string> = {
 };
 
 const ACTION_COLORS: Record<AuditAction, number> = {
-  STEAM_REGISTER: COLORS.SUCCESS as number,
-  STEAM_UNREGISTER: COLORS.WARNING as number,
   NOTIFY_SETUP: COLORS.SUCCESS as number,
   NOTIFY_ENABLE: COLORS.SUCCESS as number,
   NOTIFY_DISABLE: COLORS.WARNING as number,
@@ -107,24 +103,6 @@ export async function logAuditAction(
 }
 
 export const audit = {
-  steamRegister: (
-    client: Client,
-    guildId: string,
-    userId: string,
-    steamName: string
-  ) =>
-    logAuditAction(
-      client,
-      guildId,
-      userId,
-      'STEAM_REGISTER',
-      undefined,
-      `Steam: ${steamName}`
-    ),
-
-  steamUnregister: (client: Client, guildId: string, userId: string) =>
-    logAuditAction(client, guildId, userId, 'STEAM_UNREGISTER'),
-
   notifySetup: (
     client: Client,
     guildId: string,
