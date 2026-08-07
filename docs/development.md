@@ -125,7 +125,7 @@ Tests are **colocated with features** and shared code:
 
 ## Database Migrations
 
-1. Add a new migration file in `src/infrastructure/database/migrations/` (e.g., `004_my_table.ts`):
+1. Add a new migration file in `src/infrastructure/database/migrations/` using the `NNN_name.ts` convention (e.g., `006_my_table.ts`). Migrations are auto-discovered by `migrations/index.ts` and applied in lexical filename order, so the next free prefix is whatever comes after the highest existing number.
 
 ```typescript
 import { database } from '../connection.js';
@@ -145,15 +145,7 @@ export function up(): void {
 }
 ```
 
-2. Import and register the migration in `src/infrastructure/database/migrations/index.ts`:
-
-```typescript
-import { up as myTableUp } from './004_my_table.js';
-
-const migrations = [steamUp, notificationsUp, settingsUp, myTableUp];
-```
-
-3. Use `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS` for idempotency — migrations can be run multiple times safely.
+2. Use `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS` for idempotency — migrations can be run multiple times safely. Use `DROP TABLE IF EXISTS` for retiring legacy tables (see `005_drop_steam.ts`).
 
 ## Localization
 
