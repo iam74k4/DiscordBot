@@ -19,11 +19,12 @@ src/infrastructure/database/
 ├── connection.ts    # Singleton DB connection, WAL mode, path resolution
 ├── transaction.ts  # runTransaction(fn) — synchronous transaction wrapper
 ├── migrations/
-│   ├── index.ts    # Runs all migrations in order at startup
-│   ├── 001_steam.ts
-│   ├── 002_notifications.ts
+│   ├── index.ts             # Runs all migrations in order at startup
+│   ├── 001_steam.ts         # Legacy Steam tables (kept for upgrade path; dropped by 005)
+│   ├── 002_notifications.ts # Legacy Steam notification tables (dropped by 005)
 │   ├── 003_settings.ts
-│   └── 004_notification.ts
+│   ├── 004_notification.ts
+│   └── 005_drop_steam.ts    # Drops legacy Steam tables on existing databases
 └── index.ts        # Public exports
 ```
 
@@ -34,51 +35,6 @@ src/infrastructure/database/
 ---
 
 ## Schema
-
-### steam_users
-
-Discord–Steam account links.
-
-| Column        | Type    | Constraints |
-| ------------- | ------- | ----------- |
-| discord_id    | TEXT    | PRIMARY KEY |
-| steam_id      | TEXT    | NOT NULL    |
-| steam_name    | TEXT    |             |
-| registered_at | INTEGER | NOT NULL    |
-
----
-
-### playtime_history
-
-Historical playtime records per user.
-
-| Column         | Type    | Constraints                |
-| -------------- | ------- | -------------------------- |
-| id             | INTEGER | PRIMARY KEY AUTOINCREMENT  |
-| discord_id     | TEXT    | NOT NULL, FK → steam_users |
-| steam_id       | TEXT    | NOT NULL                   |
-| total_playtime | INTEGER | NOT NULL                   |
-| recorded_at    | INTEGER | NOT NULL                   |
-
-**Indices:**
-
-- `idx_playtime_history_discord_id` ON `discord_id`
-- `idx_playtime_history_recorded_at` ON `recorded_at`
-
----
-
-### notification_settings
-
-Per-guild notification configuration.
-
-| Column     | Type    | Constraints        |
-| ---------- | ------- | ------------------ |
-| guild_id   | TEXT    | PRIMARY KEY        |
-| channel_id | TEXT    | NOT NULL           |
-| enabled    | INTEGER | NOT NULL DEFAULT 1 |
-| created_at | INTEGER | NOT NULL           |
-
----
 
 ### notification_channels
 
@@ -123,30 +79,6 @@ Per-user VC session history for statistics.
 
 ---
 
-### user_notification_prefs
-
-Per-user notification preferences.
-
-| Column         | Type    | Constraints                   |
-| -------------- | ------- | ----------------------------- |
-| discord_id     | TEXT    | PRIMARY KEY, FK → steam_users |
-| notify_enabled | INTEGER | NOT NULL DEFAULT 1            |
-
----
-
-### game_activity_cache
-
-Cached game activity for notification logic.
-
-| Column          | Type    | Constraints |
-| --------------- | ------- | ----------- |
-| discord_id      | TEXT    | PRIMARY KEY |
-| current_game    | TEXT    |             |
-| game_started_at | INTEGER |             |
-| last_checked    | INTEGER | NOT NULL    |
-
----
-
 ### guild_settings
 
 Per-guild settings (language, audit channel, etc.).
@@ -186,16 +118,14 @@ Audit log entries for admin actions.
 
 The `action` column in `audit_logs` stores one of these values:
 
-| Value              | Description                   |
-| ------------------ | ----------------------------- |
-| `STEAM_REGISTER`   | Steam account linked          |
-| `STEAM_UNREGISTER` | Steam account unlinked        |
-| `NOTIFY_SETUP`     | Notification setup            |
-| `NOTIFY_ENABLE`    | Notifications enabled         |
-| `NOTIFY_DISABLE`   | Notifications disabled        |
-| `NOTIFY_REMOVE`    | Notification settings removed |
-| `SETTINGS_CHANGE`  | Guild settings changed        |
-| `AUDIT_SETUP`      | Audit log channel configured  |
+| Value             | Description                   |
+| ----------------- | ----------------------------- |
+| `NOTIFY_SETUP`    | Notification setup            |
+| `NOTIFY_ENABLE`   | Notifications enabled         |
+| `NOTIFY_DISABLE`  | Notifications disabled        |
+| `NOTIFY_REMOVE`   | Notification settings removed |
+| `SETTINGS_CHANGE` | Guild settings changed        |
+| `AUDIT_SETUP`     | Audit log channel configured  |
 
 Defined in `src/features/admin/repositories/auditRepository.ts`.
 
@@ -203,12 +133,10 @@ Defined in `src/features/admin/repositories/auditRepository.ts`.
 
 ## Repository Ownership
 
-| Tables                                                              | Feature      | Repositories                                                    |
-| ------------------------------------------------------------------- | ------------ | --------------------------------------------------------------- |
-| steam_users, playtime_history                                       | steam        | `steamUserRepository.ts`, `playtimeRepository.ts`               |
-| notification_settings, user_notification_prefs, game_activity_cache | steam        | `notificationRepository.ts`                                     |
-| notification_channels, voice_sessions                               | notification | `notificationChannelRepository.ts`, `voiceSessionRepository.ts` |
-| guild_settings, audit_logs                                          | admin        | `settingsRepository.ts`, `auditRepository.ts`                   |
+| Tables                                | Feature      | Repositories                                                    |
+| ------------------------------------- | ------------ | --------------------------------------------------------------- |
+| notification_channels, voice_sessions | notification | `notificationChannelRepository.ts`, `voiceSessionRepository.ts` |
+| guild_settings, audit_logs            | admin        | `settingsRepository.ts`, `auditRepository.ts`                   |
 
 All repositories live under `src/features/<feature>/repositories/`.
 
@@ -218,12 +146,13 @@ All repositories live under `src/features/<feature>/repositories/`.
 
 Migrations live in `src/infrastructure/database/migrations/` and are run in order at startup:
 
-1. `001_steam.ts` — steam_users, playtime_history
-2. `002_notifications.ts` — notification_settings, user_notification_prefs, game_activity_cache
+1. `001_steam.ts` — Legacy: steam_users, playtime_history (kept for upgrade path; tables are dropped by 005)
+2. `002_notifications.ts` — Legacy: notification_settings, user_notification_prefs, game_activity_cache (dropped by 005)
 3. `003_settings.ts` — guild_settings, audit_logs
 4. `004_notification.ts` — notification_channels, voice_sessions
+5. `005_drop_steam.ts` — Drops the legacy Steam tables created by 001 and 002 on existing databases
 
-`initializeDatabase()` runs all migrations inside a single transaction. It is safe to call multiple times; migrations use `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS`. Initialization is performed once per process.
+`initializeDatabase()` runs all migrations inside a single transaction. It is safe to call multiple times; migrations use `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, and `DROP TABLE IF EXISTS`. Initialization is performed once per process.
 
 ### Rollback Policy
 
@@ -239,31 +168,6 @@ Migrations do not define `down()` functions. To roll back schema changes:
 
 ```mermaid
 erDiagram
-    steam_users ||--o{ playtime_history : "discord_id"
-    steam_users ||--o| user_notification_prefs : "discord_id"
-
-    steam_users {
-        text discord_id PK
-        text steam_id
-        text steam_name
-        integer registered_at
-    }
-
-    playtime_history {
-        integer id PK
-        text discord_id FK
-        text steam_id
-        integer total_playtime
-        integer recorded_at
-    }
-
-    notification_settings {
-        text guild_id PK
-        text channel_id
-        integer enabled
-        integer created_at
-    }
-
     notification_channels {
         text guild_id PK
         text type PK
@@ -283,18 +187,6 @@ erDiagram
         integer left_at
         integer duration_ms
         integer created_at
-    }
-
-    user_notification_prefs {
-        text discord_id PK
-        integer notify_enabled
-    }
-
-    game_activity_cache {
-        text discord_id PK
-        text current_game
-        integer game_started_at
-        integer last_checked
     }
 
     guild_settings {
@@ -323,7 +215,6 @@ erDiagram
 Runtime retention is configured with environment variables and enforced by feature cleanup jobs.
 
 - `RECORDING_RETENTION_HOURS` (default: `24`): deletes `.wav` recording files from `data/recordings/`
-- `PLAYTIME_HISTORY_RETENTION_DAYS` (default: `365`): deletes old `playtime_history` rows during Steam scheduler cleanup
 - `VOICE_SESSION_RETENTION_DAYS` (default: `30`): deletes completed `voice_sessions` rows older than the cutoff
 - `AUDIT_LOG_RETENTION_DAYS` (default: `90`): deletes old `audit_logs` rows
 - `BACKUP_RETENTION_DAYS` (default: `7`): deletes old backup files

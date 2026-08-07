@@ -43,7 +43,6 @@ vi.mock('../../../infrastructure/metrics/index.js', () => ({
     formatForDisplay: vi.fn().mockReturnValue('Metrics formatted'),
     getSnapshot: vi.fn().mockReturnValue({
       commands: { executed: 100, errors: 5, byName: {} },
-      api: { steamCalls: 50, steamErrors: 2 },
       voice: { recordings: 10, totalSeconds: 600 },
       startTime: Date.now() - 3600000,
       uptimeSeconds: 3600,

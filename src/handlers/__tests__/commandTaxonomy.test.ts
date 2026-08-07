@@ -15,7 +15,6 @@ describe('command taxonomy', () => {
     expect(names).toEqual(
       expect.arrayContaining([
         'general',
-        'steam',
         'notification',
         'community',
         'voice',
@@ -24,7 +23,7 @@ describe('command taxonomy', () => {
       ])
     );
     expect(names).not.toEqual(
-      expect.arrayContaining(['poll', 'roulette', 'record'])
+      expect.arrayContaining(['poll', 'roulette', 'record', 'steam'])
     );
   });
 });

@@ -22,18 +22,8 @@ The project uses feature-based architecture. Each feature owns its command entry
     ├── features/
     │   ├── index.ts         # Feature auto-discovery, startAllFeatures/stopAllFeatures
     │   ├── __tests__/       # Feature registry tests
-    │   ├── steam/
-    │   │   ├── index.ts     # Feature lifecycle (name, start, stop)
-    │   │   ├── commands/    # Slash command definitions (auto-loaded)
-    │   │   ├── application/ # Command/business logic handlers
-    │   │   ├── repositories/ # Database access with real SQL queries
-    │   │   ├── integrations/ # Steam API client and helpers
-    │   │   ├── jobs/        # Steam notifications and scheduler
-    │   │   ├── domain/      # Steam-only helpers/constants
-    │   │   ├── __tests__/   # Colocated tests
-    │   │   └── helpCatalog.ts
     │   ├── voice/
-    │   │   ├── index.ts
+    │   │   ├── index.ts     # Feature lifecycle (name, start, stop)
     │   │   ├── commands/
     │   │   ├── application/
     │   │   ├── events/
@@ -53,20 +43,12 @@ The project uses feature-based architecture. Each feature owns its command entry
     │   │   ├── commands/
     │   │   ├── application/
     │   │   └── helpCatalog.ts
-    │   ├── github/
-    │   │   ├── index.ts
-    │   │   ├── commands/
-    │   │   ├── application/
-    │   │   ├── events/
-    │   │   ├── integrations/
-    │   │   └── helpCatalog.ts
     │   ├── notification/
     │   │   ├── index.ts
     │   │   ├── commands/
     │   │   ├── application/
     │   │   ├── events/
     │   │   ├── repositories/
-    │   │   ├── steam/       # Steam notification commands/use cases owned by notification
     │   │   ├── tracking/
     │   │   ├── __tests__/
     │   │   └── helpCatalog.ts
@@ -100,10 +82,11 @@ The project uses feature-based architecture. Each feature owns its command entry
     │   │   ├── index.ts       # Barrel re-export
     │   │   └── migrations/    # DDL definitions
     │   │       ├── index.ts   # initializeDatabase()
-    │   │       ├── 001_steam.ts
-    │   │       ├── 002_notifications.ts
+    │   │       ├── 001_steam.ts        # Legacy Steam tables (kept for upgrade path; tables are dropped by 005)
+    │   │       ├── 002_notifications.ts # Legacy Steam notification tables (dropped by 005)
     │   │       ├── 003_settings.ts
-    │   │       └── 004_notification.ts
+    │   │       ├── 004_notification.ts
+    │   │       └── 005_drop_steam.ts   # Drops legacy Steam tables on existing DBs
     │   ├── audit/           # Audit log delivery/orchestration
     │   │   ├── index.ts
     │   │   ├── format.ts
@@ -170,7 +153,7 @@ flowchart LR
 
 - `infrastructure/database/` is **pure infrastructure**: connection management, `runTransaction()`, and migrations.
 - No business logic or feature-specific queries live here. All SQL lives in feature `repositories/`.
-- Migrations are numbered DDL files (`001_steam.ts`, `002_notifications.ts`, `003_settings.ts`, `004_notification.ts`) applied by `initializeDatabase()`.
+- Migrations are numbered DDL files (`001_steam.ts`, `002_notifications.ts`, `003_settings.ts`, `004_notification.ts`, `005_drop_steam.ts`) applied by `initializeDatabase()`. The Steam feature has been removed; migrations 001 and 002 are kept untouched for a clean upgrade path, and `005_drop_steam.ts` drops the legacy Steam tables on existing databases.
 
 ## Middleware
 
