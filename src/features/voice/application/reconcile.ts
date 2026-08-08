@@ -91,9 +91,7 @@ export async function reconcileOccupiedVoiceChannels(
       }
 
       // Autojoin policy can flip while connect awaits.
-      if (
-        !voiceSettingsRepository.mayAutoJoin(guild.id, bestChannel.id)
-      ) {
+      if (!voiceSettingsRepository.mayAutoJoin(guild.id, bestChannel.id)) {
         logger.info(
           `Auto-join revoked during reconcile of ${bestChannel.name} (${bestChannel.id}); disconnecting`
         );

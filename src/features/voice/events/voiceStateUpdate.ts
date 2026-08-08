@@ -108,7 +108,9 @@ async function handleBotVoiceState(
     if (!connection) return;
 
     // Policy can flip while connect awaits (exclude/disable).
-    if (!voiceSettingsRepository.mayAutoJoin(newState.guild.id, newChannel.id)) {
+    if (
+      !voiceSettingsRepository.mayAutoJoin(newState.guild.id, newChannel.id)
+    ) {
       logger.info(
         `Auto-join revoked during bot re-track of ${newChannel.name} (${newChannel.id}); disconnecting`
       );
