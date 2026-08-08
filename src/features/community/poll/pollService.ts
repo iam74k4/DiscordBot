@@ -4,6 +4,7 @@ import {
   ButtonInteraction,
   ButtonStyle,
   Client,
+  MessageFlags,
 } from 'discord.js';
 import { createEmbed } from '../../../shared/utils/embed.js';
 import { COLORS, PROGRESS_BAR } from '../../../shared/utils/constants/index.js';
@@ -107,7 +108,7 @@ export async function handlePollVote(
     const locale = resolveLocale(interaction);
     await interaction.reply({
       content: t('poll.errors.pollEndedDesc', locale),
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -122,7 +123,7 @@ export async function handlePollVote(
   ) {
     await interaction.reply({
       content: t('poll.errors.invalidOption', locale),
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -149,7 +150,7 @@ export async function handlePollVote(
 
   await interaction.reply({
     content: responseMessage,
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
   });
 
   // Finalization may have started while we awaited the vote ack — do not

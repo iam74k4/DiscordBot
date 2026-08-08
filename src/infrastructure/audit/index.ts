@@ -17,6 +17,8 @@ const ACTION_NAMES: Record<AuditAction, string> = {
   NOTIFY_REMOVE: 'Notification Settings Removed',
   SETTINGS_CHANGE: 'Settings Changed',
   AUDIT_SETUP: 'Audit Log Configured',
+  ROLE_ADD: 'Role Added',
+  ROLE_REMOVE: 'Role Removed',
 };
 
 const ACTION_COLORS: Record<AuditAction, number> = {
@@ -26,6 +28,8 @@ const ACTION_COLORS: Record<AuditAction, number> = {
   NOTIFY_REMOVE: COLORS.ERROR as number,
   SETTINGS_CHANGE: COLORS.INFO as number,
   AUDIT_SETUP: COLORS.INFO as number,
+  ROLE_ADD: COLORS.SUCCESS as number,
+  ROLE_REMOVE: COLORS.WARNING as number,
 };
 
 async function resolveAuditTargetDisplay(
@@ -52,9 +56,20 @@ export async function logAuditAction(
   targetId?: string,
   details?: string
 ): Promise<void> {
-  auditRepository.createLog(guildId, userId, action, targetId, details);
+  // Callers fire this and move on, so a failed write must not surface as an
+  // unhandled rejection and must never take down the action being audited.
+  let auditChannelId: string | null;
+  try {
+    auditRepository.createLog(guildId, userId, action, targetId, details);
+    auditChannelId = auditRepository.getAuditChannel(guildId);
+  } catch (error) {
+    logger.error(
+      `Failed to persist audit log (${action}) for guild ${guildId}:`,
+      error
+    );
+    return;
+  }
 
-  const auditChannelId = auditRepository.getAuditChannel(guildId);
   if (!auditChannelId) return;
 
   try {
@@ -107,7 +122,8 @@ export const audit = {
     client: Client,
     guildId: string,
     userId: string,
-    channelId: string
+    channelId: string,
+    kind?: string
   ) =>
     logAuditAction(
       client,
@@ -115,7 +131,9 @@ export const audit = {
       userId,
       'NOTIFY_SETUP',
       undefined,
-      `Channel: <#${channelId}>`
+      kind
+        ? `${kind} notifications → <#${channelId}>`
+        : `Channel: <#${channelId}>`
     ),
 
   notifyEnable: (client: Client, guildId: string, userId: string) =>
@@ -124,8 +142,37 @@ export const audit = {
   notifyDisable: (client: Client, guildId: string, userId: string) =>
     logAuditAction(client, guildId, userId, 'NOTIFY_DISABLE'),
 
-  notifyRemove: (client: Client, guildId: string, userId: string) =>
-    logAuditAction(client, guildId, userId, 'NOTIFY_REMOVE'),
+  notifyRemove: (
+    client: Client,
+    guildId: string,
+    userId: string,
+    kind?: string
+  ) =>
+    logAuditAction(
+      client,
+      guildId,
+      userId,
+      'NOTIFY_REMOVE',
+      undefined,
+      kind ? `${kind} notifications disabled` : undefined
+    ),
+
+  roleAdd: (
+    client: Client,
+    guildId: string,
+    userId: string,
+    targetId: string,
+    details: string
+  ) => logAuditAction(client, guildId, userId, 'ROLE_ADD', targetId, details),
+
+  roleRemove: (
+    client: Client,
+    guildId: string,
+    userId: string,
+    targetId: string,
+    details: string
+  ) =>
+    logAuditAction(client, guildId, userId, 'ROLE_REMOVE', targetId, details),
 
   settingsChange: (
     client: Client,

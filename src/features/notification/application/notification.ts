@@ -10,6 +10,7 @@ import { resolveLocale } from '../../../locales/guildLocale.js';
 import { notificationChannelRepository } from '../repositories/notificationChannelRepository.js';
 import { getSendableTextChannel } from '../../../shared/utils/discord.js';
 import { showNotificationPanel } from './panel.js';
+import { audit } from '../../../infrastructure/audit/index.js';
 
 async function validateNotificationChannel(
   interaction: ChatInputCommandInteraction
@@ -82,6 +83,13 @@ export async function handleVoiceSet(
   }
 
   notificationChannelRepository.set(interaction.guildId, 'voice', channel.id);
+  void audit.notifySetup(
+    interaction.client,
+    interaction.guildId,
+    interaction.user.id,
+    channel.id,
+    'Voice'
+  );
 
   await interaction.reply({
     embeds: [
@@ -119,6 +127,14 @@ export async function handleVoiceRemove(
     interaction.guildId,
     'voice'
   );
+  if (removed) {
+    void audit.notifyRemove(
+      interaction.client,
+      interaction.guildId,
+      interaction.user.id,
+      'Voice'
+    );
+  }
 
   if (!removed) {
     await interaction.reply({
@@ -197,6 +213,13 @@ export async function handleWelcomeSet(
     'member_join',
     channel.id
   );
+  void audit.notifySetup(
+    interaction.client,
+    interaction.guildId,
+    interaction.user.id,
+    channel.id,
+    'Welcome'
+  );
 
   await interaction.reply({
     embeds: [
@@ -234,6 +257,14 @@ export async function handleWelcomeRemove(
     interaction.guildId,
     'member_join'
   );
+  if (removed) {
+    void audit.notifyRemove(
+      interaction.client,
+      interaction.guildId,
+      interaction.user.id,
+      'Welcome'
+    );
+  }
 
   if (!removed) {
     await interaction.reply({

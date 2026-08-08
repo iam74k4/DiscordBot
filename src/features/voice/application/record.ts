@@ -12,6 +12,7 @@ import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 import { t } from '../../../locales/index.js';
 import { resolveLocale } from '../../../locales/guildLocale.js';
 import { env, RETRY } from '../../../config/index.js';
+import { metrics } from '../../../infrastructure/metrics/index.js';
 import { connectionManager } from '../recording/connectionManager.js';
 import {
   parseDurationString,
@@ -168,6 +169,8 @@ export async function executeRecordCommand(
       userId: interaction.user.id,
       guildId: interaction.guild.id,
     });
+
+    metrics.recordVoiceRecording(result.duration);
 
     const mainFile = new AttachmentBuilder(result.filePath, {
       name: result.filePath.split(/[/\\]/).pop() || 'recording.wav',
