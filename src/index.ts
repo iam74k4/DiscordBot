@@ -1,7 +1,7 @@
 import { once } from 'node:events';
 import { Events } from 'discord.js';
 import { createClient } from './client.js';
-import { env } from './config/index.js';
+import { env, loadConfig } from './config/index.js';
 import { loadCommands } from './handlers/commandHandler.js';
 import { loadEvents } from './handlers/eventHandler.js';
 import { getErrorMessage, logger } from './shared/utils/logger.js';
@@ -81,6 +81,9 @@ async function gracefulShutdown(
 }
 
 async function main(): Promise<void> {
+  // Read and validate configuration before anything else can observe it.
+  loadConfig();
+
   logger.info('Starting Discord bot...');
 
   await initializeDatabase();

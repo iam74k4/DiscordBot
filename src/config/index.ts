@@ -1,4 +1,11 @@
-export { env, isBotOwner } from './env.js';
+export {
+  env,
+  isBotOwner,
+  loadConfig,
+  parseConfig,
+  resetConfigForTesting,
+} from './env.js';
+export type { AppConfig } from './env.js';
 export {
   AUDIO,
   DISCORD_LIMITS,
