@@ -11,7 +11,15 @@ import {
   endPoll,
   findUserPollInChannel,
 } from './pollService.js';
-import { pollStore, type PollData, MAX_ACTIVE_POLLS } from './pollStore.js';
+import {
+  pollStore,
+  type PollData,
+  MAX_ACTIVE_POLLS,
+  MAX_ACTIVE_POLLS_PER_GUILD,
+} from './pollStore.js';
+
+/** Highest option slot offered by `/community poll create`. */
+const MAX_POLL_OPTIONS = 10;
 
 async function handleCreatePoll(
   interaction: ChatInputCommandInteraction
@@ -35,7 +43,7 @@ async function handleCreatePoll(
   }
 
   const options: string[] = [];
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= MAX_POLL_OPTIONS; i++) {
     const option = interaction.options.getString(`option${i}`);
     if (!option) continue;
 
@@ -67,14 +75,23 @@ async function handleCreatePoll(
     return;
   }
 
-  if (!pollStore.canCreate()) {
+  const guildId = interaction.guildId ?? '';
+  if (!pollStore.canCreate(guildId)) {
+    const guildLimited =
+      guildId !== '' &&
+      pollStore.countForGuild(guildId) >= MAX_ACTIVE_POLLS_PER_GUILD;
+
     await interaction.reply({
       embeds: [
         createErrorEmbed(
           t('poll.errors.maxActivePolls', locale),
-          t('poll.errors.maxActivePollsDesc', locale, {
-            count: MAX_ACTIVE_POLLS,
-          })
+          guildLimited
+            ? t('poll.errors.maxGuildPollsDesc', locale, {
+                count: MAX_ACTIVE_POLLS_PER_GUILD,
+              })
+            : t('poll.errors.maxActivePollsDesc', locale, {
+                count: MAX_ACTIVE_POLLS,
+              })
         ),
       ],
       flags: MessageFlags.Ephemeral,
@@ -90,7 +107,7 @@ async function handleCreatePoll(
     anonymous,
     endsAt: duration ? Date.now() + duration * 60 * 1000 : undefined,
     channelId: interaction.channelId,
-    guildId: interaction.guildId ?? '',
+    guildId,
     client: interaction.client,
     locale,
   };

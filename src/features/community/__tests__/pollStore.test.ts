@@ -1,24 +1,32 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import {
-  MAX_ACTIVE_POLLS,
-  pollStore,
-  type PollData,
-} from '../poll/pollStore.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const create = vi.hoisted(() => vi.fn());
+const remove = vi.hoisted(() => vi.fn());
+const upsertVote = vi.hoisted(() => vi.fn());
+
+vi.mock('../poll/pollRepository.js', () => ({
+  pollRepository: { create, remove, upsertVote },
+}));
+
+const { MAX_ACTIVE_POLLS, MAX_ACTIVE_POLLS_PER_GUILD, pollStore } =
+  await import('../poll/pollStore.js');
+type PollData = import('../poll/pollStore.js').PollData;
 
 describe('PollStore', () => {
-  const createMockPoll = (id: string): PollData => ({
+  const createMockPoll = (id: string, guildId = 'guild123'): PollData => ({
     question: `Test question ${id}`,
     options: ['Option A', 'Option B', 'Option C'],
     votes: new Map(),
     creatorId: 'creator123',
     anonymous: false,
     channelId: 'channel123',
-    guildId: 'guild123',
+    guildId,
     locale: 'en',
   });
 
   beforeEach(() => {
     pollStore.clearAll();
+    vi.clearAllMocks();
   });
 
   it('stores and retrieves a poll', () => {
@@ -50,25 +58,94 @@ describe('PollStore', () => {
     expect(pollStore.has('msg1')).toBe(false);
   });
 
-  it('clears all polls on shutdown', () => {
-    pollStore.set('msg1', createMockPoll('1'));
-    pollStore.set('msg2', createMockPoll('2'));
-
-    pollStore.clearAll();
-
-    expect(pollStore.size).toBe(0);
-    expect(pollStore.has('msg1')).toBe(false);
-    expect(pollStore.has('msg2')).toBe(false);
-  });
-
-  it('enforces the active poll limit', () => {
+  it('enforces the global active poll limit across guilds', () => {
+    // Spread across guilds so the per-guild cap is not what stops us.
     for (let i = 0; i < MAX_ACTIVE_POLLS; i++) {
-      pollStore.set(`msg${i}`, createMockPoll(String(i)));
+      pollStore.set(
+        `msg${i}`,
+        createMockPoll(String(i), `guild${Math.floor(i / 10)}`)
+      );
     }
 
-    expect(pollStore.canCreate()).toBe(false);
-    expect(() => pollStore.set('overflow', createMockPoll('overflow'))).toThrow(
-      `Active poll limit reached (${MAX_ACTIVE_POLLS})`
+    expect(pollStore.canCreate('fresh-guild')).toBe(false);
+    expect(() =>
+      pollStore.set('overflow', createMockPoll('overflow', 'fresh-guild'))
+    ).toThrow(`Active poll limit reached (${MAX_ACTIVE_POLLS})`);
+  });
+
+  it('stops one guild from filling the global budget', () => {
+    for (let i = 0; i < MAX_ACTIVE_POLLS_PER_GUILD; i++) {
+      pollStore.set(`noisy${i}`, createMockPoll(String(i), 'noisy-guild'));
+    }
+
+    expect(pollStore.countForGuild('noisy-guild')).toBe(
+      MAX_ACTIVE_POLLS_PER_GUILD
     );
+    expect(pollStore.canCreate('noisy-guild')).toBe(false);
+    // Other guilds are unaffected.
+    expect(pollStore.canCreate('quiet-guild')).toBe(true);
+  });
+
+  describe('persistence', () => {
+    it('writes a new poll out so a restart can restore it', () => {
+      pollStore.set('msg1', createMockPoll('1'));
+
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          messageId: 'msg1',
+          guildId: 'guild123',
+          question: 'Test question 1',
+          options: ['Option A', 'Option B', 'Option C'],
+        })
+      );
+    });
+
+    it('writes each vote out as it is cast', () => {
+      pollStore.set('msg1', createMockPoll('1'));
+      pollStore.setVote('msg1', 'user-1', 2);
+
+      expect(pollStore.get('msg1')?.votes.get('user-1')).toBe(2);
+      expect(upsertVote).toHaveBeenCalledWith('msg1', 'user-1', 2);
+    });
+
+    it('ignores votes for polls it does not hold', () => {
+      pollStore.setVote('missing', 'user-1', 0);
+      expect(upsertVote).not.toHaveBeenCalled();
+    });
+
+    it('deletes stored rows when a poll is finalized', () => {
+      pollStore.set('msg1', createMockPoll('1'));
+      pollStore.delete('msg1');
+
+      expect(remove).toHaveBeenCalledWith('msg1');
+    });
+
+    it('keeps stored polls on shutdown so they can be restored', () => {
+      pollStore.set('msg1', createMockPoll('1'));
+      pollStore.set('msg2', createMockPoll('2'));
+
+      pollStore.clearAll();
+
+      expect(pollStore.size).toBe(0);
+      expect(pollStore.has('msg1')).toBe(false);
+      // clearAll is shutdown, not cancellation: the rows must survive.
+      expect(remove).not.toHaveBeenCalled();
+    });
+
+    it('restores without rewriting or counting against creation limits', () => {
+      pollStore.restore('msg1', createMockPoll('1'));
+
+      expect(pollStore.has('msg1')).toBe(true);
+      expect(create).not.toHaveBeenCalled();
+    });
+
+    it('survives a database that rejects the write', () => {
+      create.mockImplementationOnce(() => {
+        throw new Error('database is locked');
+      });
+
+      expect(() => pollStore.set('msg1', createMockPoll('1'))).not.toThrow();
+      expect(pollStore.has('msg1')).toBe(true);
+    });
   });
 });

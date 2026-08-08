@@ -130,7 +130,7 @@ export async function handlePollVote(
 
   const userId = interaction.user.id;
   const previousVote = poll.votes.get(userId);
-  poll.votes.set(userId, optionIndex);
+  pollStore.setVote(messageId, userId, optionIndex);
 
   let responseMessage: string;
   if (previousVote !== undefined && previousVote !== optionIndex) {

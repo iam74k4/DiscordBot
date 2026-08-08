@@ -1,7 +1,11 @@
 import { Client } from 'discord.js';
 import { Locale } from '../../../locales/index.js';
+import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
+import { pollRepository } from './pollRepository.js';
 
 export const MAX_ACTIVE_POLLS = 1000;
+/** Per-guild cap so one server cannot consume the global budget. */
+export const MAX_ACTIVE_POLLS_PER_GUILD = 50;
 
 export interface PollData {
   question: string;
@@ -31,20 +35,62 @@ class PollStore {
   }
 
   set(messageId: string, poll: PollData): void {
-    if (!this.store.has(messageId) && !this.canCreate()) {
+    if (!this.store.has(messageId) && !this.canCreate(poll.guildId)) {
       throw new Error(`Active poll limit reached (${MAX_ACTIVE_POLLS})`);
     }
     this.store.set(messageId, poll);
+    this.persist(messageId, poll);
   }
 
-  canCreate(): boolean {
-    return this.store.size < MAX_ACTIVE_POLLS;
+  /**
+   * Restore a poll read back from the database. Unlike `set`, this does not
+   * write it out again and is not subject to the creation limits - the rows
+   * already exist.
+   */
+  restore(messageId: string, poll: PollData): void {
+    this.store.set(messageId, poll);
+  }
+
+  canCreate(guildId?: string): boolean {
+    if (this.store.size >= MAX_ACTIVE_POLLS) return false;
+    if (!guildId) return true;
+    return this.countForGuild(guildId) < MAX_ACTIVE_POLLS_PER_GUILD;
+  }
+
+  countForGuild(guildId: string): number {
+    let count = 0;
+    for (const poll of this.store.values()) {
+      if (poll.guildId === guildId) count++;
+    }
+    return count;
+  }
+
+  /** Record a vote in memory and in the database. */
+  setVote(messageId: string, userId: string, optionIndex: number): void {
+    const poll = this.store.get(messageId);
+    if (!poll) return;
+
+    poll.votes.set(userId, optionIndex);
+    try {
+      pollRepository.upsertVote(messageId, userId, optionIndex);
+    } catch (error) {
+      logger.warn(
+        `Failed to persist vote on poll ${messageId}: ${getErrorMessage(error)}`
+      );
+    }
   }
 
   delete(messageId: string): boolean {
     const poll = this.store.get(messageId);
     if (poll?.timeout) {
       clearTimeout(poll.timeout);
+    }
+    try {
+      pollRepository.remove(messageId);
+    } catch (error) {
+      logger.warn(
+        `Failed to delete stored poll ${messageId}: ${getErrorMessage(error)}`
+      );
     }
     return this.store.delete(messageId);
   }
@@ -57,9 +103,37 @@ class PollStore {
     return this.store.size;
   }
 
+  /**
+   * Drop in-memory state and timers only. Shutdown must not delete stored
+   * polls - they are exactly what the next startup restores.
+   */
   clearAll(): void {
-    for (const [messageId] of this.entries()) {
-      this.delete(messageId);
+    for (const poll of this.store.values()) {
+      if (poll.timeout) {
+        clearTimeout(poll.timeout);
+        poll.timeout = undefined;
+      }
+    }
+    this.store.clear();
+  }
+
+  private persist(messageId: string, poll: PollData): void {
+    try {
+      pollRepository.create({
+        messageId,
+        guildId: poll.guildId,
+        channelId: poll.channelId,
+        creatorId: poll.creatorId,
+        question: poll.question,
+        options: poll.options,
+        anonymous: poll.anonymous,
+        endsAt: poll.endsAt,
+        locale: poll.locale,
+      });
+    } catch (error) {
+      logger.warn(
+        `Failed to persist poll ${messageId}: ${getErrorMessage(error)}`
+      );
     }
   }
 }

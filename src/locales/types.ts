@@ -198,6 +198,7 @@ export interface TranslationKeys {
       optionTooLong: string;
       maxActivePolls: string;
       maxActivePollsDesc: string;
+      maxGuildPollsDesc: string;
       invalidOption: string;
       pollEnded: string;
       pollEndedDesc: string;

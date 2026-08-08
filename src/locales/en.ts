@@ -145,6 +145,8 @@ export const en: TranslationKeys = {
       maxActivePolls: 'Poll Limit Reached',
       maxActivePollsDesc:
         'There are already {count} active polls. Please end an existing poll before creating a new one.',
+      maxGuildPollsDesc:
+        'This server can have {count} active polls at a time. Please end an existing poll before creating a new one.',
       invalidOption: 'Invalid vote option.',
       pollEnded: 'Poll Ended',
       pollEndedDesc: 'This poll has ended or no longer exists.',
