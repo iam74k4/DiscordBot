@@ -21,15 +21,17 @@ function cleanupOldVoiceSessions(): void {
   }
 }
 
-export function start(_client: Client): void {
+export function start(client: Client): void {
   if (cleanupInterval) {
     return;
   }
   voiceTracker.closeAllStaleSessions();
+  voiceTracker.reconcileActiveVoiceSessions(client);
   cleanupInterval = startDailyCleanup(cleanupOldVoiceSessions);
   logger.info('Notification feature started');
 }
 
 export function stop(): void {
+  voiceTracker.endAllSessions();
   cleanupInterval = stopCleanupInterval(cleanupInterval);
 }

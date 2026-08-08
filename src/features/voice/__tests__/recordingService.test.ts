@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { mkdir } from 'fs/promises';
 import {
   recordAudio,
+  generateFileName,
   pcmBufferHasAudibleSignal,
   RecordingNoAudibleAudioError,
 } from '../recording/recordingService.js';
@@ -32,6 +34,7 @@ describe('recordingService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockExtractLastSeconds.mockReturnValue(Buffer.alloc(0));
+    vi.mocked(mkdir).mockImplementation(() => Promise.resolve(undefined));
   });
 
   it('throws for duration <= 0', async () => {
@@ -46,9 +49,10 @@ describe('recordingService', () => {
   });
 
   it('throws when recording already in progress', async () => {
-    mockExtractLastSeconds.mockImplementation(
-      () => new Promise<Buffer>(() => {})
-    );
+    const audible = Buffer.alloc(4);
+    audible.writeInt16LE(1000, 0);
+    mockExtractLastSeconds.mockReturnValue(audible);
+    vi.mocked(mkdir).mockImplementation(() => new Promise(() => {}));
 
     const p1 = recordAudio({
       channelId: 'ch1',
@@ -56,6 +60,10 @@ describe('recordingService', () => {
       userId: 'u1',
       guildId: 'g1',
     });
+
+    // Allow the deferred recording work to start and park on mkdir.
+    await Promise.resolve();
+    await Promise.resolve();
 
     await expect(
       recordAudio({
@@ -89,5 +97,37 @@ describe('recordingService', () => {
         guildId: 'g1',
       })
     ).rejects.toBeInstanceOf(RecordingNoAudibleAudioError);
+  });
+
+  it('clears the queue after a silent-window failure so retries can proceed', async () => {
+    const silent = Buffer.alloc(96000);
+    mockExtractLastSeconds.mockReturnValue(silent);
+
+    await expect(
+      recordAudio({
+        channelId: 'ch-retry',
+        duration: 1,
+        userId: 'u1',
+        guildId: 'g1',
+      })
+    ).rejects.toBeInstanceOf(RecordingNoAudibleAudioError);
+
+    // A second call must not report "already in progress" after the sync throw.
+    await expect(
+      recordAudio({
+        channelId: 'ch-retry',
+        duration: 1,
+        userId: 'u1',
+        guildId: 'g1',
+      })
+    ).rejects.toBeInstanceOf(RecordingNoAudibleAudioError);
+  });
+
+  it('generateFileName is unique across channels in the same second', () => {
+    const a = generateFileName(30, 'channel-a');
+    const b = generateFileName(30, 'channel-b');
+    expect(a).not.toBe(b);
+    expect(a).toContain('channel-a');
+    expect(b).toContain('channel-b');
   });
 });

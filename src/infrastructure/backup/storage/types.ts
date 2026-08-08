@@ -1,6 +1,10 @@
-/** Backup filename format: backup-YYYY-MM-DDTHH-MM-SS.db */
+/**
+ * Backup filename format:
+ * - legacy: backup-YYYY-MM-DDTHH-MM-SS.db
+ * - unique: backup-YYYY-MM-DDTHH-MM-SS-<6 hex>.db
+ */
 const BACKUP_FILENAME_REGEX =
-  /^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.db$/;
+  /^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}(?:-[0-9a-f]{6})?\.db$/;
 
 /**
  * Validate backup filename to prevent path traversal and injection.
