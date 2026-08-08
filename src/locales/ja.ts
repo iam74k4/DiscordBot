@@ -322,6 +322,30 @@ export const ja: TranslationKeys = {
   },
 
   record: {
+    autojoin: {
+      title: 'VC自動参加',
+      enabled:
+        'このサーバーでVCへの自動参加を有効にしました。Botは人がいるVCに参加し、直近{minutes}分の音声を保持します。',
+      disabled:
+        'このサーバーでVCへの自動参加を無効にしました。Botはこれ以降VCに参加せず、音声も保持しません。',
+      excluded:
+        '<#{channel}> を自動参加の対象外にしました。このチャンネルの音声は保持されません。',
+      included: '<#{channel}> を自動参加の対象に戻しました。',
+      notExcluded: '<#{channel}> は対象外に設定されていません。',
+      statusEnabled: '有効',
+      statusDisabled: '無効',
+      exclusionCount: '対象外チャンネル',
+      currentChannelBuffered: '現在のチャンネルは音声を保持中です',
+      currentChannelExcluded: '現在のチャンネルは対象外です',
+      currentChannelNone: 'VCに参加していません',
+    },
+    notice: {
+      title: '音声を保持しています',
+      body: 'このチャンネルの音声を直近{minutes}分ぶん保持しています。サーバー管理者は `/voice record` で書き出せます。',
+      optOut:
+        '保持を止めるには管理者が `/voice autojoin exclude` を実行してください。',
+    },
+    bufferWindow: '保持時間',
     title: '録音',
     recording: '録音中...',
     recordingDesc: '過去{duration}の音声を録音しています。',

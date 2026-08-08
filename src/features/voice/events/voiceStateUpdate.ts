@@ -2,6 +2,11 @@ import { Events, VoiceChannel, VoiceState, StageChannel } from 'discord.js';
 import { Event } from '../../../shared/types/index.js';
 import { ExtendedClient } from '../../../client.js';
 import { connectionManager } from '../recording/connectionManager.js';
+import { voiceSettingsRepository } from '../repositories/voiceSettingsRepository.js';
+import {
+  announceBuffering,
+  forgetAnnouncement,
+} from '../application/announce.js';
 import { logger } from '../../../shared/utils/logger.js';
 
 function humanMemberCount(
@@ -85,6 +90,7 @@ async function handleBotVoiceState(
     );
     await connectionManager.disconnect(oldChannel.id);
   }
+  forgetAnnouncement(oldChannel.id);
 
   // Admin move A→B: reconnect on B when humans are present so recording
   // continues. Skip when newChannel is null (kick/disconnect).
@@ -92,7 +98,8 @@ async function handleBotVoiceState(
     newChannel &&
     humanMemberCount(newChannel) > 0 &&
     !connectionManager.getConnection(newChannel.id) &&
-    !connectionManager.isAtLimit()
+    !connectionManager.isAtLimit() &&
+    voiceSettingsRepository.mayAutoJoin(newState.guild.id, newChannel.id)
   ) {
     const connection = await connectionManager.connect(
       newState.guild,
@@ -102,6 +109,7 @@ async function handleBotVoiceState(
       logger.info(
         `Re-tracked bot after move into ${newChannel.name} (${newChannel.id})`
       );
+      await announceBuffering(newChannel);
     }
   }
 }
@@ -122,6 +130,14 @@ async function handleUserJoined(
   const existingConnection = connectionManager.getConnection(channel.id);
   if (existingConnection) {
     connectionManager.updateActivity(channel.id);
+    return;
+  }
+
+  // Buffering everyone's audio is opt-out per guild and per channel.
+  if (!voiceSettingsRepository.mayAutoJoin(guild.id, channel.id)) {
+    logger.debug(
+      `Auto-join disabled for ${channel.name} (${channel.id}) in guild ${guild.id}`
+    );
     return;
   }
 
@@ -165,6 +181,8 @@ async function handleUserJoined(
   logger.info(
     `Auto-joined voice channel ${channel.name} (${channel.id}) in guild ${guild.name}`
   );
+
+  await announceBuffering(channel);
 }
 
 /**
@@ -188,6 +206,7 @@ async function handleUserLeft(
       `No users left in channel ${channel.name} (${channel.id}). Disconnecting...`
     );
     await connectionManager.disconnect(channel.id);
+    forgetAnnouncement(channel.id);
   }
 }
 

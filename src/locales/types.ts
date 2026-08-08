@@ -367,6 +367,26 @@ export interface TranslationKeys {
 
   // Record command
   record: {
+    autojoin: {
+      title: string;
+      enabled: string;
+      disabled: string;
+      excluded: string;
+      included: string;
+      notExcluded: string;
+      statusEnabled: string;
+      statusDisabled: string;
+      exclusionCount: string;
+      currentChannelBuffered: string;
+      currentChannelExcluded: string;
+      currentChannelNone: string;
+    };
+    notice: {
+      title: string;
+      body: string;
+      optOut: string;
+    };
+    bufferWindow: string;
     title: string;
     recording: string;
     recordingDesc: string;

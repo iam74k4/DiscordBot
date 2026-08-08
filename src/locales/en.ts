@@ -329,6 +329,29 @@ export const en: TranslationKeys = {
   },
 
   record: {
+    autojoin: {
+      title: 'Voice auto-join',
+      enabled:
+        'Auto-join is on for this server. The bot joins occupied voice channels and keeps the last {minutes} minutes of audio.',
+      disabled:
+        'Auto-join is off for this server. The bot will not join voice channels or keep any audio.',
+      excluded:
+        'Auto-join now skips <#{channel}>. Audio in that channel is not kept.',
+      included: 'Auto-join covers <#{channel}> again.',
+      notExcluded: '<#{channel}> was not on the exclusion list.',
+      statusEnabled: 'On',
+      statusDisabled: 'Off',
+      exclusionCount: 'Excluded channels',
+      currentChannelBuffered: 'Audio in your current channel is being kept',
+      currentChannelExcluded: 'Your current channel is excluded',
+      currentChannelNone: 'You are not in a voice channel',
+    },
+    notice: {
+      title: 'Audio is being kept',
+      body: 'The last {minutes} minutes of audio in this channel are kept so a server admin can save them with `/voice record`.',
+      optOut: 'An admin can stop this with `/voice autojoin exclude`.',
+    },
+    bufferWindow: 'Buffer window',
     title: 'Recording',
     recording: 'Recording...',
     recordingDesc: 'Recording {duration} of past audio.',

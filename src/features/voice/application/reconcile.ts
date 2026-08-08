@@ -1,5 +1,7 @@
 import { ChannelType, Client, StageChannel, VoiceChannel } from 'discord.js';
 import { connectionManager } from '../recording/connectionManager.js';
+import { voiceSettingsRepository } from '../repositories/voiceSettingsRepository.js';
+import { announceBuffering } from './announce.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 
 function humanMemberCount(channel: VoiceChannel | StageChannel): number {
@@ -37,6 +39,10 @@ export async function reconcileOccupiedVoiceChannels(
       return;
     }
 
+    if (!voiceSettingsRepository.isAutoJoinEnabled(guild.id)) {
+      continue;
+    }
+
     let alreadyConnectedInGuild = false;
     for (const info of connectionManager.getAllConnections().values()) {
       if (info.guildId === guild.id) {
@@ -53,6 +59,8 @@ export async function reconcileOccupiedVoiceChannels(
 
     for (const channel of guild.channels.cache.values()) {
       if (!isJoinableVoiceChannel(channel)) continue;
+      if (voiceSettingsRepository.isChannelExcluded(guild.id, channel.id))
+        continue;
       const count = humanMemberCount(channel);
       if (count > bestCount) {
         bestChannel = channel;
@@ -85,6 +93,8 @@ export async function reconcileOccupiedVoiceChannels(
       logger.info(
         `Reconciled voice connection to ${bestChannel.name} (${bestChannel.id}) in guild ${guild.name}`
       );
+
+      await announceBuffering(bestChannel);
     } catch (error) {
       logger.error(
         `Voice reconcile error for guild ${guild.id}:`,
