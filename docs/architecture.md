@@ -62,7 +62,8 @@ The project uses feature-based architecture. Each feature owns its command entry
     │       └── helpCatalog.ts
     ├── shared/
     │   ├── help/
-    │   │   └── catalog.ts   # Shared help catalog types/state
+    │   │   ├── catalog.ts   # Shared help catalog types/state
+    │   │   └── __tests__/   # Catalog vs. command definition consistency
     │   ├── types/           # Cross-feature type definitions
     │   └── utils/           # Cross-feature pure utilities
     ├── events/              # Core client/interaction events
@@ -87,9 +88,15 @@ The project uses feature-based architecture. Each feature owns its command entry
     │   │       ├── 002_notifications.ts # Legacy Steam notification tables (dropped by 005)
     │   │       ├── 003_settings.ts
     │   │       ├── 004_notification.ts
-    │   │       └── 005_drop_steam.ts   # Drops legacy Steam tables on existing DBs
-    │   ├── audit/           # Audit log delivery/orchestration
+    │   │       ├── 005_drop_steam.ts   # Drops legacy Steam tables on existing DBs
+    │   │       ├── 006_polls.ts
+    │   │       └── 007_voice_autojoin.ts
+    │   ├── guildSettings/   # Sole owner of guild_settings (language, audit channel, voice auto-join)
     │   │   ├── index.ts
+    │   │   └── __tests__/
+    │   ├── audit/           # Audit log storage and delivery
+    │   │   ├── index.ts
+    │   │   ├── auditRepository.ts  # Owns audit_logs
     │   │   ├── format.ts
     │   │   └── __tests__/
     │   ├── backup/          # Scheduled DB backups
@@ -115,8 +122,12 @@ The project uses feature-based architecture. Each feature owns its command entry
 - Internal command logic should live in `application/`.
 - Feature-specific persistence access should live in that feature's `repositories/`. Repositories contain **actual SQL queries**, not thin wrappers.
 - Prefer explicit supporting folder names such as `integrations/`, `jobs/`, `recording/`, `tracking/`, and feature-owned internal modules like `community/poll/`.
-- `src/infrastructure/` is reserved for truly shared runtime infrastructure, not feature-owned business logic.
+- `commands/` files delegate to `application/`; they must not import `repositories/` or `infrastructure/` directly.
+- Features never import each other. Anything two features need belongs in `infrastructure/` or `shared/`.
+- Features may expose `handleComponent(interaction)` to claim button and select-menu interactions. The router walks the registry, so component UI needs no change outside the feature.
+- `src/infrastructure/` is reserved for truly shared runtime infrastructure, not feature-owned business logic. State that several features read - such as `guild_settings` - is owned here, not by whichever feature happens to provide its UI.
 - `src/shared/` contains cross-feature utilities, types, and shared registries such as the help catalog.
+- These rules are enforced by `src/__tests__/architecture.test.ts`, not just documented.
 
 ## Layer Architecture
 
@@ -136,25 +147,35 @@ flowchart LR
   end
   subgraph Infrastructure
     database["database (connection)"]
+    sharedInfra["guildSettings / audit"]
   end
 
   commands --> application
   application --> repositories
   application --> runtimeFolders
+  application --> sharedInfra
   repositories --> database
+  sharedInfra --> database
 ```
 
 - **commands**: Slash command definitions; delegate to application layer.
 - **application**: Command/business logic handlers; orchestrate repositories and supporting runtime folders.
 - **repositories**: Database access with real SQL; use `runTransaction()` for multi-table writes.
 - **supporting runtime folders**: Feature-owned integrations, background jobs, trackers, recorders, or stateful helpers. Prefer explicit names over a generic `services/` directory, and reserve `services/` for cases like `poll` where a smaller stateful boundary is clearer than further splitting.
+- **shared infrastructure**: Cross-feature state and services with their own tables — `guildSettings` (`guild_settings`) and `audit` (`audit_logs`). Features use them; they never depend on a feature.
 - **database**: Pure infrastructure under `src/infrastructure/database/`—connection, pragma, transactions, migrations only.
 
 ## Database Layer
 
 - `infrastructure/database/` is **pure infrastructure**: connection management, `runTransaction()`, and migrations.
 - No business logic or feature-specific queries live here. All SQL lives in feature `repositories/`.
-- Migrations are numbered DDL files (`001_steam.ts`, `002_notifications.ts`, `003_settings.ts`, `004_notification.ts`, `005_drop_steam.ts`) applied by `initializeDatabase()`. The Steam feature has been removed; migrations 001 and 002 are kept untouched for a clean upgrade path, and `005_drop_steam.ts` drops the legacy Steam tables on existing databases.
+- Migrations are numbered DDL files (`001_steam.ts` … `007_voice_autojoin.ts`) applied by `initializeDatabase()`. They re-run on every boot, so a migration that adds a column checks `PRAGMA table_info` first. The Steam feature has been removed; migrations 001 and 002 are kept untouched for a clean upgrade path, and `005_drop_steam.ts` drops the legacy Steam tables on existing databases.
+
+## Interactions
+
+- Slash commands and events are auto-discovered from `features/*/commands/` and `features/*/events/`.
+- Component interactions (buttons, select menus) go through `dispatchComponent()` in `src/features/index.ts`: each feature's optional `handleComponent` is offered the interaction until one returns `true`, with per-feature error isolation.
+- Interactive panels use `runComponentPanel()` from `src/shared/utils/panel.ts`, which owns the reply/collect/re-render/expire lifecycle. A panel supplies `render`, `renderDisabled`, and `onComponent`.
 
 ## Middleware
 

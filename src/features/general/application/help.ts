@@ -19,7 +19,7 @@ import {
   type PermissionLevel,
 } from '../../../shared/help/catalog.js';
 import { isBotOwner } from '../../../config/env.js';
-import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
+import { runComponentPanel } from '../../../shared/utils/panel.js';
 
 interface PermissionContext {
   userId: string;
@@ -250,99 +250,66 @@ export async function executeHelpCommand(
     return;
   }
 
-  const selectMenu = new StringSelectMenuBuilder()
-    .setCustomId('help_category')
-    .setPlaceholder(t('help.selectCategory', locale))
-    .addOptions(
-      new StringSelectMenuOptionBuilder()
-        .setLabel(t('help.showAll', locale))
-        .setValue('all')
-        .setDefault(true),
-      ...filteredCategories.map((cat, index) => {
-        const name = locale === 'ja' ? cat.name.ja : cat.name.en;
-        return new StringSelectMenuOptionBuilder()
-          .setLabel(name)
-          .setValue(`cat_${index}`);
-      })
-    );
+  // The panel's whole state is which category is selected.
+  let selectedValue = 'all';
 
-  const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-    selectMenu
-  );
+  const buildSelectRow = (disabled = false) => {
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId('help_category')
+      .setPlaceholder(t('help.selectCategory', locale))
+      .setDisabled(disabled)
+      .addOptions(
+        new StringSelectMenuOptionBuilder()
+          .setLabel(t('help.showAll', locale))
+          .setValue('all')
+          .setDefault(selectedValue === 'all'),
+        ...filteredCategories.map((cat, index) => {
+          const name = locale === 'ja' ? cat.name.ja : cat.name.en;
+          const value = `cat_${index}`;
+          return new StringSelectMenuOptionBuilder()
+            .setLabel(name)
+            .setValue(value)
+            .setDefault(selectedValue === value);
+        })
+      );
 
-  const reply = await interaction.reply({
-    embeds: [buildOverviewEmbed()],
-    components: [row],
-    fetchReply: true,
-  });
+    return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu);
+  };
 
-  const collector = reply.createMessageComponentCollector({
+  const renderEmbed = () => {
+    if (selectedValue === 'all') return buildOverviewEmbed();
+    const category =
+      filteredCategories[parseInt(selectedValue.replace('cat_', ''), 10)];
+    return category ? buildCategoryEmbed(category) : buildOverviewEmbed();
+  };
+
+  await runComponentPanel({
+    interaction,
+    locale,
+    label: 'help panel',
+    ephemeral: false,
     componentType: ComponentType.StringSelect,
-    time: 120_000,
-  });
+    render: () => ({ embeds: [renderEmbed()], components: [buildSelectRow()] }),
+    renderDisabled: () => [buildSelectRow(true)],
+    onComponent: async (componentInteraction) => {
+      if (!componentInteraction.isStringSelectMenu()) return 'handled';
 
-  collector.on('collect', async (selectInteraction) => {
-    if (selectInteraction.user.id !== interaction.user.id) {
-      await selectInteraction.reply({
-        content: t('help.onlyCommandUser', locale),
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
+      const value = componentInteraction.values[0];
+      const isKnownCategory =
+        value === 'all' ||
+        filteredCategories[parseInt(value.replace('cat_', ''), 10)] !==
+          undefined;
 
-    const value = selectInteraction.values[0];
-
-    let embed;
-    if (value === 'all') {
-      embed = buildOverviewEmbed();
-    } else {
-      const catIndex = parseInt(value.replace('cat_', ''), 10);
-      const category = filteredCategories[catIndex];
-      if (!category) {
-        await selectInteraction.reply({
-          content: t('help.commandNotFoundDesc', locale, {
-            command: value,
-          }),
+      if (!isKnownCategory) {
+        await componentInteraction.reply({
+          content: t('help.commandNotFoundDesc', locale, { command: value }),
           flags: MessageFlags.Ephemeral,
         });
-        return;
+        return 'handled';
       }
-      embed = buildCategoryEmbed(category);
-    }
 
-    const updatedMenu = StringSelectMenuBuilder.from(
-      selectMenu.toJSON()
-    ).setOptions(
-      selectMenu.options.map((opt) =>
-        StringSelectMenuOptionBuilder.from(opt.toJSON()).setDefault(
-          opt.toJSON().value === value
-        )
-      )
-    );
-    const updatedRow =
-      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-        updatedMenu
-      );
-    await selectInteraction.update({
-      embeds: [embed],
-      components: [updatedRow],
-    });
-  });
-
-  collector.on('end', async () => {
-    const disabledMenu = StringSelectMenuBuilder.from(
-      selectMenu.toJSON()
-    ).setDisabled(true);
-    const disabledRow =
-      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-        disabledMenu
-      );
-    await interaction
-      .editReply({ components: [disabledRow] })
-      .catch((e: unknown) => {
-        logger.debug(
-          `Failed to disable help select menu: ${getErrorMessage(e)}`
-        );
-      });
+      selectedValue = value;
+      return 'update';
+    },
   });
 }

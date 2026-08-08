@@ -13,15 +13,15 @@ import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
 import { type Locale, t } from '../../../locales/index.js';
 import { LANGUAGE_AUTO } from '../../../locales/guildLocale.js';
+import { guildSettingsRepository } from '../../../infrastructure/guildSettings/index.js';
 import {
   auditRepository,
   type AuditLogRecord,
-  settingsRepository,
-} from '../repositories/index.js';
-import { logAuditAction } from '../../../infrastructure/audit/index.js';
+  logAuditAction,
+} from '../../../infrastructure/audit/index.js';
 import { formatAuditTarget } from '../../../infrastructure/audit/format.js';
 import { getSendableTextChannel } from '../../../shared/utils/discord.js';
-import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
+import { runComponentPanel } from '../../../shared/utils/panel.js';
 
 type SettingsPanelView = 'overview' | 'language' | 'audit' | 'logs';
 
@@ -37,9 +37,7 @@ const SUPPORTED_LANGUAGES = ['ja', 'en', LANGUAGE_AUTO] as const;
 
 /** Stored NULL means "follow the viewer"; the panel shows it as `auto`. */
 function currentLanguageValue(guildId: string): string {
-  return (
-    settingsRepository.getGuildSettings(guildId)?.language ?? LANGUAGE_AUTO
-  );
+  return guildSettingsRepository.get(guildId)?.language ?? LANGUAGE_AUTO;
 }
 
 function languageDisplayName(value: string, locale: Locale): string {
@@ -161,7 +159,7 @@ function buildLogsPaginationRow(
 }
 
 function buildOverviewEmbed(guildId: string, locale: Locale) {
-  const guildSettings = settingsRepository.getGuildSettings(guildId);
+  const guildSettings = guildSettingsRepository.get(guildId);
   const languageDisplay = languageDisplayName(
     guildSettings?.language ?? LANGUAGE_AUTO,
     locale
@@ -206,8 +204,7 @@ function buildLanguageEmbed(guildId: string, locale: Locale) {
 }
 
 function buildAuditEmbed(guildId: string, locale: Locale) {
-  const auditChannel =
-    settingsRepository.getGuildSettings(guildId)?.audit_channel_id;
+  const auditChannel = guildSettingsRepository.get(guildId)?.audit_channel_id;
 
   return createEmbed({
     title: t('settings.audit.name', locale),
@@ -292,7 +289,7 @@ function buildComponents(
 
   if (view === 'audit') {
     const hasAuditChannel =
-      !!settingsRepository.getGuildSettings(guildId)?.audit_channel_id;
+      !!guildSettingsRepository.get(guildId)?.audit_channel_id;
     rows.push(buildAuditSelectRow(locale, disabled));
     rows.push(buildAuditActionsRow(locale, hasAuditChannel, disabled));
   }
@@ -380,32 +377,24 @@ export async function showSettingsPanel(
     };
   };
 
-  const initialState = render();
-  const response = await interaction.reply({
-    embeds: [initialState.embed],
-    components: initialState.components,
-    flags: MessageFlags.Ephemeral,
-    fetchReply: true,
-  });
-
-  if (typeof response.createMessageComponentCollector !== 'function') {
-    return;
-  }
-
-  const collector = response.createMessageComponentCollector({
-    time: PANEL_TIMEOUT,
-  });
-
-  collector.on('collect', async (componentInteraction) => {
-    if (componentInteraction.user.id !== interaction.user.id) {
-      await componentInteraction.reply({
-        content: t('help.onlyCommandUser', locale),
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
-
-    try {
+  await runComponentPanel({
+    interaction,
+    locale,
+    label: 'settings panel',
+    timeout: PANEL_TIMEOUT,
+    render: () => {
+      const state = render();
+      return { embeds: [state.embed], components: state.components };
+    },
+    renderDisabled: () =>
+      buildComponents(
+        interaction.guildId!,
+        locale,
+        currentView,
+        logsPage,
+        true
+      ),
+    onComponent: async (componentInteraction) => {
       if (componentInteraction.isButton()) {
         if (
           componentInteraction.customId === 'settings-panel:overview' ||
@@ -437,7 +426,7 @@ export async function showSettingsPanel(
         }
 
         if (componentInteraction.customId === 'settings-panel:audit-clear') {
-          settingsRepository.setAuditChannel(interaction.guildId!, null);
+          guildSettingsRepository.setAuditChannel(interaction.guildId!, null);
           await logAuditAction(
             interaction.client,
             interaction.guildId!,
@@ -459,9 +448,10 @@ export async function showSettingsPanel(
             value as (typeof SUPPORTED_LANGUAGES)[number]
           )
         ) {
-          settingsRepository.setGuildSettings(interaction.guildId!, {
-            language: value === LANGUAGE_AUTO ? null : value,
-          });
+          guildSettingsRepository.setLanguage(
+            interaction.guildId!,
+            value === LANGUAGE_AUTO ? null : value
+          );
           await logAuditAction(
             componentInteraction.client,
             componentInteraction.guildId!,
@@ -490,10 +480,13 @@ export async function showSettingsPanel(
             ],
             flags: MessageFlags.Ephemeral,
           });
-          return;
+          return 'handled';
         }
 
-        settingsRepository.setAuditChannel(interaction.guildId!, channelId);
+        guildSettingsRepository.setAuditChannel(
+          interaction.guildId!,
+          channelId
+        );
         await logAuditAction(
           interaction.client,
           interaction.guildId!,
@@ -505,32 +498,7 @@ export async function showSettingsPanel(
         currentView = 'audit';
       }
 
-      const nextState = render();
-      await componentInteraction.update({
-        embeds: [nextState.embed],
-        components: nextState.components,
-      });
-    } catch (error) {
-      logger.warn(`Failed to update settings panel: ${getErrorMessage(error)}`);
-      await componentInteraction.deferUpdate().catch(() => undefined);
-    }
-  });
-
-  collector.on('end', async () => {
-    await interaction
-      .editReply({
-        components: buildComponents(
-          interaction.guildId!,
-          locale,
-          currentView,
-          logsPage,
-          true
-        ),
-      })
-      .catch((error: unknown) => {
-        logger.debug(
-          `Failed to disable settings panel components: ${getErrorMessage(error)}`
-        );
-      });
+      return 'update';
+    },
   });
 }

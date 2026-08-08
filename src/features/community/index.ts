@@ -1,6 +1,7 @@
-import type { Client } from 'discord.js';
+import type { Client, MessageComponentInteraction } from 'discord.js';
 import './helpCatalog.js';
 import { pollStore, restorePolls } from './poll/index.js';
+import { handleCommunityButtonInteraction } from './poll/button.js';
 
 export const name = 'community';
 
@@ -9,6 +10,17 @@ export const name = 'community';
  */
 export async function start(client: Client): Promise<void> {
   await restorePolls(client);
+}
+
+/**
+ * Claim poll vote buttons. Returns false for anything else so other features
+ * still get a chance at the interaction.
+ */
+export async function handleComponent(
+  interaction: MessageComponentInteraction
+): Promise<boolean> {
+  if (!interaction.isButton()) return false;
+  return handleCommunityButtonInteraction(interaction);
 }
 
 /**

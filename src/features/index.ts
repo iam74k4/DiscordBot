@@ -1,4 +1,4 @@
-import type { Client } from 'discord.js';
+import type { Client, MessageComponentInteraction } from 'discord.js';
 import { readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -12,6 +12,14 @@ export interface FeatureModule {
   name: string;
   start(client: Client): void | Promise<void>;
   stop(): void | Promise<void>;
+  /**
+   * Handle a button or select-menu interaction owned by this feature.
+   * Return true once handled so routing stops; return false to pass it on.
+   * Optional - features without component UI simply omit it.
+   */
+  handleComponent?(
+    interaction: MessageComponentInteraction
+  ): boolean | Promise<boolean>;
 }
 
 let featureModules: FeatureModule[] = [];
@@ -22,7 +30,8 @@ function isFeatureModule(mod: unknown): mod is FeatureModule {
   return (
     typeof m.name === 'string' &&
     typeof m.start === 'function' &&
-    typeof m.stop === 'function'
+    typeof m.stop === 'function' &&
+    (m.handleComponent === undefined || typeof m.handleComponent === 'function')
   );
 }
 
@@ -71,6 +80,42 @@ export async function loadFeatures(): Promise<void> {
 
 export function getFeatureModules(): readonly FeatureModule[] {
   return featureModules;
+}
+
+/**
+ * Offer a component interaction to each module until one claims it.
+ * Mirrors startAllFeatures' error isolation: a throwing feature must not stop
+ * the others, and the interaction counts as handled so the router does not
+ * fall through to command handling.
+ */
+export async function dispatchComponent(
+  modules: readonly FeatureModule[],
+  interaction: MessageComponentInteraction
+): Promise<boolean> {
+  for (const feature of modules) {
+    if (!feature.handleComponent) continue;
+
+    try {
+      if (await feature.handleComponent(interaction)) {
+        return true;
+      }
+    } catch (error) {
+      logger.error(
+        `Feature ${feature.name} failed handling component ${interaction.customId}:`,
+        getErrorMessage(error)
+      );
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/** Route a component interaction through the loaded feature registry. */
+export function routeComponentToFeatures(
+  interaction: MessageComponentInteraction
+): Promise<boolean> {
+  return dispatchComponent(featureModules, interaction);
 }
 
 /**

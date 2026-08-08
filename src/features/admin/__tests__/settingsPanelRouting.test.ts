@@ -6,19 +6,16 @@ vi.mock('../application/settingsPanel.js', () => ({
   showSettingsPanel,
 }));
 
-vi.mock('../repositories/index.js', () => ({
-  auditRepository: {
-    getLogs: vi.fn(),
-    getLogsCount: vi.fn(),
-  },
-  settingsRepository: {
-    getGuildSettings: vi.fn(),
+vi.mock('../../../infrastructure/guildSettings/index.js', () => ({
+  guildSettingsRepository: {
+    get: vi.fn(),
     setAuditChannel: vi.fn(),
-    setGuildSettings: vi.fn(),
+    setLanguage: vi.fn(),
   },
 }));
 
 vi.mock('../../../infrastructure/audit/index.js', () => ({
+  auditRepository: { getLogs: vi.fn(), getLogsCount: vi.fn() },
   logAuditAction: vi.fn(),
 }));
 

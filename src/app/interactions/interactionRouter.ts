@@ -1,6 +1,5 @@
 import {
   type AutocompleteInteraction,
-  type ButtonInteraction,
   type ChatInputCommandInteraction,
   type Interaction,
   MessageFlags,
@@ -12,7 +11,7 @@ import { createErrorEmbed } from '../../shared/utils/embed.js';
 import { metrics } from '../../infrastructure/metrics/index.js';
 import { t } from '../../locales/index.js';
 import { resolveLocale } from '../../locales/guildLocale.js';
-import { handleCommunityButtonInteraction } from '../../features/community/poll/button.js';
+import { routeComponentToFeatures } from '../../features/index.js';
 
 async function handleAutocompleteInteraction(
   client: ExtendedClient,
@@ -126,12 +125,6 @@ async function handleCommandExecution(
   }
 }
 
-async function handleButtonInteraction(
-  interaction: ButtonInteraction
-): Promise<boolean> {
-  return handleCommunityButtonInteraction(interaction);
-}
-
 export async function routeInteraction(
   client: ExtendedClient,
   interaction: Interaction
@@ -142,7 +135,7 @@ export async function routeInteraction(
   }
 
   if (interaction.isButton()) {
-    const handled = await handleButtonInteraction(interaction);
+    const handled = await routeComponentToFeatures(interaction);
     if (handled) {
       return;
     }
