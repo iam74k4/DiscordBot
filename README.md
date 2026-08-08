@@ -25,9 +25,9 @@ A modular Discord bot built with TypeScript and discord.js v14.
 - Slash command support with automatic registration
 - **Voice channel recording** (restricted past-audio recording with `/voice record`)
 - VC join/leave and member-join notifications, plus per-user VC time stats
-- Community features (polls, roulette)
+- Community features (polls that survive restarts, roulette)
 - Admin system (`/admin` server settings, `/owner` bot-owner tools)
-- Audit logging for admin actions
+- Audit logging for role changes, notification setup, and settings changes
 - Middleware system (permissions, cooldown)
 - SQLite database for persistence
 - Modular feature-based architecture for easy extension
@@ -47,7 +47,6 @@ A modular Discord bot built with TypeScript and discord.js v14.
 | Code Quality | ESLint, Prettier              |
 | Build Tool   | TypeScript Compiler           |
 | Development  | tsx (hot-reload)              |
-| Charting     | Chart.js, chartjs-node-canvas |
 | Scheduling   | node-cron                     |
 | Deployment   | Railway                       |
 | CI/CD        | GitHub Actions                |
@@ -145,14 +144,18 @@ npm start
 
 Requires **Manage Server** in the guild (slash command default permission).
 
-| Command                           | Description                 |
-| --------------------------------- | --------------------------- |
-| `/admin settings view`            | View current settings       |
-| `/admin settings language <lang>` | Set server language (ja/en) |
-| `/admin settings audit [channel]` | Set audit log channel       |
-| `/admin settings logs`            | View recent audit logs      |
-| `/admin role add`                 | Add a role to a member      |
-| `/admin role remove`              | Remove a role from a member |
+| Command                           | Description                                |
+| --------------------------------- | ------------------------------------------ |
+| `/admin settings view`            | View current settings                      |
+| `/admin settings language <lang>` | Set server language (`ja` / `en` / `auto`) |
+| `/admin settings audit [channel]` | Set audit log channel                      |
+| `/admin settings logs`            | View recent audit logs                     |
+| `/admin role add`                 | Add a role to a member (audit logged)      |
+| `/admin role remove`              | Remove a role from a member (audit logged) |
+
+`language` sets the language the bot replies in for everyone in the server.
+`auto` follows each user's own Discord client language, which is how the bot
+behaves when nothing is configured.
 
 ### Bot owner (`/owner`)
 
@@ -181,29 +184,45 @@ Only users listed in `BOT_OWNER_IDS` can run these commands (can be used in DMs 
 **Options:**
 
 - `question`: Poll question (required)
-- `option1` to `option10`: Choices (at least 2 required)
+- `option1` to `option10`: Choices (at least 2 required, up to 10)
 - `duration`: Duration in minutes (optional, unlimited if not set)
 - `anonymous`: Anonymous voting (default: false)
 
 ### Voice (`/voice`)
 
-| Command                    | Description                               |
-| -------------------------- | ----------------------------------------- |
-| `/voice record <duration>` | Record past audio from your voice channel |
-| `/voice status`            | Show voice subsystem status               |
+| Command                             | Description                                   |
+| ----------------------------------- | --------------------------------------------- |
+| `/voice record <duration>`          | Record past audio from your voice channel     |
+| `/voice status`                     | Show buffer window, auto-join state, capacity |
+| `/voice autojoin enable`            | Allow the bot to join occupied voice channels |
+| `/voice autojoin disable`           | Stop joining and buffering in this server     |
+| `/voice autojoin exclude <channel>` | Keep the bot out of one voice channel         |
+| `/voice autojoin include <channel>` | Remove a channel from the exclusion list      |
 
 **Options:**
 
-- `duration`: Recording duration (e.g., `30s`, `1m`, `5m`, max 5 minutes)
+- `duration`: Recording duration (e.g., `30s`, `1m`, `5m`, max 5 minutes). A
+  recording cannot be longer than `AUDIO_BUFFER_DURATION`, which is why raising
+  that setting above `MAX_RECORDING_DURATION` only costs memory.
 
 **Features:**
 
-- Auto-join: Bot automatically joins voice channels when users enter
-- Hybrid buffering: Stores 10 minutes of audio (2 min in memory, 8 min on disk)
+- Auto-join: Bot automatically joins voice channels when users enter, and keeps
+  a rolling window of that channel's audio so `/voice record` can reach backwards
+  in time
+- Disclosure: on joining, the bot posts once into the voice channel's own text
+  chat saying audio is being kept and how to turn it off
+- Opt-out: `/voice autojoin disable` (whole server) or
+  `/voice autojoin exclude <channel>` (one channel). Both also drop any
+  connection already buffering
+- In-memory ring buffer of `AUDIO_BUFFER_DURATION` seconds (default: 300 = 5
+  minutes), about **82MB per connected voice channel**. Multiply by
+  `MAX_CONCURRENT_VC_CONNECTIONS` when sizing your host
 - WAV format output at 48kHz/16bit/mono (~27.5MB for 5 minutes)
 - Private delivery: Recording responses and files are sent ephemerally
 - Automatic file cleanup after `RECORDING_RETENTION_HOURS` (default: 24 hours)
-- Memory monitoring with automatic disconnection when threshold exceeded
+- Memory monitoring against `MEMORY_LIMIT_MB` (RSS), disconnecting the oldest
+  connections when usage passes 85% of the budget
 
 **Notes:**
 
@@ -211,6 +230,14 @@ Only users listed in `BOT_OWNER_IDS` can run these commands (can be used in DMs 
 - Bot must be in the same voice channel
 - Maximum concurrent VC connections: 5 (configurable)
 - Opus decoding uses **`opusscript`** (pure JS) instead of `@discordjs/opus` so installs stay free of vulnerable native prebuild chains; CPU use can be higher than a native Opus build under heavy voice load. See [`docs/quality.md`](docs/quality.md) for dependency overrides.
+
+### Memory
+
+Each connected voice channel holds its ring buffer in memory: roughly
+`AUDIO_BUFFER_DURATION × 0.27 MB` (about 82MB at the 300s default). With
+`MAX_CONCURRENT_VC_CONNECTIONS=5` the worst case is about 410MB on top of the
+bot's baseline, so `MEMORY_LIMIT_MB` (default 512) should match what your host
+actually grants the container.
 
 ### Data Retention
 

@@ -16,17 +16,17 @@ export default defineConfig({
         'src/shared/types/**',
         'src/index.ts',
         'src/client.ts',
-        'src/shared/utils/chart.ts', // Canvas/Chart.js rendering – integration-style
         'src/handlers/**', // Command/event loader bootstrap
         'src/app-scripts/**', // CLI maintenance scripts
         'src/events/**', // Discord event handlers (integration)
       ],
-      // Current minimum thresholds: lines 26%, functions 28%, branches 21%, statements 26%
+      // Current minimum thresholds: lines 46%, functions 52%, branches 38%, statements 45%
+      // (measured 49.7 / 56.2 / 41.2 / 48.5 — raise these as coverage grows)
       thresholds: {
-        lines: 26,
-        functions: 28,
-        branches: 21,
-        statements: 26,
+        lines: 46,
+        functions: 52,
+        branches: 38,
+        statements: 45,
       },
     },
   },

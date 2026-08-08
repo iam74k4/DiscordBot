@@ -28,6 +28,7 @@ The project uses feature-based architecture. Each feature owns its command entry
     │   │   ├── application/
     │   │   ├── events/
     │   │   ├── recording/
+    │   │   ├── repositories/ # Auto-join settings and channel exclusions
     │   │   ├── jobs/
     │   │   ├── __tests__/
     │   │   └── helpCatalog.ts
