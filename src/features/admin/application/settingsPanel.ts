@@ -21,7 +21,7 @@ import {
 } from '../../../infrastructure/audit/index.js';
 import { formatAuditTarget } from '../../../infrastructure/audit/format.js';
 import { getSendableTextChannel } from '../../../shared/utils/discord.js';
-import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
+import { runComponentPanel } from '../../../shared/utils/panel.js';
 
 type SettingsPanelView = 'overview' | 'language' | 'audit' | 'logs';
 
@@ -377,32 +377,24 @@ export async function showSettingsPanel(
     };
   };
 
-  const initialState = render();
-  const response = await interaction.reply({
-    embeds: [initialState.embed],
-    components: initialState.components,
-    flags: MessageFlags.Ephemeral,
-    fetchReply: true,
-  });
-
-  if (typeof response.createMessageComponentCollector !== 'function') {
-    return;
-  }
-
-  const collector = response.createMessageComponentCollector({
-    time: PANEL_TIMEOUT,
-  });
-
-  collector.on('collect', async (componentInteraction) => {
-    if (componentInteraction.user.id !== interaction.user.id) {
-      await componentInteraction.reply({
-        content: t('help.onlyCommandUser', locale),
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
-
-    try {
+  await runComponentPanel({
+    interaction,
+    locale,
+    label: 'settings panel',
+    timeout: PANEL_TIMEOUT,
+    render: () => {
+      const state = render();
+      return { embeds: [state.embed], components: state.components };
+    },
+    renderDisabled: () =>
+      buildComponents(
+        interaction.guildId!,
+        locale,
+        currentView,
+        logsPage,
+        true
+      ),
+    onComponent: async (componentInteraction) => {
       if (componentInteraction.isButton()) {
         if (
           componentInteraction.customId === 'settings-panel:overview' ||
@@ -488,7 +480,7 @@ export async function showSettingsPanel(
             ],
             flags: MessageFlags.Ephemeral,
           });
-          return;
+          return 'handled';
         }
 
         guildSettingsRepository.setAuditChannel(
@@ -506,32 +498,7 @@ export async function showSettingsPanel(
         currentView = 'audit';
       }
 
-      const nextState = render();
-      await componentInteraction.update({
-        embeds: [nextState.embed],
-        components: nextState.components,
-      });
-    } catch (error) {
-      logger.warn(`Failed to update settings panel: ${getErrorMessage(error)}`);
-      await componentInteraction.deferUpdate().catch(() => undefined);
-    }
-  });
-
-  collector.on('end', async () => {
-    await interaction
-      .editReply({
-        components: buildComponents(
-          interaction.guildId!,
-          locale,
-          currentView,
-          logsPage,
-          true
-        ),
-      })
-      .catch((error: unknown) => {
-        logger.debug(
-          `Failed to disable settings panel components: ${getErrorMessage(error)}`
-        );
-      });
+      return 'update';
+    },
   });
 }

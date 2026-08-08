@@ -22,7 +22,7 @@ import {
   interactionHasGuildPermission,
 } from '../../../shared/utils/discord.js';
 import { PermissionFlagsBits } from 'discord.js';
-import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
+import { runComponentPanel } from '../../../shared/utils/panel.js';
 
 type NotificationPanelView = 'status' | 'stats';
 type Period = 'today' | 'week' | 'month' | 'all';
@@ -322,32 +322,25 @@ export async function showNotificationPanel(
     ),
   });
 
-  const initialState = render();
-  const response = await interaction.reply({
-    embeds: [initialState.embed],
-    components: initialState.components,
-    flags: MessageFlags.Ephemeral,
-    fetchReply: true,
-  });
-
-  if (typeof response.createMessageComponentCollector !== 'function') {
-    return;
-  }
-
-  const collector = response.createMessageComponentCollector({
-    time: PANEL_TIMEOUT,
-  });
-
-  collector.on('collect', async (componentInteraction) => {
-    if (componentInteraction.user.id !== interaction.user.id) {
-      await componentInteraction.reply({
-        content: t('help.onlyCommandUser', locale),
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
-
-    try {
+  await runComponentPanel({
+    interaction,
+    locale,
+    label: 'notification panel',
+    timeout: PANEL_TIMEOUT,
+    render: () => {
+      const state = render();
+      return { embeds: [state.embed], components: state.components };
+    },
+    renderDisabled: () =>
+      buildComponents(
+        locale,
+        interaction.guildId!,
+        currentView,
+        currentPeriod,
+        canManageGuild,
+        true
+      ),
+    onComponent: async (componentInteraction) => {
       if (componentInteraction.isButton()) {
         if (componentInteraction.customId === 'notification-panel:stats') {
           currentView = 'stats';
@@ -406,7 +399,7 @@ export async function showNotificationPanel(
             ],
             flags: MessageFlags.Ephemeral,
           });
-          return;
+          return 'handled';
         }
 
         notificationChannelRepository.set(
@@ -417,35 +410,7 @@ export async function showNotificationPanel(
         currentView = 'status';
       }
 
-      const nextState = render();
-      await componentInteraction.update({
-        embeds: [nextState.embed],
-        components: nextState.components,
-      });
-    } catch (error) {
-      logger.warn(
-        `Failed to update notification panel: ${getErrorMessage(error)}`
-      );
-      await componentInteraction.deferUpdate().catch(() => undefined);
-    }
-  });
-
-  collector.on('end', async () => {
-    await interaction
-      .editReply({
-        components: buildComponents(
-          locale,
-          interaction.guildId!,
-          currentView,
-          currentPeriod,
-          canManageGuild,
-          true
-        ),
-      })
-      .catch((error: unknown) => {
-        logger.debug(
-          `Failed to disable notification panel components: ${getErrorMessage(error)}`
-        );
-      });
+      return 'update';
+    },
   });
 }

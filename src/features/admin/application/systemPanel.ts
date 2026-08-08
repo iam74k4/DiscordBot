@@ -3,7 +3,6 @@ import {
   ButtonBuilder,
   ButtonStyle,
   ChatInputCommandInteraction,
-  MessageFlags,
 } from 'discord.js';
 import { createEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
@@ -15,7 +14,7 @@ import {
 } from '../../../infrastructure/health/index.js';
 import { backupService } from '../../../infrastructure/backup/index.js';
 import { metrics } from '../../../infrastructure/metrics/index.js';
-import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
+import { runComponentPanel } from '../../../shared/utils/panel.js';
 
 type AdminPanelView =
   | 'stats'
@@ -272,34 +271,23 @@ export async function showAdminSystemPanel(
     }
   };
 
-  const response = await interaction.reply({
-    embeds: [await render()],
-    components: [
-      buildMainRow(locale, currentView),
-      buildUtilityRow(locale, currentView),
+  await runComponentPanel({
+    interaction,
+    locale,
+    label: 'admin system panel',
+    timeout: PANEL_TIMEOUT,
+    render: async () => ({
+      embeds: [await render()],
+      components: [
+        buildMainRow(locale, currentView),
+        buildUtilityRow(locale, currentView),
+      ],
+    }),
+    renderDisabled: () => [
+      buildMainRow(locale, currentView, true),
+      buildUtilityRow(locale, currentView, true),
     ],
-    flags: MessageFlags.Ephemeral,
-    fetchReply: true,
-  });
-
-  if (typeof response.createMessageComponentCollector !== 'function') {
-    return;
-  }
-
-  const collector = response.createMessageComponentCollector({
-    time: PANEL_TIMEOUT,
-  });
-
-  collector.on('collect', async (componentInteraction) => {
-    if (componentInteraction.user.id !== interaction.user.id) {
-      await componentInteraction.reply({
-        content: t('help.onlyCommandUser', locale),
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
-
-    try {
+    onComponent: async (componentInteraction) => {
       const action = componentInteraction.customId.replace('admin-panel:', '');
 
       if (
@@ -334,40 +322,15 @@ export async function showAdminSystemPanel(
             buildUtilityRow(locale, currentView),
           ],
         });
-        return;
+        // Already deferred and edited above; nothing left for the panel to do.
+        return 'handled';
       }
 
       if (action === 'refresh') {
         lastBackupMessage = null;
       }
 
-      await componentInteraction.update({
-        embeds: [await render()],
-        components: [
-          buildMainRow(locale, currentView),
-          buildUtilityRow(locale, currentView),
-        ],
-      });
-    } catch (error) {
-      logger.warn(
-        `Failed to update admin system panel: ${getErrorMessage(error)}`
-      );
-      await componentInteraction.deferUpdate().catch(() => undefined);
-    }
-  });
-
-  collector.on('end', async () => {
-    await interaction
-      .editReply({
-        components: [
-          buildMainRow(locale, currentView, true),
-          buildUtilityRow(locale, currentView, true),
-        ],
-      })
-      .catch((error: unknown) => {
-        logger.debug(
-          `Failed to disable admin system panel components: ${getErrorMessage(error)}`
-        );
-      });
+      return 'update';
+    },
   });
 }
