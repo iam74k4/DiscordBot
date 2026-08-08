@@ -28,20 +28,41 @@ function checkBotCanManageRole(
   return botHighestRole.position > role.position;
 }
 
-async function checkActorCanManageRole(
-  interaction: ChatInputCommandInteraction,
+function checkActorCanManageRole(
+  executor: GuildMember,
   roleId: string
-): Promise<boolean> {
-  const guild = interaction.guild;
-  if (!guild) return false;
-
-  const executor = await guild.members
-    .fetch(interaction.user.id)
-    .catch(() => null);
-  const role = guild.roles.cache.get(roleId);
-  if (!executor || !role) return false;
-
+): boolean {
+  const role = executor.guild.roles.cache.get(roleId);
+  if (!role) return false;
   return executor.roles.highest.position > role.position;
+}
+
+/**
+ * Discord's client blocks Manage Roles on members at or above the actor.
+ * The bot API only enforces bot hierarchy, so slash commands must mirror
+ * that actor-vs-target check or junior mods can edit senior members.
+ */
+function checkActorCanManageMember(
+  executor: GuildMember,
+  target: GuildMember
+): boolean {
+  if (target.id === target.guild.ownerId && executor.id !== target.id) {
+    return false;
+  }
+  if (executor.id === target.id) {
+    return true;
+  }
+  return executor.roles.highest.position > target.roles.highest.position;
+}
+
+function checkBotCanManageMember(
+  interaction: ChatInputCommandInteraction,
+  target: GuildMember
+): boolean {
+  const botMember = interaction.guild?.members.me;
+  if (!botMember) return false;
+  if (target.id === target.guild.ownerId) return false;
+  return botMember.roles.highest.position > target.roles.highest.position;
 }
 
 export async function executeRoleCommand(
@@ -103,10 +124,37 @@ export async function executeRoleCommand(
     return;
   }
 
-  if (!(await checkActorCanManageRole(interaction, role.id))) {
+  const executor = await interaction.guild.members
+    .fetch(interaction.user.id)
+    .catch(() => null);
+  if (!executor || !checkActorCanManageRole(executor, role.id)) {
     const embed = createErrorEmbed(
       t('common.error', locale),
       t('admin.role.errors.actorRoleHierarchy', locale)
+    );
+    await interaction.reply({
+      embeds: [embed],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  if (!checkActorCanManageMember(executor, member)) {
+    const embed = createErrorEmbed(
+      t('common.error', locale),
+      t('admin.role.errors.targetMemberHierarchy', locale)
+    );
+    await interaction.reply({
+      embeds: [embed],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  if (!checkBotCanManageMember(interaction, member)) {
+    const embed = createErrorEmbed(
+      t('common.error', locale),
+      t('admin.role.errors.botTargetMemberHierarchy', locale)
     );
     await interaction.reply({
       embeds: [embed],

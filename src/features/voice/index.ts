@@ -4,6 +4,7 @@ import { memoryMonitor } from './jobs/memoryMonitor.js';
 import { fileCleanupService } from './jobs/fileCleanup.js';
 import { channelMixRingManager } from './recording/channelMixRing.js';
 import { connectionManager } from './recording/connectionManager.js';
+import { reconcileOccupiedVoiceChannels } from './application/reconcile.js';
 import { setServiceStatus } from '../../infrastructure/health/index.js';
 
 export const name = 'voice';
@@ -11,12 +12,14 @@ export const name = 'voice';
 /**
  * Start Voice jobs and recording runtime
  */
-export function start(_client: Client): void {
+export async function start(client: Client): Promise<void> {
   memoryMonitor.start();
   setServiceStatus('voiceMemoryMonitor', true);
 
   fileCleanupService.start();
   setServiceStatus('voiceFileCleanup', true);
+
+  await reconcileOccupiedVoiceChannels(client);
 }
 
 /**

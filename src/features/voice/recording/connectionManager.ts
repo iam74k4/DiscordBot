@@ -28,6 +28,17 @@ import { channelMixRingManager } from './channelMixRing.js';
 export class VoiceConnectionManager {
   private connections: Map<string, VoiceConnectionInfo> = new Map();
   private activeStreams: Map<string, Set<Readable>> = new Map();
+  /** In-flight connect promises keyed by channel id (dedupe concurrent joins). */
+  private readonly connecting = new Map<
+    string,
+    Promise<VoiceConnection | null>
+  >();
+  /**
+   * Guild ids with an in-flight connect. Discord allows one voice connection
+   * per guild; tracking this prevents a second channel join from reusing the
+   * live VoiceConnection under a different channelId (mix-ring cross-talk).
+   */
+  private readonly connectingGuilds = new Map<string, string>();
   private readonly maxConnections: number;
 
   constructor() {
@@ -40,43 +51,144 @@ export class VoiceConnectionManager {
   private async checkPermissions(
     channel: VoiceChannel | StageChannel
   ): Promise<boolean> {
-    const permissions = channel.permissionsFor(channel.guild.members.me!);
+    const me = channel.guild.members.me;
+    if (!me) return false;
+
+    const permissions = channel.permissionsFor(me);
     if (!permissions) return false;
 
     return permissions.has(PermissionFlagsBits.Connect);
   }
 
   /**
-   * Connect to a voice channel
+   * True when this guild already has a tracked or in-flight connection on a
+   * different channel. `@discordjs/voice` keys connections by guildId and will
+   * move/reuse the existing VoiceConnection — registering it again under a
+   * second channelId wires both mix rings to the same receiver.
+   */
+  private hasOtherChannelInGuild(
+    guildId: string,
+    channelId: string
+  ): string | undefined {
+    for (const [otherChannelId, info] of this.connections) {
+      if (info.guildId === guildId && otherChannelId !== channelId) {
+        return otherChannelId;
+      }
+    }
+    const inFlightChannelId = this.connectingGuilds.get(guildId);
+    if (inFlightChannelId && inFlightChannelId !== channelId) {
+      return inFlightChannelId;
+    }
+    return undefined;
+  }
+
+  /**
+   * Established connections plus in-flight joins that have not landed yet.
+   * Channels present in both maps (between `connections.set` and `connecting`
+   * cleanup) are counted once so max>1 is not under-admitted.
+   */
+  private usageCount(excludeChannelId?: string): number {
+    let inFlightOnly = 0;
+    for (const channelId of this.connecting.keys()) {
+      if (channelId === excludeChannelId) continue;
+      if (!this.connections.has(channelId)) {
+        inFlightOnly++;
+      }
+    }
+    return this.connections.size + inFlightOnly;
+  }
+
+  /**
+   * Connect to a voice channel.
+   * Concurrent callers for the same channel share one in-flight join.
+   * Limit checks include in-flight connects to avoid TOCTOU bypass.
+   * At most one channel per guild is allowed (Discord voice constraint).
    */
   async connect(
     guild: Guild,
     channel: VoiceChannel | StageChannel
   ): Promise<VoiceConnection | null> {
     const channelId = channel.id;
+    const guildId = guild.id;
 
-    // Check if already connected
-    if (this.connections.has(channelId)) {
-      const info = this.connections.get(channelId)!;
-      if (info.state === VoiceConnectionState.Connected) {
-        logger.debug(`Already connected to channel ${channelId}`);
-        return info.connection;
-      }
+    const existing = this.connections.get(channelId);
+    if (existing) {
+      logger.debug(`Already connected/connecting to channel ${channelId}`);
+      return existing.connection;
     }
 
-    // Check connection limit
-    if (this.connections.size >= this.maxConnections) {
+    const otherChannelId = this.hasOtherChannelInGuild(guildId, channelId);
+    if (otherChannelId) {
+      logger.warn(
+        `Already connected in guild ${guildId} (channel ${otherChannelId}). Cannot connect to ${channelId} — Discord allows one voice connection per guild.`
+      );
+      return null;
+    }
+
+    const inFlight = this.connecting.get(channelId);
+    if (inFlight) {
+      return inFlight;
+    }
+
+    // Reserve before any await (JS is single-threaded until await).
+    if (this.usageCount() >= this.maxConnections) {
       logger.warn(
         `Connection limit reached (${this.maxConnections}). Cannot connect to channel ${channelId}`
       );
       return null;
     }
 
-    // Check permissions
+    const connectPromise = this.connectInternal(guild, channel);
+    this.connecting.set(channelId, connectPromise);
+    this.connectingGuilds.set(guildId, channelId);
+    try {
+      return await connectPromise;
+    } finally {
+      this.connecting.delete(channelId);
+      if (this.connectingGuilds.get(guildId) === channelId) {
+        this.connectingGuilds.delete(guildId);
+      }
+    }
+  }
+
+  private async connectInternal(
+    guild: Guild,
+    channel: VoiceChannel | StageChannel
+  ): Promise<VoiceConnection | null> {
+    const channelId = channel.id;
+    const guildId = guild.id;
+
+    const existing = this.connections.get(channelId);
+    if (existing) {
+      return existing.connection;
+    }
+
     const hasPermission = await this.checkPermissions(channel);
     if (!hasPermission) {
       logger.warn(
         `Bot does not have permission to connect to channel ${channelId}`
+      );
+      return null;
+    }
+
+    // Another connect may have won while we awaited permissions
+    const raced = this.connections.get(channelId);
+    if (raced) {
+      return raced.connection;
+    }
+
+    const otherChannelId = this.hasOtherChannelInGuild(guildId, channelId);
+    if (otherChannelId) {
+      logger.warn(
+        `Already connected in guild ${guildId} (channel ${otherChannelId}). Cannot connect to ${channelId} — Discord allows one voice connection per guild.`
+      );
+      return null;
+    }
+
+    // Other usage = established + other in-flight (exclude this reservation)
+    if (this.usageCount(channelId) >= this.maxConnections) {
+      logger.warn(
+        `Connection limit reached (${this.maxConnections}). Cannot connect to channel ${channelId}`
       );
       return null;
     }
@@ -203,7 +315,13 @@ export class VoiceConnectionManager {
           ]);
           // Reconnecting to a new channel - ignore disconnect
         } catch {
-          // Real disconnect - clean up
+          // Real disconnect - clean up only if this connection is still tracked.
+          // A replacement join for the same channel must not be destroyed by a
+          // stale handler from the previous VoiceConnection instance.
+          const current = this.connections.get(channelId);
+          if (current?.connection !== connection) {
+            return;
+          }
           this.destroyStreamsForChannel(channelId);
           connection.destroy();
           this.connections.delete(channelId);
@@ -214,10 +332,11 @@ export class VoiceConnectionManager {
 
       connection.on(VoiceConnectionStatus.Ready, () => {
         const connInfo = this.connections.get(channelId);
-        if (connInfo) {
-          connInfo.state = VoiceConnectionState.Connected;
-          connInfo.connectedAt = Date.now();
+        if (connInfo?.connection !== connection) {
+          return;
         }
+        connInfo.state = VoiceConnectionState.Connected;
+        connInfo.connectedAt = Date.now();
         logger.info(`Connected to voice channel ${channelId}`);
       });
 

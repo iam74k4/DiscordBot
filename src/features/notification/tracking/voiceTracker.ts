@@ -1,3 +1,5 @@
+import type { Client } from 'discord.js';
+import { ChannelType } from 'discord.js';
 import { voiceSessionRepository } from '../repositories/voiceSessionRepository.js';
 import { logger } from '../../../shared/utils/logger.js';
 
@@ -72,9 +74,57 @@ function closeAllStaleSessions(): void {
   activeSessions.clear();
 }
 
+/**
+ * Close every in-memory session at graceful shutdown so downtime is not
+ * attributed to users who were connected when the process stopped.
+ */
+function endAllSessions(): void {
+  for (const key of [...activeSessions.keys()]) {
+    const separator = key.indexOf(':');
+    if (separator <= 0) continue;
+    const guildId = key.slice(0, separator);
+    const userId = key.slice(separator + 1);
+    endSession(guildId, userId);
+  }
+}
+
+/**
+ * Restart does not emit join events for users already in VC. Re-open sessions
+ * for current occupants so post-restart presence is tracked.
+ */
+function reconcileActiveVoiceSessions(client: Client): void {
+  let started = 0;
+
+  for (const guild of client.guilds.cache.values()) {
+    for (const channel of guild.channels.cache.values()) {
+      if (
+        channel.type !== ChannelType.GuildVoice &&
+        channel.type !== ChannelType.GuildStageVoice
+      ) {
+        continue;
+      }
+
+      if (!('members' in channel) || !channel.members) continue;
+
+      for (const member of channel.members.values()) {
+        if (member.user.bot) continue;
+        if (getActiveSession(guild.id, member.id)) continue;
+        startSession(guild.id, member.id, channel.id, channel.name);
+        started++;
+      }
+    }
+  }
+
+  if (started > 0) {
+    logger.info(`Reconciled ${started} active voice session(s) after restart`);
+  }
+}
+
 export const voiceTracker = {
   startSession,
   endSession,
+  endAllSessions,
   getActiveSession,
   closeAllStaleSessions,
+  reconcileActiveVoiceSessions,
 };

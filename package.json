@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc",
     "start": "node dist/index.js",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
@@ -33,10 +33,10 @@
   "dependencies": {
     "@discordjs/voice": "^0.19.2",
     "@snazzah/davey": "^0.1.11",
-    "better-sqlite3": "^12.8.0",
+    "better-sqlite3": "^12.9.0",
     "chart.js": "^4.5.1",
     "chartjs-node-canvas": "^5.0.0",
-    "discord.js": "^14.26.2",
+    "discord.js": "^14.26.3",
     "dotenv": "^17.4.0",
     "node-cron": "^4.2.1",
     "opusscript": "^0.0.8",
@@ -46,18 +46,19 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.6.0",
     "@types/node-cron": "^3.0.11",
-    "@vitest/coverage-v8": "^4.1.2",
+    "@vitest/coverage-v8": "^4.1.4",
     "eslint": "^10.2.0",
-    "prettier": "^3.8.1",
+    "prettier": "^3.8.3",
     "tsx": "^4.6.0",
     "typescript": "^6.0.2",
-    "typescript-eslint": "^8.58.0",
+    "typescript-eslint": "^8.58.2",
     "vitest": "^4.1.2"
   },
   "overrides": {
-    "undici": "6.24.1",
-    "flatted": "3.4.2"
+    "undici": "6.28.0",
+    "flatted": "3.4.2",
+    "ws": "8.21.2"
   }
 }
