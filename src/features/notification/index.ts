@@ -1,5 +1,4 @@
 import type { Client } from 'discord.js';
-import './helpCatalog.js';
 import { voiceTracker } from './tracking/voiceTracker.js';
 import { voiceSessionRepository } from './repositories/voiceSessionRepository.js';
 import { env } from '../../config/index.js';

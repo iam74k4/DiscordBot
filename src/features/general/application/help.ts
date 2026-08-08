@@ -13,11 +13,12 @@ import { COLORS } from '../../../shared/utils/constants/index.js';
 import { t } from '../../../locales/index.js';
 import { resolveLocale } from '../../../locales/guildLocale.js';
 import {
-  getHelpCategories,
+  buildHelpCatalog,
   type CommandCategory,
   type CommandInfo,
   type PermissionLevel,
 } from '../../../shared/help/catalog.js';
+import type { ExtendedClient } from '../../../client.js';
 import { isBotOwner } from '../../../config/env.js';
 import { runComponentPanel } from '../../../shared/utils/panel.js';
 
@@ -91,12 +92,23 @@ function formatCommandPermissionLabel(
   return labels.length > 0 ? ` [${labels.join(', ')}]` : '';
 }
 
+/**
+ * The catalog is derived from the commands this client actually loaded, so
+ * help can never advertise a command that is not deployed.
+ */
+function getHelpCategories(
+  interaction: AutocompleteInteraction | ChatInputCommandInteraction
+): CommandCategory[] {
+  const client = interaction.client as ExtendedClient;
+  return buildHelpCatalog(client.commands.values());
+}
+
 function getVisibleCommandNames(
   interaction: AutocompleteInteraction | ChatInputCommandInteraction
 ): string[] {
   const ctx = getPermissionContext(interaction);
   const names: string[] = [];
-  for (const category of getHelpCategories()) {
+  for (const category of getHelpCategories(interaction)) {
     for (const cmd of category.commands) {
       if (canUserSeeCommandWithContext(cmd, ctx)) {
         names.push(cmd.name);
@@ -106,8 +118,11 @@ function getVisibleCommandNames(
   return names;
 }
 
-function findCommand(name: string): CommandInfo | null {
-  for (const category of getHelpCategories()) {
+function findCommand(
+  interaction: AutocompleteInteraction | ChatInputCommandInteraction,
+  name: string
+): CommandInfo | null {
+  for (const category of getHelpCategories(interaction)) {
     for (const cmd of category.commands) {
       if (cmd.name === name) {
         return cmd;
@@ -140,7 +155,7 @@ export async function autocompleteHelpCommand(
 
   await interaction.respond(
     filtered.slice(0, 25).map((name) => {
-      const cmd = findCommand(name);
+      const cmd = findCommand(interaction, name);
       return {
         name: cmd ? getCommandLabel(cmd, locale, 60) : name,
         value: name,
@@ -156,7 +171,7 @@ export async function executeHelpCommand(
   const commandName = interaction.options.getString('command');
 
   if (commandName) {
-    const cmd = findCommand(commandName);
+    const cmd = findCommand(interaction, commandName);
 
     if (!cmd || !canUserSeeCommand(cmd, interaction)) {
       const embed = createEmbed({
@@ -193,7 +208,7 @@ export async function executeHelpCommand(
     return;
   }
 
-  const filteredCategories = getHelpCategories()
+  const filteredCategories = getHelpCategories(interaction)
     .map((category) => ({
       ...category,
       commands: category.commands.filter((cmd) =>

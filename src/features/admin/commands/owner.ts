@@ -109,6 +109,11 @@ export const command: Command = {
         )
     ),
 
+  help: {
+    category: { en: 'Admin', ja: '管理者' },
+    permission: 'owner',
+  },
+
   async execute(interaction) {
     await executeOwnerCommand(interaction);
   },

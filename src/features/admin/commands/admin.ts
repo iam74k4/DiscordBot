@@ -147,6 +147,11 @@ export const command: Command = {
         )
     ),
 
+  help: {
+    category: { en: 'Admin', ja: '管理者' },
+    permission: ['manageGuild', 'manageRoles'],
+  },
+
   async execute(interaction) {
     const group = interaction.options.getSubcommandGroup(false);
 

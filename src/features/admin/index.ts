@@ -1,5 +1,4 @@
 import type { Client } from 'discord.js';
-import './helpCatalog.js';
 
 export const name = 'admin';
 

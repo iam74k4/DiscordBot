@@ -233,6 +233,10 @@ export const command: Command = {
     cooldown: 10000, // 10 seconds cooldown (animation takes time)
   },
 
+  help: {
+    category: { en: 'Community', ja: 'コミュニティ' },
+  },
+
   async execute(interaction) {
     const group = interaction.options.getSubcommandGroup(true);
     if (group === 'poll') {

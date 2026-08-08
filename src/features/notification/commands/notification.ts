@@ -121,6 +121,18 @@ export const command: Command = {
         )
     ) as SlashCommandBuilder,
 
+  help: {
+    category: { en: 'Notification', ja: '通知' },
+    permission: 'everyone',
+    // The settings subcommands check Manage Server themselves; the builder
+    // cannot declare that, so help mirrors it here.
+    subcommandPermissions: {
+      'notification voice': 'manageGuild',
+      'notification welcome': 'manageGuild',
+      'notification status': 'manageGuild',
+    },
+  },
+
   async execute(interaction) {
     const group = interaction.options.getSubcommandGroup(false);
     const subcommand = interaction.options.getSubcommand();

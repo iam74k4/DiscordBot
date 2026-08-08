@@ -7,6 +7,7 @@ import {
   PermissionResolvable,
 } from 'discord.js';
 import { MiddlewareName } from './middleware.js';
+import type { CommandHelp } from '../help/catalog.js';
 
 /**
  * Command execution function type
@@ -51,6 +52,12 @@ export interface Command {
   middleware?: MiddlewareName[];
   /** Options for middleware */
   options?: CommandOptions;
+  /**
+   * How the command appears in `/general help`. Names, descriptions, and
+   * usage are read from `data`, so only the category and any permission the
+   * builder cannot express belong here. Commands without it stay unlisted.
+   */
+  help?: CommandHelp;
   /** Command execution function */
   execute: CommandExecute;
   /** Autocomplete handler (optional) */
