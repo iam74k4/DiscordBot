@@ -60,8 +60,4 @@ export const MONITORING = {
   MEMORY_CRITICAL_THRESHOLD_MB: 150,
   /** Memory monitor check interval in ms (1 minute) */
   MEMORY_MONITOR_INTERVAL_MS: 60_000,
-  /** Disk buffer cleanup interval in ms (1 hour) */
-  DISK_BUFFER_CLEANUP_INTERVAL_MS: 3_600_000,
-  /** Disk usage warning threshold in MB */
-  DISK_WARNING_THRESHOLD_MB: 1000,
 } as const;

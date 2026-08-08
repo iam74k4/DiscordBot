@@ -3,7 +3,6 @@ import {
   COLORS,
   TITLES,
   PROGRESS_BAR,
-  CHART_COLORS,
 } from '../constants/index.js';
 import { BOT_INFO } from '../../../config/constants.js';
 
@@ -58,24 +57,5 @@ describe('PROGRESS_BAR', () => {
   it('should have reasonable default length', () => {
     expect(PROGRESS_BAR.LENGTH).toBeGreaterThanOrEqual(5);
     expect(PROGRESS_BAR.LENGTH).toBeLessThanOrEqual(20);
-  });
-});
-
-describe('CHART_COLORS', () => {
-  it('should have background and text colors', () => {
-    expect(CHART_COLORS.BACKGROUND).toBeDefined();
-    expect(CHART_COLORS.TEXT).toBeDefined();
-    expect(CHART_COLORS.GRID).toBeDefined();
-  });
-
-  it('should have color palette', () => {
-    expect(CHART_COLORS.PALETTE).toBeDefined();
-    expect(Array.isArray(CHART_COLORS.PALETTE)).toBe(true);
-    expect(CHART_COLORS.PALETTE.length).toBeGreaterThanOrEqual(6);
-  });
-
-  it('should have valid hex color format', () => {
-    expect(CHART_COLORS.BACKGROUND).toMatch(/^#[0-9a-fA-F]{6}$/);
-    expect(CHART_COLORS.TEXT).toMatch(/^#[0-9a-fA-F]{6}$/);
   });
 });

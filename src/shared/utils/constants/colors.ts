@@ -15,26 +15,3 @@ export const COLORS = {
   /** Blue - Info messages */
   INFO: 0x5865f2 as ColorResolvable,
 } as const;
-
-/**
- * Chart colors (dark theme for Discord)
- */
-export const CHART_COLORS = {
-  /** Discord dark background */
-  BACKGROUND: '#2f3136',
-  /** Discord text color */
-  TEXT: '#dcddde',
-  /** Grid line color */
-  GRID: '#40444b',
-  /** Chart color palette */
-  PALETTE: [
-    '#5865f2', // Discord Blurple
-    '#57f287', // Green
-    '#fee75c', // Yellow
-    '#ed4245', // Red
-    '#eb459e', // Pink
-    '#9b59b6', // Purple
-    '#3498db', // Blue
-    '#1abc9c', // Teal
-  ],
-} as const;

@@ -13,38 +13,6 @@ export enum VoiceConnectionState {
 }
 
 /**
- * Audio buffer configuration
- */
-export interface AudioBufferConfig {
-  /** Memory buffer duration in seconds (default: 120 = 2 minutes) */
-  memoryBufferDuration: number;
-  /** Disk buffer duration in seconds (default: 480 = 8 minutes) */
-  diskBufferDuration: number;
-  /** Total buffer duration in seconds (default: 600 = 10 minutes) */
-  totalBufferDuration: number;
-  /** Sample rate in Hz (default: 48000, mono PCM from voice pipeline) */
-  sampleRate: number;
-  /** Bit depth (default: 16) */
-  bitDepth: number;
-  /** Number of channels (default: 1 = mono) */
-  channels: number;
-  /** Disk buffer directory path */
-  diskBufferDir: string;
-}
-
-/**
- * Audio chunk with timestamp
- */
-export interface AudioChunk {
-  /** Audio data (PCM) */
-  data: Buffer;
-  /** Timestamp when the chunk was received */
-  timestamp: number;
-  /** Duration in milliseconds */
-  duration: number;
-}
-
-/**
  * Recording options
  */
 export interface RecordingOptions {
@@ -102,6 +70,4 @@ export interface MemoryMonitorStats {
   activeConnections: number;
   /** Total buffer size in MB */
   totalBufferSizeMB: number;
-  /** Disk buffer size in MB */
-  diskBufferSizeMB: number;
 }

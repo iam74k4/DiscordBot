@@ -70,10 +70,6 @@ export class MemoryMonitor {
             name: 'Buffer Size (MB)',
             value: stats.totalBufferSizeMB.toFixed(1),
           },
-          {
-            name: 'Disk Buffer (MB)',
-            value: stats.diskBufferSizeMB.toFixed(1),
-          },
         ]
       ).catch(() => undefined);
       this.handleCriticalMemory();
@@ -83,16 +79,9 @@ export class MemoryMonitor {
       );
     }
 
-    // Check disk usage
-    if (stats.diskBufferSizeMB >= MONITORING.DISK_WARNING_THRESHOLD_MB) {
-      logger.warn(
-        `Disk buffer warning threshold exceeded: ${stats.diskBufferSizeMB.toFixed(2)}MB >= ${MONITORING.DISK_WARNING_THRESHOLD_MB}MB`
-      );
-    }
-
     // Log stats periodically
     logger.debug(
-      `Memory stats: ${stats.memoryUsageMB.toFixed(2)}MB memory, ${stats.activeConnections} connections, ${stats.totalBufferSizeMB.toFixed(2)}MB buffers, ${stats.diskBufferSizeMB.toFixed(2)}MB disk`
+      `Memory stats: ${stats.memoryUsageMB.toFixed(2)}MB memory, ${stats.activeConnections} connections, ${stats.totalBufferSizeMB.toFixed(2)}MB buffers`
     );
   }
 
@@ -120,7 +109,6 @@ export class MemoryMonitor {
     const connections = connectionManager.getAllConnections();
 
     const totalBufferSizeMB = channelMixRingManager.getTotalMixBufferSizeMB();
-    const diskBufferSizeMB = 0;
 
     // Get process memory usage
     const processMemoryMB = process.memoryUsage().heapUsed / (1024 * 1024);
@@ -129,16 +117,7 @@ export class MemoryMonitor {
       memoryUsageMB: processMemoryMB,
       activeConnections: connections.size,
       totalBufferSizeMB,
-      diskBufferSizeMB,
     };
-  }
-
-  /**
-   * Legacy HybridAudioBuffer disk spill is unused; always 0.
-   * Extend with directory walk if orphaned `AUDIO_DISK_BUFFER_DIR` data must be tracked.
-   */
-  async getDiskUsage(): Promise<number> {
-    return 0;
   }
 }
 

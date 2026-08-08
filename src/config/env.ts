@@ -148,11 +148,6 @@ function validateNumericalConfig(): void {
     600,
     'AUDIO_BUFFER_DURATION'
   );
-  const memBuf = parseNumber(
-    process.env.AUDIO_MEMORY_BUFFER_DURATION,
-    120,
-    'AUDIO_MEMORY_BUFFER_DURATION'
-  );
   const maxVc = parseNumber(
     process.env.MAX_CONCURRENT_VC_CONNECTIONS,
     5,
@@ -192,16 +187,6 @@ function validateNumericalConfig(): void {
       `AUDIO_BUFFER_DURATION (${bufferDur}) should be >= MAX_RECORDING_DURATION (${maxRec})`
     );
   }
-  if (memBuf <= 0) {
-    errors.push('AUDIO_MEMORY_BUFFER_DURATION must be > 0');
-  }
-  if (memBuf > bufferDur) {
-    errors.push(
-      `AUDIO_MEMORY_BUFFER_DURATION (${memBuf}) must be <= AUDIO_BUFFER_DURATION (${bufferDur})`
-    );
-  }
-  // memBuf / disk split above apply to legacy HybridAudioBuffer only; the mix
-  // ring uses AUDIO_BUFFER_DURATION as a single in-memory window.
   if (maxVc <= 0 || maxVc > 100) {
     errors.push('MAX_CONCURRENT_VC_CONNECTIONS must be between 1 and 100');
   }
@@ -268,11 +253,6 @@ const recordingsDir = validateWorkspacePath(
   'RECORDINGS_DIR',
   { directory: true }
 );
-const audioDiskBufferDir = validateWorkspacePath(
-  process.env.AUDIO_DISK_BUFFER_DIR || 'data/buffers/',
-  'AUDIO_DISK_BUFFER_DIR',
-  { directory: true }
-);
 const backupDir = validateWorkspacePath(
   process.env.BACKUP_DIR || 'data/backups/',
   'BACKUP_DIR',
@@ -324,15 +304,6 @@ export const env = {
     600,
     'AUDIO_BUFFER_DURATION'
   ),
-  /**
-   * Legacy HybridAudioBuffer (memory segment); unused by production recording.
-   * Kept for compatibility with existing deployments and unit tests.
-   */
-  AUDIO_MEMORY_BUFFER_DURATION: parseNumber(
-    process.env.AUDIO_MEMORY_BUFFER_DURATION,
-    120,
-    'AUDIO_MEMORY_BUFFER_DURATION'
-  ),
   /** Maximum concurrent VC connections (default: 5) */
   MAX_CONCURRENT_VC_CONNECTIONS: parseNumber(
     process.env.MAX_CONCURRENT_VC_CONNECTIONS,
@@ -367,11 +338,6 @@ export const env = {
   DATABASE_PATH: databasePath,
   /** Recordings directory (default: data/recordings/) */
   RECORDINGS_DIR: recordingsDir,
-  /**
-   * Legacy HybridAudioBuffer disk spill directory (default: data/buffers/).
-   * Production recording does not write here.
-   */
-  AUDIO_DISK_BUFFER_DIR: audioDiskBufferDir,
 
   // -----------------------------------------------------------
   // Backup settings
