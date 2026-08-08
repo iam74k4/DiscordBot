@@ -194,12 +194,20 @@ Defined in `src/features/admin/repositories/auditRepository.ts`.
 
 ## Repository Ownership
 
-| Tables                                | Feature      | Repositories                                                    |
-| ------------------------------------- | ------------ | --------------------------------------------------------------- |
-| notification_channels, voice_sessions | notification | `notificationChannelRepository.ts`, `voiceSessionRepository.ts` |
-| guild_settings, audit_logs            | admin        | `settingsRepository.ts`, `auditRepository.ts`                   |
-| polls, poll_votes                     | community    | `poll/pollRepository.ts`                                        |
-| voice_autojoin_exclusions             | voice        | `repositories/voiceSettingsRepository.ts`                       |
+| Tables                                | Feature        | Repositories                                                    |
+| ------------------------------------- | -------------- | --------------------------------------------------------------- |
+| notification_channels, voice_sessions | notification   | `notificationChannelRepository.ts`, `voiceSessionRepository.ts` |
+| guild_settings                        | infrastructure | `infrastructure/guildSettings/index.ts`                         |
+| audit_logs                            | infrastructure | `infrastructure/audit/auditRepository.ts`                       |
+| polls, poll_votes                     | community      | `poll/pollRepository.ts`                                        |
+| voice_autojoin_exclusions             | voice          | `repositories/voiceSettingsRepository.ts`                       |
+
+`guild_settings` and `audit_logs` are owned by infrastructure rather than a
+feature because several features read them: locale resolution reads
+`language`, the audit service reads `audit_channel_id`, and voice reads
+`voice_autojoin_enabled`. Every write to `guild_settings` goes through
+`guildSettingsRepository.update()`, which is enforced by
+`src/__tests__/architecture.test.ts`.
 
 All repositories live under `src/features/<feature>/repositories/`.
 
