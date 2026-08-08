@@ -8,9 +8,13 @@ export async function executePingCommand(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
   const locale = resolveLocale(interaction);
-  const sent = await interaction.deferReply({ fetchReply: true });
+  const response = await interaction.deferReply({ withResponse: true });
 
-  const roundtripLatency = sent.createdTimestamp - interaction.createdTimestamp;
+  // Fall back to "now" if Discord returned no message: a slightly optimistic
+  // figure beats failing the command over a diagnostic.
+  const acknowledgedAt =
+    response.resource?.message?.createdTimestamp ?? Date.now();
+  const roundtripLatency = acknowledgedAt - interaction.createdTimestamp;
   const wsLatency = interaction.client.ws.ping;
 
   const embed = createEmbed({

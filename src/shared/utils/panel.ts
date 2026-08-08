@@ -61,16 +61,17 @@ export async function runComponentPanel(
     embeds: initial.embeds,
     components: initial.components,
     ...(ephemeral ? { flags: MessageFlags.Ephemeral } : {}),
-    fetchReply: true,
+    withResponse: true,
   });
 
-  // Some transports (and test doubles) hand back a plain message object with
-  // no collector attached; there is nothing to keep in sync then.
-  if (typeof response.createMessageComponentCollector !== 'function') {
+  // Some transports (and test doubles) hand back no message to collect on;
+  // there is nothing to keep in sync then.
+  const message = response.resource?.message;
+  if (typeof message?.createMessageComponentCollector !== 'function') {
     return;
   }
 
-  const collector = response.createMessageComponentCollector({
+  const collector = message.createMessageComponentCollector({
     ...(options.componentType === undefined
       ? {}
       : { componentType: options.componentType }),

@@ -112,11 +112,17 @@ async function handleCreatePoll(
     locale,
   };
 
-  const message = await interaction.reply({
+  const response = await interaction.reply({
     embeds: [buildPollResultEmbed(pollData)],
     components: buildPollButtons(pollData),
-    fetchReply: true,
+    withResponse: true,
   });
+
+  const message = response.resource?.message;
+  if (!message) {
+    logger.error('Poll created but Discord returned no message to track');
+    return;
+  }
 
   pollStore.set(message.id, pollData);
   logger.info(

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { InteractionContextType, SlashCommandBuilder } from 'discord.js';
 import { Command } from '../../../shared/types/index.js';
 import { executeOwnerCommand } from '../application/owner.js';
 
@@ -11,7 +11,11 @@ export const command: Command = {
     .setDescriptionLocalizations({
       ja: 'Botオーナー向けの状態確認・バックアップ・一斉通知',
     })
-    .setDMPermission(true)
+    .setContexts(
+      InteractionContextType.Guild,
+      InteractionContextType.BotDM,
+      InteractionContextType.PrivateChannel
+    )
     .addSubcommandGroup((group) =>
       group
         .setName('system')

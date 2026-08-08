@@ -16,6 +16,10 @@ import {
   initializeDatabase,
 } from './infrastructure/database/index.js';
 import { backupService } from './infrastructure/backup/index.js';
+import {
+  startAuditRetention,
+  stopAuditRetention,
+} from './infrastructure/audit/index.js';
 import { cooldownStore } from './middleware/cooldown/cooldownStore.js';
 import type { ExtendedClient } from './client.js';
 
@@ -55,6 +59,7 @@ async function gracefulShutdown(
 
   steps.push(
     ['Backup service', () => backupService.stop()],
+    ['Audit retention', () => stopAuditRetention()],
     ['Features', () => stopAllFeatures()],
     ['Cooldown store', () => cooldownStore.clearAll()],
     ['Database', () => closeDatabase()],
@@ -146,6 +151,7 @@ async function main(): Promise<void> {
   await startAllFeatures(client);
 
   backupService.start();
+  startAuditRetention();
 
   logger.info('Discord bot started successfully');
 }

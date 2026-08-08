@@ -19,7 +19,7 @@ function createHarness(options?: { withCollector?: boolean }) {
   const listeners = new Map<string, Listener>();
   const editReply = vi.fn().mockResolvedValue({});
 
-  const response = {
+  const message = {
     createMessageComponentCollector: vi.fn(() => ({
       on: (event: string, listener: Listener) => {
         listeners.set(event, listener);
@@ -27,12 +27,11 @@ function createHarness(options?: { withCollector?: boolean }) {
     })),
   };
 
-  if (options?.withCollector === false) {
-    // Some transports return a plain message with no collector attached.
-    (
-      response as { createMessageComponentCollector?: unknown }
-    ).createMessageComponentCollector = undefined;
-  }
+  // withResponse: true resolves to an InteractionCallbackResponse whose
+  // resource carries the message; Discord may omit it.
+  const response = {
+    resource: options?.withCollector === false ? null : { message },
+  };
 
   const interaction = {
     user: { id: 'owner-1' },
@@ -82,7 +81,7 @@ describe('runComponentPanel', () => {
         embeds: ['first'],
         components: ['row'],
         flags: MessageFlags.Ephemeral,
-        fetchReply: true,
+        withResponse: true,
       })
     );
   });
@@ -209,7 +208,7 @@ describe('runComponentPanel', () => {
     });
   });
 
-  it('returns quietly when the reply carries no collector', async () => {
+  it('returns quietly when Discord returns no message to collect on', async () => {
     const harness = createHarness({ withCollector: false });
 
     await runComponentPanel({

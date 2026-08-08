@@ -7,6 +7,7 @@ import { formatAuditTarget } from './format.js';
 
 export { auditRepository } from './auditRepository.js';
 export type { AuditAction, AuditLogRecord } from './auditRepository.js';
+export { startAuditRetention, stopAuditRetention } from './retention.js';
 
 const ACTION_NAMES: Record<AuditAction, string> = {
   NOTIFY_SETUP: 'Notification Setup',

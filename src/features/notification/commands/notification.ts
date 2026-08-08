@@ -1,5 +1,6 @@
 import {
   ChannelType,
+  InteractionContextType,
   MessageFlags,
   PermissionFlagsBits,
   SlashCommandBuilder,
@@ -20,7 +21,7 @@ export const command: Command = {
     .setName('notification')
     .setDescription('Notification settings and VC time stats')
     .setDescriptionLocalizations({ ja: '通知設定・VC統計' })
-    .setDMPermission(false)
+    .setContexts(InteractionContextType.Guild)
     .addSubcommandGroup((group) =>
       group
         .setName('voice')

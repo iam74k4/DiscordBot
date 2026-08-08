@@ -48,15 +48,20 @@ export async function awaitConfirmation(
 
   const embed = createWarningEmbed(t('common.confirmMessage', locale), message);
 
-  const reply = await interaction.reply({
+  const response = await interaction.reply({
     embeds: [embed],
     components: [row],
     flags: ephemeral ? MessageFlags.Ephemeral : undefined,
-    fetchReply: true,
+    withResponse: true,
   });
 
   try {
-    const result = await reply.awaitMessageComponent({
+    const message = response.resource?.message;
+    if (!message) {
+      throw new Error('Confirmation reply returned no message');
+    }
+
+    const result = await message.awaitMessageComponent({
       componentType: ComponentType.Button,
       filter: (i) => i.user.id === interaction.user.id,
       time: timeout,

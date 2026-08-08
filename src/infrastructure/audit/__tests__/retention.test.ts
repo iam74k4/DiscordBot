@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const deleteOldLogs = vi.fn(() => 2);
 const loggerInfo = vi.fn();
 
-vi.mock('../../../infrastructure/audit/index.js', () => ({
+vi.mock('../auditRepository.js', () => ({
   auditRepository: {
     deleteOldLogs,
   },
@@ -21,7 +21,7 @@ vi.mock('../../../shared/utils/logger.js', () => ({
   },
 }));
 
-describe('admin feature lifecycle', () => {
+describe('audit log retention', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
@@ -32,12 +32,12 @@ describe('admin feature lifecycle', () => {
     vi.useRealTimers();
   });
 
-  it('runs audit cleanup immediately and avoids duplicate intervals', async () => {
-    const { start, stop } = await import('../index.js');
-    const client = {} as never;
+  it('runs cleanup immediately and avoids duplicate intervals', async () => {
+    const { startAuditRetention, stopAuditRetention } =
+      await import('../retention.js');
 
-    start(client);
-    start(client);
+    startAuditRetention();
+    startAuditRetention();
 
     expect(deleteOldLogs).toHaveBeenCalledTimes(1);
     expect(deleteOldLogs).toHaveBeenCalledWith(90);
@@ -45,8 +45,21 @@ describe('admin feature lifecycle', () => {
     vi.advanceTimersByTime(24 * 60 * 60 * 1000);
     expect(deleteOldLogs).toHaveBeenCalledTimes(2);
 
-    stop();
+    stopAuditRetention();
     vi.advanceTimersByTime(24 * 60 * 60 * 1000);
     expect(deleteOldLogs).toHaveBeenCalledTimes(2);
+  });
+
+  it('can be restarted after a stop', async () => {
+    const { startAuditRetention, stopAuditRetention } =
+      await import('../retention.js');
+
+    startAuditRetention();
+    stopAuditRetention();
+    startAuditRetention();
+
+    expect(deleteOldLogs).toHaveBeenCalledTimes(2);
+
+    stopAuditRetention();
   });
 });
