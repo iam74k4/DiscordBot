@@ -5,6 +5,7 @@ import { createEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { resolveGuildLocale } from '../../../locales/guildLocale.js';
 import { notificationChannelRepository } from '../repositories/notificationChannelRepository.js';
 import { voiceTracker } from '../tracking/voiceTracker.js';
 import { getSendableTextChannel } from '../../../shared/utils/discord.js';
@@ -121,7 +122,10 @@ async function sendVoiceNotification(
     );
     if (!textChannel) return;
 
-    const locale = mapDiscordLocale(state.guild.preferredLocale);
+    const locale = resolveGuildLocale(
+      guildId,
+      mapDiscordLocale(state.guild.preferredLocale)
+    );
     const embed = createEmbed({
       description: t(
         kind === 'join'

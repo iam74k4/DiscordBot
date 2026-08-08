@@ -9,8 +9,10 @@ import {
 import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
-import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { t } from '../../../locales/index.js';
+import { resolveLocale } from '../../../locales/guildLocale.js';
 import { env, RETRY } from '../../../config/index.js';
+import { metrics } from '../../../infrastructure/metrics/index.js';
 import { connectionManager } from '../recording/connectionManager.js';
 import {
   parseDurationString,
@@ -21,7 +23,7 @@ import {
 export async function executeRecordCommand(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   const durationStr = interaction.options.getString('duration', true);
 
   if (!interaction.guild || !interaction.member) {
@@ -167,6 +169,8 @@ export async function executeRecordCommand(
       userId: interaction.user.id,
       guildId: interaction.guild.id,
     });
+
+    metrics.recordVoiceRecording(result.duration);
 
     const mainFile = new AttachmentBuilder(result.filePath, {
       name: result.filePath.split(/[/\\]/).pop() || 'recording.wav',

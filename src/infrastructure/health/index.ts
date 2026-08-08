@@ -16,6 +16,8 @@ export interface HealthStatus {
     used: number;
     total: number;
     percentage: number;
+    /** Resident set size in MB; includes off-heap voice mix buffers */
+    rss: number;
   };
   database: {
     connected: boolean;
@@ -59,13 +61,14 @@ function checkDatabase(): { connected: boolean; tables: number } {
 /**
  * Check memory usage
  */
-function checkMemory(): { used: number; total: number; percentage: number } {
+function checkMemory(): HealthStatus['memory'] {
   const memUsage = process.memoryUsage();
   const used = Math.round(memUsage.heapUsed / 1024 / 1024);
   const total = Math.round(memUsage.heapTotal / 1024 / 1024);
   const percentage = Math.round((used / total) * 100);
+  const rss = Math.round(memUsage.rss / 1024 / 1024);
 
-  return { used, total, percentage };
+  return { used, total, percentage, rss };
 }
 
 /**
@@ -147,9 +150,10 @@ export function formatHealthStatus(health: HealthStatus): string {
     `**Uptime:** ${uptimeDays}d ${uptimeHours}h ${uptimeMinutes}m`,
     '',
     '**Memory**',
-    `├ Used: ${health.memory.used} MB`,
-    `├ Total: ${health.memory.total} MB`,
-    `└ Usage: ${health.memory.percentage}%`,
+    `├ Heap used: ${health.memory.used} MB`,
+    `├ Heap total: ${health.memory.total} MB`,
+    `├ Heap usage: ${health.memory.percentage}%`,
+    `└ RSS: ${health.memory.rss} MB`,
     '',
     '**Discord**',
     `├ Connected: ${health.discord.connected ? '✅' : '❌'}`,

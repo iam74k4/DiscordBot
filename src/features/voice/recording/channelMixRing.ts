@@ -8,23 +8,40 @@ const SAMPLE_RATE = AUDIO.SAMPLE_RATE;
  * Wall-clock–aligned ring buffer: multiple users' PCM is summed per sample with
  * slot ownership to handle ring wrap. Output uses soft limiting.
  */
+/**
+ * Sentinel stored in `slotGeneration` for a slot that was never written.
+ * Generations are stored as `(lap % GENERATION_MODULUS) + 1` so 0 stays free.
+ */
+const GENERATION_MODULUS = 0xffff;
+
 export class ChannelMixRing {
   private readonly sizeSamples: number;
-  private readonly mix: Float32Array;
   /**
-   * Global sample index last written per slot, or -1 if empty.
-   * Float64 (not Int32): at 48 kHz, Int32 overflows after ~12.4h and
-   * `slotOwner[idx] === g` fails, so extract returns silence.
+   * Per-sample sum of every speaker. Int32 (not Float32): the mix is a sum of
+   * int16 samples, so it needs no fraction, and 4 bytes still leaves room for
+   * more concurrent speakers than a voice channel can hold.
    */
-  private readonly slotOwner: Float64Array;
+  private readonly mix: Int32Array;
+  /**
+   * Which lap around the ring last wrote each slot, +1 so that 0 means empty.
+   * Storing the lap rather than the global sample index keeps this at 2 bytes
+   * instead of 8; a stale slot is only misread if it survives 65535 laps
+   * untouched (weeks at any sane buffer length).
+   */
+  private readonly slotGeneration: Uint16Array;
   private epochMs: number;
 
   constructor(bufferDurationSeconds: number) {
     this.sizeSamples = Math.ceil(SAMPLE_RATE * bufferDurationSeconds);
-    this.mix = new Float32Array(this.sizeSamples);
-    this.slotOwner = new Float64Array(this.sizeSamples);
-    this.slotOwner.fill(-1);
+    this.mix = new Int32Array(this.sizeSamples);
+    this.slotGeneration = new Uint16Array(this.sizeSamples);
     this.epochMs = Date.now();
+  }
+
+  /** Lap marker for a global sample index (never 0, which means "empty"). */
+  private generationOf(globalIndex: number): number {
+    const lap = Math.floor(globalIndex / this.sizeSamples);
+    return (lap % GENERATION_MODULUS) + 1;
   }
 
   /**
@@ -33,7 +50,7 @@ export class ChannelMixRing {
   setEpoch(ms: number): void {
     this.epochMs = ms;
     this.mix.fill(0);
-    this.slotOwner.fill(-1);
+    this.slotGeneration.fill(0);
   }
 
   /**
@@ -53,11 +70,11 @@ export class ChannelMixRing {
       const g = startGlobal + j;
       if (g < 0) continue;
 
-      const idx =
-        ((g % this.sizeSamples) + this.sizeSamples) % this.sizeSamples;
-      if (this.slotOwner[idx] !== g) {
+      const idx = g % this.sizeSamples;
+      const generation = this.generationOf(g);
+      if (this.slotGeneration[idx] !== generation) {
         this.mix[idx] = 0;
-        this.slotOwner[idx] = g;
+        this.slotGeneration[idx] = generation;
       }
 
       this.mix[idx] += pcm.readInt16LE(j * 2);
@@ -80,9 +97,8 @@ export class ChannelMixRing {
       const g = startGlobal + j;
       let v = 0;
       if (g >= 0) {
-        const idx =
-          ((g % this.sizeSamples) + this.sizeSamples) % this.sizeSamples;
-        if (this.slotOwner[idx] === g) {
+        const idx = g % this.sizeSamples;
+        if (this.slotGeneration[idx] === this.generationOf(g)) {
           v = this.mix[idx];
         }
       }
@@ -95,7 +111,9 @@ export class ChannelMixRing {
   }
 
   getApproxSizeMB(): number {
-    return (this.mix.byteLength + this.slotOwner.byteLength) / (1024 * 1024);
+    return (
+      (this.mix.byteLength + this.slotGeneration.byteLength) / (1024 * 1024)
+    );
   }
 }
 

@@ -48,6 +48,7 @@ vi.mock('../../../config/index.js', async () => {
 });
 
 import { executeRecordCommand } from '../application/record.js';
+import { metrics } from '../../../infrastructure/metrics/index.js';
 
 function createRecordInteraction(
   followUpImpl: (payload: unknown) => Promise<unknown>
@@ -147,5 +148,15 @@ describe('executeRecordCommand split delivery', () => {
 
     expect(incomplete).toBeUndefined();
     expect(interaction.followUp).toHaveBeenCalledTimes(2);
+  });
+
+  it('counts the recording so /owner system metrics is not stuck at zero', async () => {
+    const before = metrics.getSnapshot().voice;
+
+    await executeRecordCommand(createRecordInteraction(async () => ({})));
+
+    const after = metrics.getSnapshot().voice;
+    expect(after.recordings).toBe(before.recordings + 1);
+    expect(after.totalSeconds).toBe(before.totalSeconds + 300);
   });
 });

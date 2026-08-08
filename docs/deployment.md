@@ -35,8 +35,8 @@ In Railway dashboard, add the following variables:
 | `NODE_ENV`                      | Set to `production`                                                              | No                |
 | `TZ`                            | Timezone used by cron jobs and timestamps                                        | No                |
 | `MAX_RECORDING_DURATION`        | Max recording time in seconds (default: 300)                                     | No                |
-| `AUDIO_BUFFER_DURATION`         | Audio buffer time in seconds (default: 600)                                      | No                |
-| `AUDIO_MEMORY_BUFFER_DURATION`  | Memory buffer time in seconds (default: 120)                                     | No                |
+| `AUDIO_BUFFER_DURATION`         | In-memory ring buffer length in seconds (default: 300, ~0.27MB/s per channel)    | No                |
+| `MEMORY_LIMIT_MB`               | Memory budget in MB (default: 512); warns at 70% RSS, sheds connections at 85%   | No                |
 | `MAX_CONCURRENT_VC_CONNECTIONS` | Max concurrent VC connections (default: 5)                                       | No                |
 | `RECORDING_RETENTION_HOURS`     | Hours to keep generated recording files (default: 24)                            | No                |
 | `VOICE_SESSION_RETENTION_DAYS`  | Days to keep completed VC session records (default: 30)                          | No                |
@@ -50,10 +50,11 @@ In Railway dashboard, add the following variables:
 | `DATA_DIR`                      | Base directory for persisted runtime data (must stay relative to repo root)      | No                |
 | `DATABASE_PATH`                 | SQLite database path (must stay relative to repo root)                           | No                |
 | `RECORDINGS_DIR`                | Generated recording files directory (must stay relative to repo root)            | No                |
-| `AUDIO_DISK_BUFFER_DIR`         | On-disk audio buffer directory (must stay relative to repo root)                 | No                |
 | `BACKUP_DIR`                    | Backup output directory (must stay relative to repo root)                        | No                |
 
 If you enable voice recording in production, remember that `/voice record` now requires `Manage Server`, and generated files are delivered ephemerally and cleaned up automatically according to `RECORDING_RETENTION_HOURS`.
+
+Size the instance from `AUDIO_BUFFER_DURATION × 0.27MB × MAX_CONCURRENT_VC_CONNECTIONS` — about 410MB at the defaults — plus the bot's baseline, and set `MEMORY_LIMIT_MB` to the memory the host actually grants. Servers that do not want the bot buffering their voice channels can turn it off per guild or per channel with `/voice autojoin`.
 
 ### 4. Choose how production deploys run
 

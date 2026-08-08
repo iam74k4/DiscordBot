@@ -73,6 +73,41 @@ export const command: Command = {
                 .setDescriptionLocalizations({ ja: '選択肢5' })
                 .setMaxLength(100)
             )
+            .addStringOption((option) =>
+              option
+                .setName('option6')
+                .setDescription('Sixth option')
+                .setDescriptionLocalizations({ ja: '選択肢6' })
+                .setMaxLength(100)
+            )
+            .addStringOption((option) =>
+              option
+                .setName('option7')
+                .setDescription('Seventh option')
+                .setDescriptionLocalizations({ ja: '選択肢7' })
+                .setMaxLength(100)
+            )
+            .addStringOption((option) =>
+              option
+                .setName('option8')
+                .setDescription('Eighth option')
+                .setDescriptionLocalizations({ ja: '選択肢8' })
+                .setMaxLength(100)
+            )
+            .addStringOption((option) =>
+              option
+                .setName('option9')
+                .setDescription('Ninth option')
+                .setDescriptionLocalizations({ ja: '選択肢9' })
+                .setMaxLength(100)
+            )
+            .addStringOption((option) =>
+              option
+                .setName('option10')
+                .setDescription('Tenth option')
+                .setDescriptionLocalizations({ ja: '選択肢10' })
+                .setMaxLength(100)
+            )
             .addIntegerOption((option) =>
               option
                 .setName('duration')

@@ -3,19 +3,28 @@ import { awaitConfirmation } from '../../../shared/utils/confirm.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
 import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
-import { mapDiscordLocale, t } from '../../../locales/index.js';
+import { t } from '../../../locales/index.js';
+import { resolveLocale } from '../../../locales/guildLocale.js';
 import {
   buildPollButtons,
   buildPollResultEmbed,
   endPoll,
   findUserPollInChannel,
 } from './pollService.js';
-import { pollStore, type PollData, MAX_ACTIVE_POLLS } from './pollStore.js';
+import {
+  pollStore,
+  type PollData,
+  MAX_ACTIVE_POLLS,
+  MAX_ACTIVE_POLLS_PER_GUILD,
+} from './pollStore.js';
+
+/** Highest option slot offered by `/community poll create`. */
+const MAX_POLL_OPTIONS = 10;
 
 async function handleCreatePoll(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   const question = interaction.options.getString('question', true);
   const duration = interaction.options.getInteger('duration');
   const anonymous = interaction.options.getBoolean('anonymous') ?? false;
@@ -34,7 +43,7 @@ async function handleCreatePoll(
   }
 
   const options: string[] = [];
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= MAX_POLL_OPTIONS; i++) {
     const option = interaction.options.getString(`option${i}`);
     if (!option) continue;
 
@@ -66,14 +75,23 @@ async function handleCreatePoll(
     return;
   }
 
-  if (!pollStore.canCreate()) {
+  const guildId = interaction.guildId ?? '';
+  if (!pollStore.canCreate(guildId)) {
+    const guildLimited =
+      guildId !== '' &&
+      pollStore.countForGuild(guildId) >= MAX_ACTIVE_POLLS_PER_GUILD;
+
     await interaction.reply({
       embeds: [
         createErrorEmbed(
           t('poll.errors.maxActivePolls', locale),
-          t('poll.errors.maxActivePollsDesc', locale, {
-            count: MAX_ACTIVE_POLLS,
-          })
+          guildLimited
+            ? t('poll.errors.maxGuildPollsDesc', locale, {
+                count: MAX_ACTIVE_POLLS_PER_GUILD,
+              })
+            : t('poll.errors.maxActivePollsDesc', locale, {
+                count: MAX_ACTIVE_POLLS,
+              })
         ),
       ],
       flags: MessageFlags.Ephemeral,
@@ -89,7 +107,7 @@ async function handleCreatePoll(
     anonymous,
     endsAt: duration ? Date.now() + duration * 60 * 1000 : undefined,
     channelId: interaction.channelId,
-    guildId: interaction.guildId ?? '',
+    guildId,
     client: interaction.client,
     locale,
   };
@@ -127,7 +145,7 @@ async function handleCreatePoll(
 async function handleEndPoll(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   const foundMessageId = findUserPollInChannel(
     interaction.user.id,
     interaction.channelId

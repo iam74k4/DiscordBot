@@ -8,7 +8,8 @@ import { COLORS } from '../../../shared/utils/constants/index.js';
 import { isBotOwner } from '../../../config/env.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 import { withTimeout } from '../../../shared/utils/timeout.js';
-import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { t, type Locale } from '../../../locales/index.js';
+import { resolveLocale } from '../../../locales/guildLocale.js';
 import { backupService } from '../../../infrastructure/backup/index.js';
 import { showAdminSystemPanel } from './systemPanel.js';
 import { awaitConfirmation } from '../../../shared/utils/confirm.js';
@@ -24,21 +25,21 @@ function checkOwner(interaction: ChatInputCommandInteraction): boolean {
 
 async function handleStats(
   interaction: ChatInputCommandInteraction,
-  locale: ReturnType<typeof mapDiscordLocale>
+  locale: Locale
 ): Promise<void> {
   await showAdminSystemPanel(interaction, locale, 'stats');
 }
 
 async function handleDb(
   interaction: ChatInputCommandInteraction,
-  locale: ReturnType<typeof mapDiscordLocale>
+  locale: Locale
 ): Promise<void> {
   await showAdminSystemPanel(interaction, locale, 'db');
 }
 
 async function handleGuilds(
   interaction: ChatInputCommandInteraction,
-  locale: ReturnType<typeof mapDiscordLocale>
+  locale: Locale
 ): Promise<void> {
   await showAdminSystemPanel(interaction, locale, 'guilds');
 }
@@ -46,7 +47,7 @@ async function handleGuilds(
 async function handleBroadcast(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   const message = interaction.options.getString('message', true);
 
   const client = interaction.client;
@@ -166,14 +167,14 @@ async function handleBroadcast(
 
 async function handleHealth(
   interaction: ChatInputCommandInteraction,
-  locale: ReturnType<typeof mapDiscordLocale>
+  locale: Locale
 ): Promise<void> {
   await showAdminSystemPanel(interaction, locale, 'health');
 }
 
 async function handleBackupList(
   interaction: ChatInputCommandInteraction,
-  locale: ReturnType<typeof mapDiscordLocale>
+  locale: Locale
 ): Promise<void> {
   await showAdminSystemPanel(interaction, locale, 'backups');
 }
@@ -181,7 +182,7 @@ async function handleBackupList(
 async function handleBackupRun(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   const confirmed = await awaitConfirmation(
     interaction,
     t('owner.backup.confirm', locale),
@@ -233,7 +234,7 @@ async function handleBackupRun(
 
 async function handleMetrics(
   interaction: ChatInputCommandInteraction,
-  locale: ReturnType<typeof mapDiscordLocale>
+  locale: Locale
 ): Promise<void> {
   await showAdminSystemPanel(interaction, locale, 'metrics');
 }
@@ -241,7 +242,7 @@ async function handleMetrics(
 export async function executeOwnerCommand(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
 
   if (!checkOwner(interaction)) {
     const errorEmbed = createErrorEmbed(

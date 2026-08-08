@@ -6,7 +6,9 @@ export type AuditAction =
   | 'NOTIFY_DISABLE'
   | 'NOTIFY_REMOVE'
   | 'SETTINGS_CHANGE'
-  | 'AUDIT_SETUP';
+  | 'AUDIT_SETUP'
+  | 'ROLE_ADD'
+  | 'ROLE_REMOVE';
 
 export interface AuditLogRecord {
   id: number;

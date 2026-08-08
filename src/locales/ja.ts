@@ -42,6 +42,9 @@ export const ja: TranslationKeys = {
       name: '言語',
       changed: '言語を {language} に変更しました',
       current: '現在の言語',
+      auto: '自動（ユーザーに合わせる）',
+      autoHint:
+        '「自動」の場合、各ユーザーのDiscordクライアントの言語で表示します。',
     },
     audit: {
       name: '監査ログチャンネル',
@@ -142,6 +145,8 @@ export const ja: TranslationKeys = {
       maxActivePolls: '投票数上限',
       maxActivePollsDesc:
         '有効な投票が既に{count}件あります。新しい投票を作成する前に既存の投票を終了してください。',
+      maxGuildPollsDesc:
+        'このサーバーでは有効な投票を{count}件まで作成できます。新しい投票を作成する前に既存の投票を終了してください。',
       invalidOption: '無効な投票オプションです。',
       pollEnded: '投票終了',
       pollEndedDesc: 'この投票は終了したか、存在しません。',
@@ -317,6 +322,30 @@ export const ja: TranslationKeys = {
   },
 
   record: {
+    autojoin: {
+      title: 'VC自動参加',
+      enabled:
+        'このサーバーでVCへの自動参加を有効にしました。Botは人がいるVCに参加し、直近{minutes}分の音声を保持します。',
+      disabled:
+        'このサーバーでVCへの自動参加を無効にしました。Botはこれ以降VCに参加せず、音声も保持しません。',
+      excluded:
+        '<#{channel}> を自動参加の対象外にしました。このチャンネルの音声は保持されません。',
+      included: '<#{channel}> を自動参加の対象に戻しました。',
+      notExcluded: '<#{channel}> は対象外に設定されていません。',
+      statusEnabled: '有効',
+      statusDisabled: '無効',
+      exclusionCount: '対象外チャンネル',
+      currentChannelBuffered: '現在のチャンネルは音声を保持中です',
+      currentChannelExcluded: '現在のチャンネルは対象外です',
+      currentChannelNone: 'VCに参加していません',
+    },
+    notice: {
+      title: '音声を保持しています',
+      body: 'このチャンネルの音声を直近{minutes}分ぶん保持しています。サーバー管理者は `/voice record` で書き出せます。',
+      optOut:
+        '保持を止めるには管理者が `/voice autojoin exclude` を実行してください。',
+    },
+    bufferWindow: '保持時間',
     title: '録音',
     recording: '録音中...',
     recordingDesc: '過去{duration}の音声を録音しています。',

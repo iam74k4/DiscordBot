@@ -81,15 +81,74 @@ Per-user VC session history for statistics.
 
 ### guild_settings
 
-Per-guild settings (language, audit channel, etc.).
+Per-guild settings (language, audit channel, voice auto-join).
 
-| Column           | Type    | Constraints  |
-| ---------------- | ------- | ------------ |
-| guild_id         | TEXT    | PRIMARY KEY  |
-| language         | TEXT    | DEFAULT 'ja' |
-| audit_channel_id | TEXT    |              |
-| created_at       | INTEGER | NOT NULL     |
-| updated_at       | INTEGER | NOT NULL     |
+| Column                 | Type    | Constraints        |
+| ---------------------- | ------- | ------------------ |
+| guild_id               | TEXT    | PRIMARY KEY        |
+| language               | TEXT    | DEFAULT 'ja'       |
+| audit_channel_id       | TEXT    |                    |
+| voice_autojoin_enabled | INTEGER | NOT NULL DEFAULT 1 |
+| created_at             | INTEGER | NOT NULL           |
+| updated_at             | INTEGER | NOT NULL           |
+
+`language` NULL means "follow each viewer's Discord client locale" — the `auto`
+choice in `/admin settings language`. Rows inserted for other settings leave it
+NULL so a guild is never pinned to a language it did not choose.
+
+---
+
+### polls
+
+Open polls. A row exists only while a poll is running; finalizing deletes it
+along with its votes.
+
+| Column     | Type    | Constraints           |
+| ---------- | ------- | --------------------- |
+| message_id | TEXT    | PRIMARY KEY           |
+| guild_id   | TEXT    | NOT NULL              |
+| channel_id | TEXT    | NOT NULL              |
+| creator_id | TEXT    | NOT NULL              |
+| question   | TEXT    | NOT NULL              |
+| options    | TEXT    | NOT NULL (JSON array) |
+| anonymous  | INTEGER | NOT NULL DEFAULT 0    |
+| ends_at    | INTEGER |                       |
+| locale     | TEXT    | NOT NULL              |
+| created_at | INTEGER | NOT NULL              |
+
+**Indices:**
+
+- `idx_polls_guild_id` ON `guild_id`
+- `idx_polls_ends_at` ON `ends_at`
+
+---
+
+### poll_votes
+
+One row per voter per poll; changing a vote updates the row.
+
+| Column       | Type    | Constraints                      |
+| ------------ | ------- | -------------------------------- |
+| message_id   | TEXT    | NOT NULL, FK → polls(message_id) |
+| user_id      | TEXT    | NOT NULL                         |
+| option_index | INTEGER | NOT NULL                         |
+| voted_at     | INTEGER | NOT NULL                         |
+
+PRIMARY KEY (`message_id`, `user_id`)
+
+---
+
+### voice_autojoin_exclusions
+
+Voice channels the bot must not join or buffer audio in.
+
+| Column     | Type    | Constraints |
+| ---------- | ------- | ----------- |
+| guild_id   | TEXT    | NOT NULL    |
+| channel_id | TEXT    | NOT NULL    |
+| created_at | INTEGER | NOT NULL    |
+
+PRIMARY KEY (`guild_id`, `channel_id`)
 
 ---
 
@@ -126,6 +185,8 @@ The `action` column in `audit_logs` stores one of these values:
 | `NOTIFY_REMOVE`   | Notification settings removed |
 | `SETTINGS_CHANGE` | Guild settings changed        |
 | `AUDIT_SETUP`     | Audit log channel configured  |
+| `ROLE_ADD`        | Role granted to a member      |
+| `ROLE_REMOVE`     | Role removed from a member    |
 
 Defined in `src/features/admin/repositories/auditRepository.ts`.
 
@@ -137,6 +198,8 @@ Defined in `src/features/admin/repositories/auditRepository.ts`.
 | ------------------------------------- | ------------ | --------------------------------------------------------------- |
 | notification_channels, voice_sessions | notification | `notificationChannelRepository.ts`, `voiceSessionRepository.ts` |
 | guild_settings, audit_logs            | admin        | `settingsRepository.ts`, `auditRepository.ts`                   |
+| polls, poll_votes                     | community    | `poll/pollRepository.ts`                                        |
+| voice_autojoin_exclusions             | voice        | `repositories/voiceSettingsRepository.ts`                       |
 
 All repositories live under `src/features/<feature>/repositories/`.
 
@@ -151,8 +214,12 @@ Migrations live in `src/infrastructure/database/migrations/` and are run in orde
 3. `003_settings.ts` — guild_settings, audit_logs
 4. `004_notification.ts` — notification_channels, voice_sessions
 5. `005_drop_steam.ts` — Drops the legacy Steam tables created by 001 and 002 on existing databases
+6. `006_polls.ts` — polls, poll_votes
+7. `007_voice_autojoin.ts` — voice_autojoin_exclusions, plus `guild_settings.voice_autojoin_enabled`
 
 `initializeDatabase()` runs all migrations inside a single transaction. It is safe to call multiple times; migrations use `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, and `DROP TABLE IF EXISTS`. Initialization is performed once per process.
+
+SQLite has no `ADD COLUMN IF NOT EXISTS`, so migrations that add a column check `PRAGMA table_info` first (see `007_voice_autojoin.ts`) — every migration re-runs on each boot.
 
 ### Rollback Policy
 
@@ -193,9 +260,38 @@ erDiagram
         text guild_id PK
         text language
         text audit_channel_id
+        integer voice_autojoin_enabled
         integer created_at
         integer updated_at
     }
+
+    polls {
+        text message_id PK
+        text guild_id
+        text channel_id
+        text creator_id
+        text question
+        text options
+        integer anonymous
+        integer ends_at
+        text locale
+        integer created_at
+    }
+
+    poll_votes {
+        text message_id PK
+        text user_id PK
+        integer option_index
+        integer voted_at
+    }
+
+    voice_autojoin_exclusions {
+        text guild_id PK
+        text channel_id PK
+        integer created_at
+    }
+
+    polls ||--o{ poll_votes : "collects"
 
     audit_logs {
         integer id PK

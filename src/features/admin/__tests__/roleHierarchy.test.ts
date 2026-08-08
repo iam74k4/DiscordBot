@@ -11,6 +11,16 @@ vi.mock('../../../shared/utils/logger.js', () => ({
   getErrorMessage: (e: unknown) => String(e),
 }));
 
+const roleAdd = vi.fn().mockResolvedValue(undefined);
+const roleRemove = vi.fn().mockResolvedValue(undefined);
+
+vi.mock('../../../infrastructure/audit/index.js', () => ({
+  audit: {
+    roleAdd: (...args: unknown[]) => roleAdd(...args),
+    roleRemove: (...args: unknown[]) => roleRemove(...args),
+  },
+}));
+
 function memberStub(
   opts: {
     id: string;
@@ -184,6 +194,15 @@ describe('admin role target hierarchy', () => {
       expect.objectContaining({
         embeds: [expect.objectContaining({ title: 'Role Added' })],
       })
+    );
+    // Role grants are the most privilege-sensitive action the bot performs,
+    // so they must reach the audit log.
+    expect(roleAdd).toHaveBeenCalledWith(
+      undefined,
+      'guild-1',
+      'mod-1',
+      'user-1',
+      'Role: Muted (role-low)'
     );
   });
 

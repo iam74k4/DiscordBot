@@ -40,7 +40,7 @@ This document describes the quality standards and practices for this Discord bot
 - Use prepared statements for all SQL.
 - Validate backup filenames and paths to prevent traversal.
 - Require HTTPS for `ALERT_WEBHOOK_URL`.
-- Keep `DATA_DIR`, `DATABASE_PATH`, `RECORDINGS_DIR`, `AUDIO_DISK_BUFFER_DIR`, and `BACKUP_DIR` relative to the workspace root. Absolute paths and `../` escapes must fail fast at startup.
+- Keep `DATA_DIR`, `DATABASE_PATH`, `RECORDINGS_DIR`, and `BACKUP_DIR` relative to the workspace root. Absolute paths and `../` escapes must fail fast at startup.
 
 ## Dependencies and `npm audit`
 

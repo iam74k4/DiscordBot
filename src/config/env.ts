@@ -145,13 +145,13 @@ function validateNumericalConfig(): void {
   );
   const bufferDur = parseNumber(
     process.env.AUDIO_BUFFER_DURATION,
-    600,
+    300,
     'AUDIO_BUFFER_DURATION'
   );
-  const memBuf = parseNumber(
-    process.env.AUDIO_MEMORY_BUFFER_DURATION,
-    120,
-    'AUDIO_MEMORY_BUFFER_DURATION'
+  const memoryLimit = parseNumber(
+    process.env.MEMORY_LIMIT_MB,
+    512,
+    'MEMORY_LIMIT_MB'
   );
   const maxVc = parseNumber(
     process.env.MAX_CONCURRENT_VC_CONNECTIONS,
@@ -192,16 +192,19 @@ function validateNumericalConfig(): void {
       `AUDIO_BUFFER_DURATION (${bufferDur}) should be >= MAX_RECORDING_DURATION (${maxRec})`
     );
   }
-  if (memBuf <= 0) {
-    errors.push('AUDIO_MEMORY_BUFFER_DURATION must be > 0');
-  }
-  if (memBuf > bufferDur) {
-    errors.push(
-      `AUDIO_MEMORY_BUFFER_DURATION (${memBuf}) must be <= AUDIO_BUFFER_DURATION (${bufferDur})`
+  // Nothing longer than MAX_RECORDING_DURATION can ever be extracted, so the
+  // extra ring length is memory (~0.27 MB per second per channel) spent for
+  // no reachable capability.
+  if (bufferDur > maxRec) {
+    warnings.push(
+      `AUDIO_BUFFER_DURATION (${bufferDur}) exceeds MAX_RECORDING_DURATION (${maxRec}); ` +
+        `the extra ${bufferDur - maxRec}s can never be recorded and costs about ` +
+        `${(((bufferDur - maxRec) * 48000 * 6) / (1024 * 1024)).toFixed(0)}MB per voice channel`
     );
   }
-  // memBuf / disk split above apply to legacy HybridAudioBuffer only; the mix
-  // ring uses AUDIO_BUFFER_DURATION as a single in-memory window.
+  if (memoryLimit < 128 || memoryLimit > 8192) {
+    errors.push('MEMORY_LIMIT_MB must be between 128 and 8192');
+  }
   if (maxVc <= 0 || maxVc > 100) {
     errors.push('MAX_CONCURRENT_VC_CONNECTIONS must be between 1 and 100');
   }
@@ -268,11 +271,6 @@ const recordingsDir = validateWorkspacePath(
   'RECORDINGS_DIR',
   { directory: true }
 );
-const audioDiskBufferDir = validateWorkspacePath(
-  process.env.AUDIO_DISK_BUFFER_DIR || 'data/buffers/',
-  'AUDIO_DISK_BUFFER_DIR',
-  { directory: true }
-);
 const backupDir = validateWorkspacePath(
   process.env.BACKUP_DIR || 'data/backups/',
   'BACKUP_DIR',
@@ -317,21 +315,14 @@ export const env = {
   ),
   /**
    * Ring buffer length for `/voice record` (channel mix ring), in seconds
-   * (default: 600 = 10 minutes).
+   * (default: 300 = 5 minutes). Recordings are capped at
+   * MAX_RECORDING_DURATION, so a longer ring adds no capability - it only
+   * costs memory (~0.27 MB per second per connected voice channel).
    */
   AUDIO_BUFFER_DURATION: parseNumber(
     process.env.AUDIO_BUFFER_DURATION,
-    600,
+    300,
     'AUDIO_BUFFER_DURATION'
-  ),
-  /**
-   * Legacy HybridAudioBuffer (memory segment); unused by production recording.
-   * Kept for compatibility with existing deployments and unit tests.
-   */
-  AUDIO_MEMORY_BUFFER_DURATION: parseNumber(
-    process.env.AUDIO_MEMORY_BUFFER_DURATION,
-    120,
-    'AUDIO_MEMORY_BUFFER_DURATION'
   ),
   /** Maximum concurrent VC connections (default: 5) */
   MAX_CONCURRENT_VC_CONNECTIONS: parseNumber(
@@ -367,11 +358,6 @@ export const env = {
   DATABASE_PATH: databasePath,
   /** Recordings directory (default: data/recordings/) */
   RECORDINGS_DIR: recordingsDir,
-  /**
-   * Legacy HybridAudioBuffer disk spill directory (default: data/buffers/).
-   * Production recording does not write here.
-   */
-  AUDIO_DISK_BUFFER_DIR: audioDiskBufferDir,
 
   // -----------------------------------------------------------
   // Backup settings
@@ -389,6 +375,17 @@ export const env = {
 
   /** Run final backup before shutdown (default: true) */
   SHUTDOWN_FINAL_BACKUP: process.env.SHUTDOWN_FINAL_BACKUP !== 'false',
+
+  /**
+   * Memory budget for the process in MB (default: 512). Drives the voice
+   * memory monitor's warning and critical thresholds; set it to the memory
+   * your host actually grants the container.
+   */
+  MEMORY_LIMIT_MB: parseNumber(
+    process.env.MEMORY_LIMIT_MB,
+    512,
+    'MEMORY_LIMIT_MB'
+  ),
 
   /** Shutdown timeout in ms (default: 10000, range: 5000–120000) */
   SHUTDOWN_TIMEOUT_MS: parseNumber(

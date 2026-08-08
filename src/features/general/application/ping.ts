@@ -1,12 +1,13 @@
 import { ChatInputCommandInteraction } from 'discord.js';
 import { createEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
-import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { t } from '../../../locales/index.js';
+import { resolveLocale } from '../../../locales/guildLocale.js';
 
 export async function executePingCommand(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   const sent = await interaction.deferReply({ fetchReply: true });
 
   const roundtripLatency = sent.createdTimestamp - interaction.createdTimestamp;

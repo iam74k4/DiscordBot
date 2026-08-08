@@ -4,7 +4,7 @@ import { executePingCommand } from './ping.js';
 import { createEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
 import { env } from '../../../config/index.js';
-import { mapDiscordLocale } from '../../../locales/index.js';
+import { resolveLocale } from '../../../locales/guildLocale.js';
 import type { ExtendedClient } from '../../../client.js';
 
 export async function executeGeneralCommand(
@@ -20,7 +20,7 @@ export async function executeGeneralCommand(
       await executePingCommand(interaction);
       break;
     case 'about': {
-      const locale = mapDiscordLocale(interaction.locale);
+      const locale = resolveLocale(interaction);
       const embed = createEmbed({
         title: locale === 'ja' ? 'Botについて' : 'About this bot',
         description:

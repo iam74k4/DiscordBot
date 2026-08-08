@@ -76,7 +76,12 @@ export const command: Command = {
                 .setRequired(true)
                 .addChoices(
                   { name: 'English', value: 'en' },
-                  { name: '日本語', value: 'ja' }
+                  { name: '日本語', value: 'ja' },
+                  {
+                    name: 'Automatic (follow each user)',
+                    name_localizations: { ja: '自動（ユーザーに合わせる）' },
+                    value: 'auto',
+                  }
                 )
             )
         )

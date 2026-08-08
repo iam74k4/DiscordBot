@@ -4,11 +4,13 @@ import {
   ButtonInteraction,
   ButtonStyle,
   Client,
+  MessageFlags,
 } from 'discord.js';
 import { createEmbed } from '../../../shared/utils/embed.js';
 import { COLORS, PROGRESS_BAR } from '../../../shared/utils/constants/index.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
-import { mapDiscordLocale, t } from '../../../locales/index.js';
+import { t } from '../../../locales/index.js';
+import { resolveLocale } from '../../../locales/guildLocale.js';
 import { pollStore, type PollData } from './pollStore.js';
 
 function generateProgressBar(percentage: number): string {
@@ -103,15 +105,15 @@ export async function handlePollVote(
   const poll = pollStore.get(messageId);
 
   if (!poll || poll.ended) {
-    const locale = mapDiscordLocale(interaction.locale);
+    const locale = resolveLocale(interaction);
     await interaction.reply({
       content: t('poll.errors.pollEndedDesc', locale),
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
 
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   const optionIndex = Number.parseInt(interaction.customId.split('_')[2], 10);
 
   if (
@@ -121,14 +123,14 @@ export async function handlePollVote(
   ) {
     await interaction.reply({
       content: t('poll.errors.invalidOption', locale),
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
 
   const userId = interaction.user.id;
   const previousVote = poll.votes.get(userId);
-  poll.votes.set(userId, optionIndex);
+  pollStore.setVote(messageId, userId, optionIndex);
 
   let responseMessage: string;
   if (previousVote !== undefined && previousVote !== optionIndex) {
@@ -148,7 +150,7 @@ export async function handlePollVote(
 
   await interaction.reply({
     content: responseMessage,
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
   });
 
   // Finalization may have started while we awaited the vote ack — do not

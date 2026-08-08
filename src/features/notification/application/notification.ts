@@ -5,10 +5,12 @@ import {
 } from 'discord.js';
 import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
-import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { t } from '../../../locales/index.js';
+import { resolveLocale } from '../../../locales/guildLocale.js';
 import { notificationChannelRepository } from '../repositories/notificationChannelRepository.js';
 import { getSendableTextChannel } from '../../../shared/utils/discord.js';
 import { showNotificationPanel } from './panel.js';
+import { audit } from '../../../infrastructure/audit/index.js';
 
 async function validateNotificationChannel(
   interaction: ChatInputCommandInteraction
@@ -29,7 +31,7 @@ async function validateNotificationChannel(
   if (!sendableChannel) {
     return t(
       'notification.errors.channelNotSendable',
-      mapDiscordLocale(interaction.locale)
+      resolveLocale(interaction)
     );
   }
 
@@ -39,7 +41,7 @@ async function validateNotificationChannel(
 export async function handleVoiceSet(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
 
   if (!interaction.guild || !interaction.guildId) {
     await interaction.reply({
@@ -81,6 +83,13 @@ export async function handleVoiceSet(
   }
 
   notificationChannelRepository.set(interaction.guildId, 'voice', channel.id);
+  void audit.notifySetup(
+    interaction.client,
+    interaction.guildId,
+    interaction.user.id,
+    channel.id,
+    'Voice'
+  );
 
   await interaction.reply({
     embeds: [
@@ -99,7 +108,7 @@ export async function handleVoiceSet(
 export async function handleVoiceRemove(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
 
   if (!interaction.guildId) {
     await interaction.reply({
@@ -118,6 +127,14 @@ export async function handleVoiceRemove(
     interaction.guildId,
     'voice'
   );
+  if (removed) {
+    void audit.notifyRemove(
+      interaction.client,
+      interaction.guildId,
+      interaction.user.id,
+      'Voice'
+    );
+  }
 
   if (!removed) {
     await interaction.reply({
@@ -150,7 +167,7 @@ export async function handleVoiceRemove(
 export async function handleWelcomeSet(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
 
   if (!interaction.guild || !interaction.guildId) {
     await interaction.reply({
@@ -196,6 +213,13 @@ export async function handleWelcomeSet(
     'member_join',
     channel.id
   );
+  void audit.notifySetup(
+    interaction.client,
+    interaction.guildId,
+    interaction.user.id,
+    channel.id,
+    'Welcome'
+  );
 
   await interaction.reply({
     embeds: [
@@ -214,7 +238,7 @@ export async function handleWelcomeSet(
 export async function handleWelcomeRemove(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
 
   if (!interaction.guildId) {
     await interaction.reply({
@@ -233,6 +257,14 @@ export async function handleWelcomeRemove(
     interaction.guildId,
     'member_join'
   );
+  if (removed) {
+    void audit.notifyRemove(
+      interaction.client,
+      interaction.guildId,
+      interaction.user.id,
+      'Welcome'
+    );
+  }
 
   if (!removed) {
     await interaction.reply({
@@ -265,6 +297,6 @@ export async function handleWelcomeRemove(
 export async function handleStatus(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   await showNotificationPanel(interaction, locale, { initialView: 'status' });
 }

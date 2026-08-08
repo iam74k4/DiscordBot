@@ -2,7 +2,8 @@ import { database } from '../../../infrastructure/database/connection.js';
 
 export interface GuildSettingsRecord {
   guild_id: string;
-  language: string;
+  /** Configured language, or null when output follows each viewer's locale. */
+  language: string | null;
   audit_channel_id: string | null;
   created_at: number;
   updated_at: number;
@@ -50,9 +51,11 @@ function setGuildSettings(
       INSERT INTO guild_settings (guild_id, language, audit_channel_id, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?)
     `);
+    // A guild that only configures, say, an audit channel must not be pinned
+    // to a language it never chose: NULL means "follow the viewer".
     stmt.run(
       guildId,
-      settings.language ?? 'ja',
+      settings.language ?? null,
       settings.audit_channel_id ?? null,
       now,
       now

@@ -54,14 +54,6 @@ export const BOT_INFO = {
 } as const;
 
 export const MONITORING = {
-  /** Memory warning threshold in MB */
-  MEMORY_WARNING_THRESHOLD_MB: 100,
-  /** Memory critical threshold in MB (triggers auto-disconnect) */
-  MEMORY_CRITICAL_THRESHOLD_MB: 150,
   /** Memory monitor check interval in ms (1 minute) */
   MEMORY_MONITOR_INTERVAL_MS: 60_000,
-  /** Disk buffer cleanup interval in ms (1 hour) */
-  DISK_BUFFER_CLEANUP_INTERVAL_MS: 3_600_000,
-  /** Disk usage warning threshold in MB */
-  DISK_WARNING_THRESHOLD_MB: 1000,
 } as const;

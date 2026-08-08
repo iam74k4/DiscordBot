@@ -97,6 +97,8 @@ export interface TranslationKeys {
       name: string;
       changed: string;
       current: string;
+      auto: string;
+      autoHint: string;
     };
     audit: {
       name: string;
@@ -196,6 +198,7 @@ export interface TranslationKeys {
       optionTooLong: string;
       maxActivePolls: string;
       maxActivePollsDesc: string;
+      maxGuildPollsDesc: string;
       invalidOption: string;
       pollEnded: string;
       pollEndedDesc: string;
@@ -364,6 +367,26 @@ export interface TranslationKeys {
 
   // Record command
   record: {
+    autojoin: {
+      title: string;
+      enabled: string;
+      disabled: string;
+      excluded: string;
+      included: string;
+      notExcluded: string;
+      statusEnabled: string;
+      statusDisabled: string;
+      exclusionCount: string;
+      currentChannelBuffered: string;
+      currentChannelExcluded: string;
+      currentChannelNone: string;
+    };
+    notice: {
+      title: string;
+      body: string;
+      optOut: string;
+    };
+    bufferWindow: string;
     title: string;
     recording: string;
     recordingDesc: string;
