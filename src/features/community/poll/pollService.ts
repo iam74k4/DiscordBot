@@ -130,7 +130,13 @@ export async function handlePollVote(
 
   const userId = interaction.user.id;
   const previousVote = poll.votes.get(userId);
-  pollStore.setVote(messageId, userId, optionIndex);
+  if (!pollStore.setVote(messageId, userId, optionIndex)) {
+    await interaction.reply({
+      content: t('poll.errors.pollErrorDesc', locale),
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
 
   let responseMessage: string;
   if (previousVote !== undefined && previousVote !== optionIndex) {
@@ -181,7 +187,9 @@ export async function endPoll(
 
   // Block further votes before any await so late clicks cannot mutate the
   // tally after finalization has begun (and cannot race-edit the message).
-  poll.ended = true;
+  // Persist ended so a restart cannot reopen voting while Discord publish
+  // is still pending.
+  pollStore.markEnded(messageId);
 
   const discordClient = client ?? poll.client;
 

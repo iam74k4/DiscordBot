@@ -100,8 +100,9 @@ NULL so a guild is never pinned to a language it did not choose.
 
 ### polls
 
-Open polls. A row exists only while a poll is running; finalizing deletes it
-along with its votes.
+Open polls and finalize-pending polls. Successful Discord publish deletes the
+row (and its votes). When publish fails, `ended=1` keeps the sealed tally so a
+restart retries finalize instead of reopening voting.
 
 | Column     | Type    | Constraints           |
 | ---------- | ------- | --------------------- |
@@ -115,6 +116,7 @@ along with its votes.
 | ends_at    | INTEGER |                       |
 | locale     | TEXT    | NOT NULL              |
 | created_at | INTEGER | NOT NULL              |
+| ended      | INTEGER | NOT NULL DEFAULT 0    |
 
 **Indices:**
 
@@ -224,6 +226,7 @@ Migrations live in `src/infrastructure/database/migrations/` and are run in orde
 5. `005_drop_steam.ts` — Drops the legacy Steam tables created by 001 and 002 on existing databases
 6. `006_polls.ts` — polls, poll_votes
 7. `007_voice_autojoin.ts` — voice_autojoin_exclusions, plus `guild_settings.voice_autojoin_enabled`
+8. `008_poll_ended.ts` — `polls.ended` for durable finalization across restarts
 
 `initializeDatabase()` runs all migrations inside a single transaction. It is safe to call multiple times; migrations use `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, and `DROP TABLE IF EXISTS`. Initialization is performed once per process.
 
@@ -284,6 +287,7 @@ erDiagram
         integer ends_at
         text locale
         integer created_at
+        integer ended
     }
 
     poll_votes {

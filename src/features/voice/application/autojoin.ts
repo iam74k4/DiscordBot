@@ -42,12 +42,17 @@ export async function executeAutoJoinCommand(
     voiceSettingsRepository.setAutoJoinEnabled(guildId, enable);
 
     // Turning it off should stop the buffering already in progress, not just
-    // prevent the next join.
+    // prevent the next join — including joins still awaiting Ready.
     if (!enable) {
       for (const [channelId, info] of connectionManager.getAllConnections()) {
         if (info.guildId === guildId) {
           await connectionManager.disconnect(channelId);
         }
+      }
+      const inFlight = connectionManager.getInFlightChannelForGuild(guildId);
+      if (inFlight) {
+        await connectionManager.awaitConnecting(inFlight);
+        await connectionManager.disconnect(inFlight);
       }
     }
 
@@ -86,6 +91,8 @@ export async function executeAutoJoinCommand(
   if (subcommand === 'exclude') {
     voiceSettingsRepository.addExclusion(guildId, channel.id);
 
+    // Wait out an in-flight join so exclude cannot lose the race to connect().
+    await connectionManager.awaitConnecting(channel.id);
     if (connectionManager.getConnection(channel.id)) {
       await connectionManager.disconnect(channel.id);
     }

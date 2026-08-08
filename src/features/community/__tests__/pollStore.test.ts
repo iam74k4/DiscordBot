@@ -3,9 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const create = vi.hoisted(() => vi.fn());
 const remove = vi.hoisted(() => vi.fn());
 const upsertVote = vi.hoisted(() => vi.fn());
+const markEnded = vi.hoisted(() => vi.fn());
 
 vi.mock('../poll/pollRepository.js', () => ({
-  pollRepository: { create, remove, upsertVote },
+  pollRepository: { create, remove, upsertVote, markEnded },
 }));
 
 const { MAX_ACTIVE_POLLS, MAX_ACTIVE_POLLS_PER_GUILD, pollStore } =
@@ -102,14 +103,32 @@ describe('PollStore', () => {
 
     it('writes each vote out as it is cast', () => {
       pollStore.set('msg1', createMockPoll('1'));
-      pollStore.setVote('msg1', 'user-1', 2);
+      expect(pollStore.setVote('msg1', 'user-1', 2)).toBe(true);
 
       expect(pollStore.get('msg1')?.votes.get('user-1')).toBe(2);
       expect(upsertVote).toHaveBeenCalledWith('msg1', 'user-1', 2);
     });
 
+    it('does not keep a vote in memory when persistence fails', () => {
+      pollStore.set('msg1', createMockPoll('1'));
+      upsertVote.mockImplementationOnce(() => {
+        throw new Error('database is locked');
+      });
+
+      expect(pollStore.setVote('msg1', 'user-1', 1)).toBe(false);
+      expect(pollStore.get('msg1')?.votes.has('user-1')).toBe(false);
+    });
+
+    it('persists ended so restart cannot reopen voting', () => {
+      pollStore.set('msg1', createMockPoll('1'));
+      pollStore.markEnded('msg1');
+
+      expect(pollStore.get('msg1')?.ended).toBe(true);
+      expect(markEnded).toHaveBeenCalledWith('msg1');
+    });
+
     it('ignores votes for polls it does not hold', () => {
-      pollStore.setVote('missing', 'user-1', 0);
+      expect(pollStore.setVote('missing', 'user-1', 0)).toBe(false);
       expect(upsertVote).not.toHaveBeenCalled();
     });
 

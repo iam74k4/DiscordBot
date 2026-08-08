@@ -19,7 +19,20 @@ vi.mock('../../../locales/index.js', () => ({
     if (key === 'poll.ended') return 'Poll Ended';
     if (key === 'poll.votedFor') return `Voted for ${params?.option ?? ''}`;
     if (key === 'poll.errors.pollEndedDesc') return 'Poll has ended';
+    if (key === 'poll.errors.pollErrorDesc') return 'Poll error';
     return key;
+  },
+}));
+
+const markEnded = vi.hoisted(() => vi.fn());
+const upsertVote = vi.hoisted(() => vi.fn());
+
+vi.mock('../poll/pollRepository.js', () => ({
+  pollRepository: {
+    create: vi.fn(),
+    remove: vi.fn(),
+    upsertVote,
+    markEnded,
   },
 }));
 
@@ -54,6 +67,7 @@ function createEditableClient(editImpl?: () => Promise<unknown>) {
 describe('community poll service', () => {
   beforeEach(() => {
     pollStore.clearAll();
+    vi.clearAllMocks();
   });
 
   it('builds a poll embed', () => {
@@ -169,7 +183,32 @@ describe('community poll service', () => {
 
     expect(pollStore.has('msg1')).toBe(true);
     expect(poll.ended).toBe(true);
+    expect(markEnded).toHaveBeenCalledWith('msg1');
     expect(pollStore.get('msg1')?.votes.get('voter1')).toBe(0);
+  });
+
+  it('does not acknowledge a vote that failed to persist', async () => {
+    const poll = createPoll();
+    pollStore.set('msg1', poll);
+    upsertVote.mockImplementationOnce(() => {
+      throw new Error('database is locked');
+    });
+
+    const interaction = {
+      message: { id: 'msg1', edit: vi.fn() },
+      customId: 'poll_vote_0',
+      user: { id: 'voter1' },
+      locale: 'en-US',
+      reply: vi.fn().mockResolvedValue(undefined),
+    };
+
+    await handlePollVote(interaction as never);
+
+    expect(poll.votes.size).toBe(0);
+    expect(interaction.reply).toHaveBeenCalledWith(
+      expect.objectContaining({ content: 'Poll error' })
+    );
+    expect(interaction.message.edit).not.toHaveBeenCalled();
   });
 
   it('keeps ended poll votes when the channel is not cached', async () => {

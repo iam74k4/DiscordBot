@@ -10,6 +10,7 @@ vi.mock('../poll/pollRepository.js', () => ({
     create: vi.fn(),
     remove: vi.fn(),
     upsertVote: vi.fn(),
+    markEnded: vi.fn(),
   },
 }));
 
@@ -35,6 +36,7 @@ function storedPoll(overrides: Record<string, unknown> = {}) {
     options: ['Ramen', 'Curry'],
     anonymous: false,
     endsAt: null,
+    ended: false,
     locale: 'ja',
     votes: new Map([['user-1', 1]]),
     ...overrides,
@@ -91,6 +93,29 @@ describe('restorePolls', () => {
 
     expect(endPoll).not.toHaveBeenCalled();
     expect(pollStore.has('msg-1')).toBe(true);
+  });
+
+  it('retries finalize for polls sealed before restart, without reopening votes', async () => {
+    listAll.mockReturnValue([
+      storedPoll({
+        ended: true,
+        endsAt: 2_000_000,
+        votes: new Map([
+          ['user-1', 0],
+          ['user-2', 1],
+        ]),
+      }),
+    ]);
+
+    await restorePolls(client);
+
+    const poll = pollStore.get('msg-1');
+    expect(poll?.ended).toBe(true);
+    expect(poll?.votes.size).toBe(2);
+    expect(endPoll).toHaveBeenCalledWith('msg-1', client);
+    // Must not arm a live timer that would treat the poll as still open.
+    await vi.advanceTimersByTimeAsync(2_000_000);
+    expect(endPoll).toHaveBeenCalledTimes(1);
   });
 
   it('starts clean when the database cannot be read', async () => {
