@@ -59,6 +59,7 @@ describe('health service', () => {
           used: expect.any(Number),
           total: expect.any(Number),
           percentage: expect.any(Number),
+          rss: expect.any(Number),
         },
         database: {
           connected: true,
@@ -84,7 +85,7 @@ describe('health service', () => {
     const baseHealth: HealthStatus = {
       status: 'healthy',
       uptime: 3661, // 1h 1m 1s
-      memory: { used: 50, total: 128, percentage: 39 },
+      memory: { used: 50, total: 128, percentage: 39, rss: 260 },
       database: { connected: true, tables: 5 },
       discord: { connected: true, ping: 50 },
       services: {},
@@ -137,11 +138,13 @@ describe('health service', () => {
       expect(formatted).toContain('1d 1h 1m');
     });
 
-    it('formats memory section with used, total, and percentage', () => {
+    it('formats memory section with heap figures and RSS', () => {
       const formatted = formatHealthStatus(baseHealth);
-      expect(formatted).toContain('Used: 50 MB');
-      expect(formatted).toContain('Total: 128 MB');
-      expect(formatted).toContain('Usage: 39%');
+      expect(formatted).toContain('Heap used: 50 MB');
+      expect(formatted).toContain('Heap total: 128 MB');
+      expect(formatted).toContain('Heap usage: 39%');
+      // RSS is the figure that reflects the voice mix buffers.
+      expect(formatted).toContain('RSS: 260 MB');
     });
 
     it('formats Discord section with connection status and ping', () => {

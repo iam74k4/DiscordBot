@@ -62,6 +62,43 @@ describe('ChannelMixRing', () => {
     expect(peak).toBeGreaterThan(4000);
   });
 
+  it('does not replay a slot written a full lap earlier', () => {
+    // One lap is 20ms of samples. Audio written in lap 0 must not be read
+    // back as if it belonged to lap 1 at the same ring offset.
+    const ring = new ChannelMixRing(0.02);
+    ring.setEpoch(epoch);
+
+    const pcm = Buffer.alloc(960 * 2);
+    pcm.fill(0);
+    for (let i = 0; i < 960; i++) {
+      pcm.writeInt16LE(9000, i * 2);
+    }
+    ring.addMonoPcmInt16(pcm, epoch + 20);
+
+    // Read the same ring offsets one lap later, with nothing written since.
+    const out = ring.extractLastSeconds(0.02, epoch + 40);
+    expect(maxAbsInt16(out)).toBe(0);
+  });
+
+  it('keeps mixing correctly after more laps than the generation counter holds', () => {
+    const ring = new ChannelMixRing(0.02);
+    ring.setEpoch(epoch);
+
+    // 0xffff laps returns the generation marker to its starting value; the
+    // slot must still be recognised as belonging to the current lap.
+    const lapMs = 20;
+    const wrapAroundMs = epoch + lapMs * 0x10000;
+
+    const pcm = Buffer.alloc(960 * 2);
+    for (let i = 0; i < 960; i++) {
+      pcm.writeInt16LE(6000, i * 2);
+    }
+    ring.addMonoPcmInt16(pcm, wrapAroundMs);
+
+    const out = ring.extractLastSeconds(0.02, wrapAroundMs);
+    expect(maxAbsInt16(out)).toBeGreaterThan(4000);
+  });
+
   it('extractLastSeconds returns silence before epoch', () => {
     const ring = new ChannelMixRing(5);
     ring.setEpoch(epoch + 5000);

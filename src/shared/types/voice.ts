@@ -64,8 +64,12 @@ export interface VoiceConnectionInfo {
  * Memory monitor stats
  */
 export interface MemoryMonitorStats {
-  /** Current memory usage in MB */
+  /** Resident set size in MB (includes off-heap mix ring buffers) */
   memoryUsageMB: number;
+  /** V8 heap usage in MB (context only; not the shed-load trigger) */
+  heapUsedMB: number;
+  /** Configured memory budget in MB (MEMORY_LIMIT_MB) */
+  limitMB: number;
   /** Active voice connections count */
   activeConnections: number;
   /** Total buffer size in MB */

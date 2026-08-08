@@ -1,22 +1,31 @@
-import { MONITORING } from '../../../config/index.js';
+import { env, MONITORING } from '../../../config/index.js';
 import { logger } from '../../../shared/utils/logger.js';
 import { sendAlert } from '../../../shared/utils/alert.js';
 import { connectionManager } from '../recording/connectionManager.js';
 import { channelMixRingManager } from '../recording/channelMixRing.js';
 import { MemoryMonitorStats } from '../../../shared/types/voice.js';
 
+/** Fractions of MEMORY_LIMIT_MB at which the monitor warns and sheds load. */
+const WARNING_RATIO = 0.7;
+const CRITICAL_RATIO = 0.85;
+
 /**
- * Memory monitor service
+ * Memory monitor service.
+ *
+ * Judges on RSS, not heapUsed: the mix rings are typed arrays whose backing
+ * stores live outside the V8 heap, so heapUsed barely moves as they grow -
+ * which is precisely the memory this monitor exists to shed.
  */
 export class MemoryMonitor {
   private interval: NodeJS.Timeout | null = null;
+  private checkInProgress = false;
   private readonly warningThreshold: number;
   private readonly criticalThreshold: number;
   private readonly monitorInterval: number;
 
   constructor() {
-    this.warningThreshold = MONITORING.MEMORY_WARNING_THRESHOLD_MB;
-    this.criticalThreshold = MONITORING.MEMORY_CRITICAL_THRESHOLD_MB;
+    this.warningThreshold = Math.round(env.MEMORY_LIMIT_MB * WARNING_RATIO);
+    this.criticalThreshold = Math.round(env.MEMORY_LIMIT_MB * CRITICAL_RATIO);
     this.monitorInterval = MONITORING.MEMORY_MONITOR_INTERVAL_MS;
   }
 
@@ -30,10 +39,13 @@ export class MemoryMonitor {
     }
 
     this.interval = setInterval(() => {
-      this.checkMemoryUsage();
+      void this.checkMemoryUsage();
     }, this.monitorInterval);
 
-    logger.info('Memory monitor started');
+    logger.info(
+      `Memory monitor started (limit ${env.MEMORY_LIMIT_MB}MB, warn at ` +
+        `${this.warningThreshold}MB, shed connections at ${this.criticalThreshold}MB RSS)`
+    );
   }
 
   /**
@@ -51,37 +63,56 @@ export class MemoryMonitor {
    * Check memory usage and take action if needed
    */
   private async checkMemoryUsage(): Promise<void> {
+    // Disconnecting is slower than the tick interval under load; overlapping
+    // runs would shed connections twice for the same reading.
+    if (this.checkInProgress) return;
+    this.checkInProgress = true;
+    try {
+      await this.runCheck();
+    } finally {
+      this.checkInProgress = false;
+    }
+  }
+
+  private async runCheck(): Promise<void> {
     const stats = await this.getStats();
 
     // Check memory threshold
     if (stats.memoryUsageMB >= this.criticalThreshold) {
       logger.error(
-        `Critical memory threshold exceeded: ${stats.memoryUsageMB.toFixed(2)}MB >= ${this.criticalThreshold}MB`
+        `Critical memory threshold exceeded: ${stats.memoryUsageMB.toFixed(2)}MB RSS >= ${this.criticalThreshold}MB`
       );
       sendAlert(
         'Critical Memory Threshold Exceeded',
-        `${stats.memoryUsageMB.toFixed(1)}MB >= ${this.criticalThreshold}MB`,
+        `${stats.memoryUsageMB.toFixed(1)}MB RSS >= ${this.criticalThreshold}MB`,
         [
           {
             name: 'Active Connections',
             value: String(stats.activeConnections),
           },
           {
-            name: 'Buffer Size (MB)',
+            name: 'Mix Buffers (MB)',
             value: stats.totalBufferSizeMB.toFixed(1),
+          },
+          {
+            name: 'Heap Used (MB)',
+            value: stats.heapUsedMB.toFixed(1),
           },
         ]
       ).catch(() => undefined);
-      this.handleCriticalMemory();
+      // Awaited so the in-progress guard actually covers the disconnects.
+      await this.handleCriticalMemory();
     } else if (stats.memoryUsageMB >= this.warningThreshold) {
       logger.warn(
-        `Memory warning threshold exceeded: ${stats.memoryUsageMB.toFixed(2)}MB >= ${this.warningThreshold}MB`
+        `Memory warning threshold exceeded: ${stats.memoryUsageMB.toFixed(2)}MB RSS >= ${this.warningThreshold}MB`
       );
     }
 
     // Log stats periodically
     logger.debug(
-      `Memory stats: ${stats.memoryUsageMB.toFixed(2)}MB memory, ${stats.activeConnections} connections, ${stats.totalBufferSizeMB.toFixed(2)}MB buffers`
+      `Memory stats: ${stats.memoryUsageMB.toFixed(2)}MB rss (limit ${stats.limitMB}MB), ` +
+        `${stats.heapUsedMB.toFixed(2)}MB heap, ${stats.activeConnections} connections, ` +
+        `${stats.totalBufferSizeMB.toFixed(2)}MB mix buffers`
     );
   }
 
@@ -110,11 +141,12 @@ export class MemoryMonitor {
 
     const totalBufferSizeMB = channelMixRingManager.getTotalMixBufferSizeMB();
 
-    // Get process memory usage
-    const processMemoryMB = process.memoryUsage().heapUsed / (1024 * 1024);
+    const usage = process.memoryUsage();
 
     return {
-      memoryUsageMB: processMemoryMB,
+      memoryUsageMB: usage.rss / (1024 * 1024),
+      heapUsedMB: usage.heapUsed / (1024 * 1024),
+      limitMB: env.MEMORY_LIMIT_MB,
       activeConnections: connections.size,
       totalBufferSizeMB,
     };
