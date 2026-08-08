@@ -5,6 +5,7 @@ import { createEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { resolveGuildLocale } from '../../../locales/guildLocale.js';
 import { notificationChannelRepository } from '../repositories/notificationChannelRepository.js';
 import { getSendableTextChannel } from '../../../shared/utils/discord.js';
 
@@ -29,7 +30,10 @@ export const event: Event<typeof Events.GuildMemberAdd> = {
       );
       if (!textChannel) return;
 
-      const locale = mapDiscordLocale(member.guild.preferredLocale);
+      const locale = resolveGuildLocale(
+        guildId,
+        mapDiscordLocale(member.guild.preferredLocale)
+      );
       const embed = createEmbed({
         title: t('notification.events.memberJoinTitle', locale),
         description: t('notification.events.memberJoin', locale, {

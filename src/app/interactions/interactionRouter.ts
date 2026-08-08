@@ -10,7 +10,8 @@ import { clearCooldown, runMiddleware } from '../../middleware/index.js';
 import { getErrorMessage, logger } from '../../shared/utils/logger.js';
 import { createErrorEmbed } from '../../shared/utils/embed.js';
 import { metrics } from '../../infrastructure/metrics/index.js';
-import { mapDiscordLocale, t } from '../../locales/index.js';
+import { t } from '../../locales/index.js';
+import { resolveLocale } from '../../locales/guildLocale.js';
 import { handleCommunityButtonInteraction } from '../../features/community/poll/button.js';
 
 async function handleAutocompleteInteraction(
@@ -47,7 +48,7 @@ async function handleUnknownCommand(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
   logger.warn(`Unknown command: ${interaction.commandName}`);
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   await interaction
     .reply({
       embeds: [
@@ -98,7 +99,7 @@ async function handleCommandExecution(
       getErrorMessage(error)
     );
 
-    const locale = mapDiscordLocale(interaction.locale);
+    const locale = resolveLocale(interaction);
     const errorEmbed = createErrorEmbed(
       t('common.error', locale),
       t('common.unexpectedError', locale)

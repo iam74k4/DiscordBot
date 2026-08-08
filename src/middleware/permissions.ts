@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, PermissionsBitField } from 'discord.js';
 import { Command, MiddlewareResult } from '../shared/types/index.js';
-import { t, mapDiscordLocale } from '../locales/index.js';
+import { t } from '../locales/index.js';
+import { resolveLocale } from '../locales/guildLocale.js';
 
 /**
  * Check if user has required permissions
@@ -15,7 +16,7 @@ export async function permissionsMiddleware(
     return { success: true };
   }
 
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
 
   if (!interaction.guild || !interaction.member) {
     return {

@@ -1,7 +1,8 @@
 import { ChatInputCommandInteraction } from 'discord.js';
 import { Command, MiddlewareResult } from '../../shared/types/index.js';
 import { cooldownStore } from './cooldownStore.js';
-import { t, mapDiscordLocale } from '../../locales/index.js';
+import { t } from '../../locales/index.js';
+import { resolveLocale } from '../../locales/guildLocale.js';
 
 const DEFAULT_COOLDOWN = 3000;
 
@@ -20,7 +21,7 @@ export async function cooldownMiddleware(
 
   const remainingMs = cooldownStore.getRemainingCooldown(commandName, userId);
   if (remainingMs > 0) {
-    const locale = mapDiscordLocale(interaction.locale);
+    const locale = resolveLocale(interaction);
     const timeLeft = remainingMs / 1000;
     return {
       success: false,

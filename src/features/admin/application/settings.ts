@@ -7,7 +7,8 @@ import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
 import { settingsRepository } from '../repositories/index.js';
 import { logAuditAction } from '../../../infrastructure/audit/index.js';
-import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { t } from '../../../locales/index.js';
+import { LANGUAGE_AUTO, resolveLocale } from '../../../locales/guildLocale.js';
 import {
   getSendableTextChannel,
   interactionHasGuildPermission,
@@ -22,14 +23,14 @@ const LANGUAGE_DISPLAY_NAMES: Record<string, string> = {
 async function handleView(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   await showSettingsPanel(interaction, locale, 'overview');
 }
 
 async function handleAudit(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
 
   if (!interaction.guild) {
     const errorEmbed = createErrorEmbed(
@@ -107,14 +108,14 @@ async function handleAudit(
 async function handleLogs(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   await showSettingsPanel(interaction, locale, 'logs');
 }
 
 async function handleLanguage(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
 
   if (!interaction.guild) {
     const errorEmbed = createErrorEmbed(
@@ -129,10 +130,16 @@ async function handleLanguage(
   }
 
   const lang = interaction.options.getString('lang', true);
+  const isAuto = lang === LANGUAGE_AUTO;
 
-  settingsRepository.setGuildSettings(interaction.guild.id, { language: lang });
+  // `auto` is stored as NULL so replies keep following each viewer's locale.
+  settingsRepository.setGuildSettings(interaction.guild.id, {
+    language: isAuto ? null : lang,
+  });
 
-  const languageDisplay = LANGUAGE_DISPLAY_NAMES[lang] ?? lang;
+  const languageDisplay = isAuto
+    ? t('settings.language.auto', locale)
+    : (LANGUAGE_DISPLAY_NAMES[lang] ?? lang);
 
   const embed = createEmbed({
     title: t('settings.language.name', locale),
@@ -161,7 +168,7 @@ async function handleLanguage(
 export async function executeSettingsCommand(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
 
   if (
     !interaction.guild ||

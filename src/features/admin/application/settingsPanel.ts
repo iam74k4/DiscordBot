@@ -12,6 +12,7 @@ import {
 import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
 import { type Locale, t } from '../../../locales/index.js';
+import { LANGUAGE_AUTO } from '../../../locales/guildLocale.js';
 import {
   auditRepository,
   type AuditLogRecord,
@@ -32,7 +33,19 @@ const LANGUAGE_DISPLAY_NAMES: Record<string, string> = {
   en: 'English',
 };
 
-const SUPPORTED_LANGUAGES = ['ja', 'en'] as const;
+const SUPPORTED_LANGUAGES = ['ja', 'en', LANGUAGE_AUTO] as const;
+
+/** Stored NULL means "follow the viewer"; the panel shows it as `auto`. */
+function currentLanguageValue(guildId: string): string {
+  return (
+    settingsRepository.getGuildSettings(guildId)?.language ?? LANGUAGE_AUTO
+  );
+}
+
+function languageDisplayName(value: string, locale: Locale): string {
+  if (value === LANGUAGE_AUTO) return t('settings.language.auto', locale);
+  return LANGUAGE_DISPLAY_NAMES[value] ?? value;
+}
 
 function buildTabRow(
   locale: Locale,
@@ -85,7 +98,11 @@ function buildLanguageRow(
         new StringSelectMenuOptionBuilder()
           .setLabel('日本語')
           .setValue('ja')
-          .setDefault(currentLanguage === 'ja')
+          .setDefault(currentLanguage === 'ja'),
+        new StringSelectMenuOptionBuilder()
+          .setLabel(t('settings.language.auto', locale))
+          .setValue(LANGUAGE_AUTO)
+          .setDefault(currentLanguage === LANGUAGE_AUTO)
       )
   );
 }
@@ -145,8 +162,10 @@ function buildLogsPaginationRow(
 
 function buildOverviewEmbed(guildId: string, locale: Locale) {
   const guildSettings = settingsRepository.getGuildSettings(guildId);
-  const language = guildSettings?.language ?? 'ja';
-  const languageDisplay = LANGUAGE_DISPLAY_NAMES[language] ?? language;
+  const languageDisplay = languageDisplayName(
+    guildSettings?.language ?? LANGUAGE_AUTO,
+    locale
+  );
   const auditChannel = guildSettings?.audit_channel_id
     ? `<#${guildSettings.audit_channel_id}>`
     : t('settings.audit.notSet', locale);
@@ -171,13 +190,16 @@ function buildOverviewEmbed(guildId: string, locale: Locale) {
 }
 
 function buildLanguageEmbed(guildId: string, locale: Locale) {
-  const language =
-    settingsRepository.getGuildSettings(guildId)?.language ?? 'ja';
-  const languageDisplay = LANGUAGE_DISPLAY_NAMES[language] ?? language;
+  const languageDisplay = languageDisplayName(
+    currentLanguageValue(guildId),
+    locale
+  );
 
   return createEmbed({
     title: t('settings.language.name', locale),
-    description: `${t('settings.language.current', locale)}: **${languageDisplay}**`,
+    description:
+      `${t('settings.language.current', locale)}: **${languageDisplay}**` +
+      `\n\n${t('settings.language.autoHint', locale)}`,
     color: COLORS.INFO,
     footer: t('settings.panel.languageFooter', locale),
   });
@@ -263,9 +285,9 @@ function buildComponents(
   >[] = [buildTabRow(locale, view, disabled)];
 
   if (view === 'language') {
-    const currentLanguage =
-      settingsRepository.getGuildSettings(guildId)?.language ?? 'ja';
-    rows.push(buildLanguageRow(locale, currentLanguage, disabled));
+    rows.push(
+      buildLanguageRow(locale, currentLanguageValue(guildId), disabled)
+    );
   }
 
   if (view === 'audit') {
@@ -438,7 +460,7 @@ export async function showSettingsPanel(
           )
         ) {
           settingsRepository.setGuildSettings(interaction.guildId!, {
-            language: value,
+            language: value === LANGUAGE_AUTO ? null : value,
           });
           await logAuditAction(
             componentInteraction.client,

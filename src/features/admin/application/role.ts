@@ -6,7 +6,8 @@ import {
 } from 'discord.js';
 import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
-import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { t } from '../../../locales/index.js';
+import { resolveLocale } from '../../../locales/guildLocale.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 
 function checkManageRoles(interaction: ChatInputCommandInteraction): boolean {
@@ -68,7 +69,7 @@ function checkBotCanManageMember(
 export async function executeRoleCommand(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
 
   if (!interaction.guild) {
     const embed = createErrorEmbed(

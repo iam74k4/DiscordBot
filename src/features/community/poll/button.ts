@@ -1,7 +1,8 @@
 import { ButtonInteraction, MessageFlags } from 'discord.js';
 import { createErrorEmbed } from '../../../shared/utils/embed.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
-import { mapDiscordLocale, t } from '../../../locales/index.js';
+import { t } from '../../../locales/index.js';
+import { resolveLocale } from '../../../locales/guildLocale.js';
 import { handlePollVote, pollStore } from './index.js';
 
 export async function handleCommunityButtonInteraction(
@@ -11,7 +12,7 @@ export async function handleCommunityButtonInteraction(
     return false;
   }
 
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
 
   if (pollStore.has(interaction.message.id)) {
     try {

@@ -11,3 +11,12 @@ if (!process.env.DISCORD_CLIENT_ID) {
 if (!process.env.BOT_OWNER_IDS) {
   process.env.BOT_OWNER_IDS = '1234567890123456789';
 }
+
+/**
+ * Keep tests off the developer's real database. Repositories open the
+ * connection lazily, so any unmocked repository call would otherwise read
+ * (and create) `data/bot.db` and make results depend on local state.
+ */
+if (!process.env.DATABASE_PATH) {
+  process.env.DATABASE_PATH = 'data/vitest.db';
+}

@@ -3,7 +3,8 @@ import { awaitConfirmation } from '../../../shared/utils/confirm.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
 import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
-import { mapDiscordLocale, t } from '../../../locales/index.js';
+import { t } from '../../../locales/index.js';
+import { resolveLocale } from '../../../locales/guildLocale.js';
 import {
   buildPollButtons,
   buildPollResultEmbed,
@@ -15,7 +16,7 @@ import { pollStore, type PollData, MAX_ACTIVE_POLLS } from './pollStore.js';
 async function handleCreatePoll(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   const question = interaction.options.getString('question', true);
   const duration = interaction.options.getInteger('duration');
   const anonymous = interaction.options.getBoolean('anonymous') ?? false;
@@ -127,7 +128,7 @@ async function handleCreatePoll(
 async function handleEndPoll(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   const foundMessageId = findUserPollInChannel(
     interaction.user.id,
     interaction.channelId

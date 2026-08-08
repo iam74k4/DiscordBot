@@ -42,6 +42,9 @@ export const ja: TranslationKeys = {
       name: '言語',
       changed: '言語を {language} に変更しました',
       current: '現在の言語',
+      auto: '自動（ユーザーに合わせる）',
+      autoHint:
+        '「自動」の場合、各ユーザーのDiscordクライアントの言語で表示します。',
     },
     audit: {
       name: '監査ログチャンネル',

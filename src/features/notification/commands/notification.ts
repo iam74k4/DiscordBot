@@ -134,8 +134,9 @@ export const command: Command = {
     ) {
       const { createErrorEmbed } =
         await import('../../../shared/utils/embed.js');
-      const { t, mapDiscordLocale } = await import('../../../locales/index.js');
-      const locale = mapDiscordLocale(interaction.locale);
+      const { t } = await import('../../../locales/index.js');
+      const { resolveLocale } = await import('../../../locales/guildLocale.js');
+      const locale = resolveLocale(interaction);
       await interaction.reply({
         embeds: [
           createErrorEmbed(

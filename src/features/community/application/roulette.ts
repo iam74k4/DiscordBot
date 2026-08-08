@@ -9,7 +9,8 @@ import {
 import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
 import { logger } from '../../../shared/utils/logger.js';
-import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { t } from '../../../locales/index.js';
+import { resolveLocale } from '../../../locales/guildLocale.js';
 
 const ANIMATION_DELAY = 800;
 
@@ -43,7 +44,7 @@ function mentionMember(member: GuildMember): string {
 async function handleMemberRoulette(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
 
   if (!interaction.guild || !interaction.member) {
     await interaction.reply({
@@ -163,7 +164,7 @@ async function handleMemberRoulette(
 async function handleTeamRoulette(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
 
   if (!interaction.guild || !interaction.member) {
     await interaction.reply({

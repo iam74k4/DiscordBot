@@ -8,7 +8,8 @@ import { executeRecordCommand } from '../application/index.js';
 import { createEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
 import { connectionManager } from '../recording/connectionManager.js';
-import { mapDiscordLocale, t } from '../../../locales/index.js';
+import { t } from '../../../locales/index.js';
+import { resolveLocale } from '../../../locales/guildLocale.js';
 import { env } from '../../../config/index.js';
 
 /**
@@ -88,7 +89,7 @@ export const command: Command = {
       return;
     }
 
-    const locale = mapDiscordLocale(interaction.locale);
+    const locale = resolveLocale(interaction);
     const activeConnections = connectionManager.getConnectionCount();
     const embed = createEmbed({
       title: locale === 'ja' ? 'ボイス機能の状態' : 'Voice subsystem status',

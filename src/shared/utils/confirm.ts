@@ -8,7 +8,8 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { createWarningEmbed } from './embed.js';
-import { t, mapDiscordLocale } from '../../locales/index.js';
+import { t } from '../../locales/index.js';
+import { resolveLocale } from '../../locales/guildLocale.js';
 
 const DEFAULT_TIMEOUT = 30_000;
 
@@ -27,7 +28,7 @@ export async function awaitConfirmation(
   message: string,
   options?: ConfirmationOptions
 ): Promise<boolean> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   const timeout = options?.timeout ?? DEFAULT_TIMEOUT;
   const ephemeral = options?.ephemeral ?? true;
 

@@ -10,7 +10,8 @@ import {
 } from 'discord.js';
 import { createEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
-import { t, mapDiscordLocale } from '../../../locales/index.js';
+import { t } from '../../../locales/index.js';
+import { resolveLocale } from '../../../locales/guildLocale.js';
 import {
   getHelpCategories,
   type CommandCategory,
@@ -133,7 +134,7 @@ export async function autocompleteHelpCommand(
   interaction: AutocompleteInteraction
 ): Promise<void> {
   const focused = interaction.options.getFocused().toLowerCase();
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   const visibleNames = getVisibleCommandNames(interaction);
   const filtered = visibleNames.filter((c) => c.startsWith(focused));
 
@@ -151,7 +152,7 @@ export async function autocompleteHelpCommand(
 export async function executeHelpCommand(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   const commandName = interaction.options.getString('command');
 
   if (commandName) {

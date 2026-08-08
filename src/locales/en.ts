@@ -43,6 +43,9 @@ export const en: TranslationKeys = {
       name: 'Language',
       changed: 'Language changed to {language}',
       current: 'Current Language',
+      auto: 'Automatic (follow each user)',
+      autoHint:
+        'On automatic, replies use each viewer\u2019s own Discord client language.',
     },
     audit: {
       name: 'Audit Channel',

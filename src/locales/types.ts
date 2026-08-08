@@ -97,6 +97,8 @@ export interface TranslationKeys {
       name: string;
       changed: string;
       current: string;
+      auto: string;
+      autoHint: string;
     };
     audit: {
       name: string;

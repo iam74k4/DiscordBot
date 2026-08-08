@@ -8,7 +8,8 @@ import {
 import { createEmbed } from '../../../shared/utils/embed.js';
 import { COLORS, PROGRESS_BAR } from '../../../shared/utils/constants/index.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
-import { mapDiscordLocale, t } from '../../../locales/index.js';
+import { t } from '../../../locales/index.js';
+import { resolveLocale } from '../../../locales/guildLocale.js';
 import { pollStore, type PollData } from './pollStore.js';
 
 function generateProgressBar(percentage: number): string {
@@ -103,7 +104,7 @@ export async function handlePollVote(
   const poll = pollStore.get(messageId);
 
   if (!poll || poll.ended) {
-    const locale = mapDiscordLocale(interaction.locale);
+    const locale = resolveLocale(interaction);
     await interaction.reply({
       content: t('poll.errors.pollEndedDesc', locale),
       ephemeral: true,
@@ -111,7 +112,7 @@ export async function handlePollVote(
     return;
   }
 
-  const locale = mapDiscordLocale(interaction.locale);
+  const locale = resolveLocale(interaction);
   const optionIndex = Number.parseInt(interaction.customId.split('_')[2], 10);
 
   if (

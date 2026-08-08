@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  COLORS,
-  TITLES,
-  PROGRESS_BAR,
-} from '../constants/index.js';
+import { COLORS, TITLES, PROGRESS_BAR } from '../constants/index.js';
 import { BOT_INFO } from '../../../config/constants.js';
 
 describe('COLORS', () => {
