@@ -1,53 +1,20 @@
 import { database } from '../../../infrastructure/database/connection.js';
+import { guildSettingsRepository } from '../../../infrastructure/guildSettings/index.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 
-interface AutoJoinRow {
-  voice_autojoin_enabled: number;
-}
-
 /**
- * Whether the bot may auto-join voice channels in this guild.
- * Defaults to enabled - a guild with no settings row has not opted out.
- * Read errors default to enabled too, matching the behaviour before the
- * setting existed.
+ * Voice auto-join policy.
+ *
+ * The per-guild on/off switch lives in shared guild settings (several
+ * features read that row), while the channel exclusion list is owned here
+ * because nothing outside voice uses it.
  */
 function isAutoJoinEnabled(guildId: string): boolean {
-  try {
-    const row = database
-      .prepare(
-        'SELECT voice_autojoin_enabled FROM guild_settings WHERE guild_id = ?'
-      )
-      .get(guildId) as AutoJoinRow | undefined;
-    return row ? row.voice_autojoin_enabled === 1 : true;
-  } catch (error) {
-    logger.debug(
-      `Failed to read auto-join setting for ${guildId}: ${getErrorMessage(error)}`
-    );
-    return true;
-  }
+  return guildSettingsRepository.isVoiceAutoJoinEnabled(guildId);
 }
 
 function setAutoJoinEnabled(guildId: string, enabled: boolean): void {
-  const now = Date.now();
-  const existing = database
-    .prepare('SELECT guild_id FROM guild_settings WHERE guild_id = ?')
-    .get(guildId);
-
-  if (existing) {
-    database
-      .prepare(
-        'UPDATE guild_settings SET voice_autojoin_enabled = ?, updated_at = ? WHERE guild_id = ?'
-      )
-      .run(enabled ? 1 : 0, now, guildId);
-    return;
-  }
-
-  database
-    .prepare(
-      `INSERT INTO guild_settings (guild_id, language, audit_channel_id, voice_autojoin_enabled, created_at, updated_at)
-       VALUES (?, NULL, NULL, ?, ?, ?)`
-    )
-    .run(guildId, enabled ? 1 : 0, now, now);
+  guildSettingsRepository.setVoiceAutoJoinEnabled(guildId, enabled);
 }
 
 function isChannelExcluded(guildId: string, channelId: string): boolean {

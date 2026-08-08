@@ -2,13 +2,11 @@ import { Client, EmbedBuilder } from 'discord.js';
 import { COLORS } from '../../shared/utils/constants/index.js';
 import { logger } from '../../shared/utils/logger.js';
 import { withRetry } from '../../shared/utils/retry.js';
-import {
-  auditRepository,
-  type AuditAction,
-} from '../../features/admin/repositories/index.js';
+import { auditRepository, type AuditAction } from './auditRepository.js';
 import { formatAuditTarget } from './format.js';
 
-export type { AuditAction } from '../../features/admin/repositories/index.js';
+export { auditRepository } from './auditRepository.js';
+export type { AuditAction, AuditLogRecord } from './auditRepository.js';
 
 const ACTION_NAMES: Record<AuditAction, string> = {
   NOTIFY_SETUP: 'Notification Setup',

@@ -1,7 +1,7 @@
 import type { Client } from 'discord.js';
 import './helpCatalog.js';
 import { env } from '../../config/index.js';
-import { auditRepository } from './repositories/index.js';
+import { auditRepository } from '../../infrastructure/audit/index.js';
 import { logger } from '../../shared/utils/logger.js';
 import {
   startDailyCleanup,

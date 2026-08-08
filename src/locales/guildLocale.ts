@@ -1,5 +1,4 @@
-import { settingsRepository } from '../features/admin/repositories/settingsRepository.js';
-import { logger } from '../shared/utils/logger.js';
+import { guildSettingsRepository } from '../infrastructure/guildSettings/index.js';
 import { mapDiscordLocale } from './index.js';
 import { SUPPORTED_LOCALES, type Locale } from './types.js';
 
@@ -18,21 +17,16 @@ function isLocale(value: unknown): value is Locale {
 
 /**
  * Language configured for a guild, or null when it follows the viewer.
- * Never throws: a database failure degrades to "auto" rather than taking
- * down the interaction that asked for a translated string.
+ * `getLanguage` already degrades to null on a database failure, so locale
+ * resolution never takes down the interaction that asked for a string.
  */
 export function getGuildLanguage(
   guildId: string | null | undefined
 ): Locale | null {
   if (!guildId) return null;
 
-  try {
-    const language = settingsRepository.getGuildSettings(guildId)?.language;
-    return isLocale(language) ? language : null;
-  } catch (error) {
-    logger.debug(`Failed to read guild language for ${guildId}: ${error}`);
-    return null;
-  }
+  const language = guildSettingsRepository.getLanguage(guildId);
+  return isLocale(language) ? language : null;
 }
 
 /**

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const deleteOldLogs = vi.fn(() => 2);
 const loggerInfo = vi.fn();
 
-vi.mock('../repositories/index.js', () => ({
+vi.mock('../../../infrastructure/audit/index.js', () => ({
   auditRepository: {
     deleteOldLogs,
   },

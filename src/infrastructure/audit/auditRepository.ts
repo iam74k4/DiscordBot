@@ -1,5 +1,11 @@
-import { database } from '../../../infrastructure/database/connection.js';
+import { database } from '../database/connection.js';
+import { guildSettingsRepository } from '../guildSettings/index.js';
 
+/**
+ * Audit logging is cross-cutting: admin, notification, and voice all record
+ * through it, so the `audit_logs` table and its action vocabulary live in
+ * infrastructure rather than in whichever feature happens to display them.
+ */
 export type AuditAction =
   | 'NOTIFY_SETUP'
   | 'NOTIFY_ENABLE'
@@ -41,14 +47,12 @@ function createLog(
   );
 }
 
+/**
+ * Where audit embeds are published. The column belongs to guild settings, so
+ * it is read through their repository rather than queried here.
+ */
 function getAuditChannel(guildId: string): string | null {
-  const stmt = database.prepare(
-    'SELECT audit_channel_id FROM guild_settings WHERE guild_id = ?'
-  );
-  const result = stmt.get(guildId) as
-    | { audit_channel_id: string | null }
-    | undefined;
-  return result?.audit_channel_id ?? null;
+  return guildSettingsRepository.getAuditChannel(guildId);
 }
 
 function getLogs(guildId: string, limit: number = 50): AuditLogRecord[] {

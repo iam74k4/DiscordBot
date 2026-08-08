@@ -5,7 +5,7 @@ import {
 } from 'discord.js';
 import { createEmbed, createErrorEmbed } from '../../../shared/utils/embed.js';
 import { COLORS } from '../../../shared/utils/constants/index.js';
-import { settingsRepository } from '../repositories/index.js';
+import { guildSettingsRepository } from '../../../infrastructure/guildSettings/index.js';
 import { logAuditAction } from '../../../infrastructure/audit/index.js';
 import { t } from '../../../locales/index.js';
 import { LANGUAGE_AUTO, resolveLocale } from '../../../locales/guildLocale.js';
@@ -63,7 +63,7 @@ async function handleAudit(
       return;
     }
 
-    settingsRepository.setAuditChannel(interaction.guild.id, channel.id);
+    guildSettingsRepository.setAuditChannel(interaction.guild.id, channel.id);
 
     const embed = createEmbed({
       title: t('settings.audit.name', locale),
@@ -87,7 +87,7 @@ async function handleAudit(
       `Audit channel set to: #${channel.name}`
     );
   } else {
-    settingsRepository.setAuditChannel(interaction.guild.id, null);
+    guildSettingsRepository.setAuditChannel(interaction.guild.id, null);
 
     const embed = createEmbed({
       title: t('settings.audit.name', locale),
@@ -133,9 +133,10 @@ async function handleLanguage(
   const isAuto = lang === LANGUAGE_AUTO;
 
   // `auto` is stored as NULL so replies keep following each viewer's locale.
-  settingsRepository.setGuildSettings(interaction.guild.id, {
-    language: isAuto ? null : lang,
-  });
+  guildSettingsRepository.setLanguage(
+    interaction.guild.id,
+    isAuto ? null : lang
+  );
 
   const languageDisplay = isAuto
     ? t('settings.language.auto', locale)
