@@ -142,6 +142,10 @@ export const command: Command = {
     cooldown: 10000, // 10 seconds cooldown
   },
 
+  help: {
+    category: { en: 'Voice', ja: 'ボイス' },
+  },
+
   async execute(interaction) {
     if (interaction.options.getSubcommandGroup(false) === 'autojoin') {
       await executeAutoJoinCommand(interaction);

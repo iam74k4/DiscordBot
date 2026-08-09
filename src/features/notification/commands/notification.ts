@@ -1,5 +1,6 @@
 import {
   ChannelType,
+  InteractionContextType,
   MessageFlags,
   PermissionFlagsBits,
   SlashCommandBuilder,
@@ -20,7 +21,7 @@ export const command: Command = {
     .setName('notification')
     .setDescription('Notification settings and VC time stats')
     .setDescriptionLocalizations({ ja: '通知設定・VC統計' })
-    .setDMPermission(false)
+    .setContexts(InteractionContextType.Guild)
     .addSubcommandGroup((group) =>
       group
         .setName('voice')
@@ -119,6 +120,18 @@ export const command: Command = {
             )
         )
     ) as SlashCommandBuilder,
+
+  help: {
+    category: { en: 'Notification', ja: '通知' },
+    permission: 'everyone',
+    // The settings subcommands check Manage Server themselves; the builder
+    // cannot declare that, so help mirrors it here.
+    subcommandPermissions: {
+      'notification voice': 'manageGuild',
+      'notification welcome': 'manageGuild',
+      'notification status': 'manageGuild',
+    },
+  },
 
   async execute(interaction) {
     const group = interaction.options.getSubcommandGroup(false);

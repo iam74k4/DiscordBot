@@ -56,6 +56,10 @@ export const command: Command = {
     await autocompleteHelpCommand(interaction);
   },
 
+  help: {
+    category: { en: 'General', ja: '一般' },
+  },
+
   async execute(interaction) {
     await executeGeneralCommand(interaction);
   },

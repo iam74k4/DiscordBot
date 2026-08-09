@@ -1,5 +1,4 @@
 import type { Client } from 'discord.js';
-import './helpCatalog.js';
 import { memoryMonitor } from './jobs/memoryMonitor.js';
 import { fileCleanupService } from './jobs/fileCleanup.js';
 import { channelMixRingManager } from './recording/channelMixRing.js';

@@ -1,5 +1,4 @@
 import type { Client, MessageComponentInteraction } from 'discord.js';
-import './helpCatalog.js';
 import { pollStore, restorePolls } from './poll/index.js';
 import { handleCommunityButtonInteraction } from './poll/button.js';
 

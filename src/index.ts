@@ -1,7 +1,7 @@
 import { once } from 'node:events';
 import { Events } from 'discord.js';
 import { createClient } from './client.js';
-import { env } from './config/index.js';
+import { env, loadConfig } from './config/index.js';
 import { loadCommands } from './handlers/commandHandler.js';
 import { loadEvents } from './handlers/eventHandler.js';
 import { getErrorMessage, logger } from './shared/utils/logger.js';
@@ -16,6 +16,10 @@ import {
   initializeDatabase,
 } from './infrastructure/database/index.js';
 import { backupService } from './infrastructure/backup/index.js';
+import {
+  startAuditRetention,
+  stopAuditRetention,
+} from './infrastructure/audit/index.js';
 import { cooldownStore } from './middleware/cooldown/cooldownStore.js';
 import type { ExtendedClient } from './client.js';
 
@@ -55,6 +59,7 @@ async function gracefulShutdown(
 
   steps.push(
     ['Backup service', () => backupService.stop()],
+    ['Audit retention', () => stopAuditRetention()],
     ['Features', () => stopAllFeatures()],
     ['Cooldown store', () => cooldownStore.clearAll()],
     ['Database', () => closeDatabase()],
@@ -76,6 +81,9 @@ async function gracefulShutdown(
 }
 
 async function main(): Promise<void> {
+  // Read and validate configuration before anything else can observe it.
+  loadConfig();
+
   logger.info('Starting Discord bot...');
 
   await initializeDatabase();
@@ -146,6 +154,7 @@ async function main(): Promise<void> {
   await startAllFeatures(client);
 
   backupService.start();
+  startAuditRetention();
 
   logger.info('Discord bot started successfully');
 }
