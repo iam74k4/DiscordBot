@@ -65,19 +65,44 @@ class PollStore {
     return count;
   }
 
-  /** Record a vote in memory and in the database. */
-  setVote(messageId: string, userId: string, optionIndex: number): void {
+  /**
+   * Mark finalization started in memory and on disk so a restart cannot
+   * reopen voting before Discord publish / delete completes.
+   */
+  markEnded(messageId: string): void {
     const poll = this.store.get(messageId);
     if (!poll) return;
 
-    poll.votes.set(userId, optionIndex);
+    poll.ended = true;
+    try {
+      pollRepository.markEnded(messageId);
+    } catch (error) {
+      logger.error(
+        `Failed to persist ended state for poll ${messageId}: ${getErrorMessage(error)}`
+      );
+    }
+  }
+
+  /**
+   * Record a vote in the database first, then memory.
+   * Returns false when persistence fails so callers do not ack a vote that
+   * would vanish on the next restart.
+   */
+  setVote(messageId: string, userId: string, optionIndex: number): boolean {
+    const poll = this.store.get(messageId);
+    if (!poll || poll.ended) return false;
+
     try {
       pollRepository.upsertVote(messageId, userId, optionIndex);
     } catch (error) {
       logger.warn(
         `Failed to persist vote on poll ${messageId}: ${getErrorMessage(error)}`
       );
+      return false;
     }
+
+    poll.votes.set(userId, optionIndex);
+    return true;
   }
 
   delete(messageId: string): boolean {

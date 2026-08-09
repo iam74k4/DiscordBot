@@ -107,4 +107,16 @@ describe('voice auto-join gating', () => {
 
     expect(announceBuffering).not.toHaveBeenCalled();
   });
+
+  it('disconnects if auto-join is revoked while connect is in flight', async () => {
+    mayAutoJoin.mockReturnValueOnce(true).mockReturnValueOnce(false);
+    connect.mockResolvedValue({});
+    const { oldState, newState } = states(voiceChannel());
+
+    await event.execute(client as never, oldState as never, newState as never);
+
+    expect(connect).toHaveBeenCalled();
+    expect(disconnect).toHaveBeenCalledWith('voice-1');
+    expect(announceBuffering).not.toHaveBeenCalled();
+  });
 });

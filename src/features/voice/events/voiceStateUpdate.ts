@@ -105,12 +105,28 @@ async function handleBotVoiceState(
       newState.guild,
       newChannel
     );
-    if (connection) {
+    if (!connection) return;
+
+    // Policy can flip while connect awaits (exclude/disable).
+    if (
+      !voiceSettingsRepository.mayAutoJoin(newState.guild.id, newChannel.id)
+    ) {
       logger.info(
-        `Re-tracked bot after move into ${newChannel.name} (${newChannel.id})`
+        `Auto-join revoked during bot re-track of ${newChannel.name} (${newChannel.id}); disconnecting`
       );
-      await announceBuffering(newChannel);
+      await connectionManager.disconnect(newChannel.id);
+      return;
     }
+
+    if (humanMemberCount(newChannel) === 0) {
+      await connectionManager.disconnect(newChannel.id);
+      return;
+    }
+
+    logger.info(
+      `Re-tracked bot after move into ${newChannel.name} (${newChannel.id})`
+    );
+    await announceBuffering(newChannel);
   }
 }
 
@@ -173,6 +189,15 @@ async function handleUserJoined(
   if (humanMemberCount(channel) === 0) {
     logger.info(
       `Channel ${channel.name} (${channel.id}) emptied during connect. Disconnecting...`
+    );
+    await connectionManager.disconnect(channel.id);
+    return;
+  }
+
+  // Exclude/disable can land while connect awaits; do not keep buffering.
+  if (!voiceSettingsRepository.mayAutoJoin(guild.id, channel.id)) {
+    logger.info(
+      `Auto-join revoked during connect to ${channel.name} (${channel.id}); disconnecting`
     );
     await connectionManager.disconnect(channel.id);
     return;

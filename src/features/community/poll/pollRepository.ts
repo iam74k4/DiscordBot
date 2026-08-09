@@ -1,4 +1,5 @@
 import { database } from '../../../infrastructure/database/connection.js';
+import { runTransaction } from '../../../infrastructure/database/transaction.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 import type { Locale } from '../../../locales/index.js';
 
@@ -14,6 +15,7 @@ export interface PollRecord {
   ends_at: number | null;
   locale: string;
   created_at: number;
+  ended: number;
 }
 
 export interface PollVoteRecord {
@@ -32,6 +34,7 @@ export interface PersistedPoll {
   anonymous: boolean;
   endsAt: number | null;
   locale: Locale;
+  ended: boolean;
   votes: Map<string, number>;
 }
 
@@ -49,8 +52,8 @@ function create(poll: {
   const stmt = database.prepare(`
     INSERT OR REPLACE INTO polls (
       message_id, guild_id, channel_id, creator_id, question, options,
-      anonymous, ends_at, locale, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      anonymous, ends_at, locale, created_at, ended
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
   `);
   stmt.run(
     poll.messageId,
@@ -66,11 +69,21 @@ function create(poll: {
   );
 }
 
-function remove(messageId: string): void {
+function markEnded(messageId: string): void {
   database
-    .prepare('DELETE FROM poll_votes WHERE message_id = ?')
+    .prepare('UPDATE polls SET ended = 1 WHERE message_id = ?')
     .run(messageId);
-  database.prepare('DELETE FROM polls WHERE message_id = ?').run(messageId);
+}
+
+function remove(messageId: string): void {
+  // Votes first, then the poll row — must be atomic so a crash cannot leave a
+  // poll row with an empty tally for restore to reopen.
+  runTransaction(() => {
+    database
+      .prepare('DELETE FROM poll_votes WHERE message_id = ?')
+      .run(messageId);
+    database.prepare('DELETE FROM polls WHERE message_id = ?').run(messageId);
+  });
 }
 
 function upsertVote(
@@ -89,14 +102,17 @@ function upsertVote(
 
 function countForGuild(guildId: string): number {
   const row = database
-    .prepare('SELECT COUNT(*) as count FROM polls WHERE guild_id = ?')
+    .prepare(
+      'SELECT COUNT(*) as count FROM polls WHERE guild_id = ? AND ended = 0'
+    )
     .get(guildId) as { count: number } | undefined;
   return row?.count ?? 0;
 }
 
 /**
  * Every stored poll with its votes, for restoring state at startup.
- * A poll row only exists while the poll is open - finalizing deletes it.
+ * Open polls and finalize-pending (`ended=1`) rows both survive here until
+ * Discord publish succeeds and remove() deletes them.
  */
 function listAll(): PersistedPoll[] {
   const polls = database
@@ -146,6 +162,7 @@ function listAll(): PersistedPoll[] {
       anonymous: poll.anonymous === 1,
       endsAt: poll.ends_at,
       locale: poll.locale as Locale,
+      ended: poll.ended === 1,
       votes: votesByPoll.get(poll.message_id) ?? new Map(),
     });
   }
@@ -157,6 +174,7 @@ export const pollRepository = {
   countForGuild,
   create,
   listAll,
+  markEnded,
   remove,
   upsertVote,
 };

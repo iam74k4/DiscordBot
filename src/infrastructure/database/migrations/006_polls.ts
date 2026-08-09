@@ -17,7 +17,8 @@ export function up(): void {
       anonymous INTEGER NOT NULL DEFAULT 0,
       ends_at INTEGER,
       locale TEXT NOT NULL,
-      created_at INTEGER NOT NULL
+      created_at INTEGER NOT NULL,
+      ended INTEGER NOT NULL DEFAULT 0
     )
   `);
 

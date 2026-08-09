@@ -35,6 +35,7 @@ export async function restorePolls(client: Client): Promise<void> {
       creatorId: poll.creatorId,
       anonymous: poll.anonymous,
       endsAt: poll.endsAt ?? undefined,
+      ended: poll.ended,
       channelId: poll.channelId,
       guildId: poll.guildId,
       client,
@@ -43,6 +44,12 @@ export async function restorePolls(client: Client): Promise<void> {
 
     pollStore.restore(poll.messageId, data);
     restored++;
+
+    // Finalize-pending rows must retry publish, never reopen for voting.
+    if (poll.ended) {
+      expired.push(poll.messageId);
+      continue;
+    }
 
     if (poll.endsAt === null) continue;
 

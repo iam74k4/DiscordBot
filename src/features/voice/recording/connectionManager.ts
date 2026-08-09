@@ -369,6 +369,23 @@ export class VoiceConnectionManager {
   }
 
   /**
+   * Channel id currently connecting in a guild, if any.
+   * Used by autojoin disable/exclude so in-flight joins are not missed.
+   */
+  getInFlightChannelForGuild(guildId: string): string | undefined {
+    return this.connectingGuilds.get(guildId);
+  }
+
+  /**
+   * Await an in-flight connect for this channel (no-op when none).
+   */
+  async awaitConnecting(channelId: string): Promise<VoiceConnection | null> {
+    const inFlight = this.connecting.get(channelId);
+    if (!inFlight) return null;
+    return inFlight;
+  }
+
+  /**
    * Disconnect from a voice channel
    */
   async disconnect(channelId: string): Promise<void> {
