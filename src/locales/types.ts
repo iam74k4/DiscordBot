@@ -106,6 +106,12 @@ export interface TranslationKeys {
       configured: string;
       disabled: string;
     };
+    announcements: {
+      name: string;
+      notSet: string;
+      configured: string;
+      disabled: string;
+    };
     logs: {
       title: string;
       noLogs: string;
@@ -276,6 +282,7 @@ export interface TranslationKeys {
       progress: string;
       complete: string;
       capNote: string;
+      noChannel: string;
     };
     backup: {
       confirm: string;

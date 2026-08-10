@@ -52,6 +52,12 @@ export const ja: TranslationKeys = {
       configured: '監査ログを <#{channel}> に送信します',
       disabled: '監査ログチャンネルを削除しました。',
     },
+    announcements: {
+      name: 'お知らせチャンネル',
+      notSet: 'お知らせを受け取らない',
+      configured: 'Bot オーナーからのお知らせを <#{channel}> に投稿します',
+      disabled: 'このサーバーは Bot オーナーからのお知らせを受け取りません。',
+    },
     logs: {
       title: '監査ログ',
       noLogs: 'このサーバーの監査ログはありません。',
@@ -223,11 +229,15 @@ export const ja: TranslationKeys = {
     },
     broadcast: {
       confirm:
-        '以下のメッセージを最大 {count} 件のサーバーオーナーへ DM 送信します。\n\n{message}',
+        '以下のメッセージを {total} サーバー中 {count} 件のお知らせチャンネルへ投稿します。未設定のサーバーは対象外です。\n\n{message}',
       progress:
         '一斉通知を送信中... {processed}/{total}{capNote} (成功 {sent}, 失敗 {failed})',
-      complete: '一斉通知が完了しました\n成功: {sent}\n失敗: {failed}{capNote}',
-      capNote: '\n\n注: {total} サーバー中、先頭 {limit} 件のみ処理しました。',
+      complete:
+        '一斉通知が完了しました\n成功: {sent}\n失敗: {failed}\nお知らせチャンネル未設定: {skipped}{capNote}',
+      capNote:
+        '\n\n注: お知らせチャンネルを設定済みの {total} サーバー中、先頭 {limit} 件のみ処理しました。',
+      noChannel:
+        'お知らせチャンネルを設定しているサーバーがないため、送信先がありません。各サーバーの管理者が `/admin settings announcements` で受け取りを有効にできます。',
     },
     backup: {
       confirm: '手動データベースバックアップを今すぐ作成します。続行しますか？',

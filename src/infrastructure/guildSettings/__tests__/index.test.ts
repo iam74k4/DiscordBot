@@ -67,9 +67,10 @@ describe('guildSettingsRepository', () => {
       // audit channel never pins the guild to a language it did not choose.
       expect(insert?.run).toHaveBeenCalledWith(
         'g1',
-        null,
-        'chan-1',
-        1,
+        null, // language
+        'chan-1', // audit_channel_id
+        null, // announcement_channel_id
+        1, // voice_autojoin_enabled
         expect.any(Number),
         expect.any(Number)
       );

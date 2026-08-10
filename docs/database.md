@@ -81,16 +81,21 @@ Per-user VC session history for statistics.
 
 ### guild_settings
 
-Per-guild settings (language, audit channel, voice auto-join).
+Per-guild settings (language, audit channel, announcement channel, voice
+auto-join).
 
-| Column                 | Type    | Constraints        |
-| ---------------------- | ------- | ------------------ |
-| guild_id               | TEXT    | PRIMARY KEY        |
-| language               | TEXT    | DEFAULT 'ja'       |
-| audit_channel_id       | TEXT    |                    |
-| voice_autojoin_enabled | INTEGER | NOT NULL DEFAULT 1 |
-| created_at             | INTEGER | NOT NULL           |
-| updated_at             | INTEGER | NOT NULL           |
+| Column                  | Type    | Constraints        |
+| ----------------------- | ------- | ------------------ |
+| guild_id                | TEXT    | PRIMARY KEY        |
+| language                | TEXT    | DEFAULT 'ja'       |
+| audit_channel_id        | TEXT    |                    |
+| announcement_channel_id | TEXT    |                    |
+| voice_autojoin_enabled  | INTEGER | NOT NULL DEFAULT 1 |
+| created_at              | INTEGER | NOT NULL           |
+| updated_at              | INTEGER | NOT NULL           |
+
+`announcement_channel_id` NULL means the guild has not opted in to bot-owner
+announcements, so `/owner system broadcast` skips it.
 
 `language` NULL means "follow each viewer's Discord client locale" — the `auto`
 choice in `/admin settings language`. Rows inserted for other settings leave it
@@ -204,8 +209,8 @@ Defined in `src/features/admin/repositories/auditRepository.ts`.
 
 `guild_settings` and `audit_logs` are owned by infrastructure rather than a
 feature because several features read them: locale resolution reads
-`language`, the audit service reads `audit_channel_id`, and voice reads
-`voice_autojoin_enabled`. Every write to `guild_settings` goes through
+`language`, the audit service reads `audit_channel_id`, owner broadcasts read
+`announcement_channel_id`, and voice reads `voice_autojoin_enabled`. Every write to `guild_settings` goes through
 `guildSettingsRepository.update()`, which is enforced by
 `src/__tests__/architecture.test.ts`.
 
@@ -224,6 +229,7 @@ Migrations live in `src/infrastructure/database/migrations/` and are run in orde
 5. `005_drop_steam.ts` — Drops the legacy Steam tables created by 001 and 002 on existing databases
 6. `006_polls.ts` — polls, poll_votes
 7. `007_voice_autojoin.ts` — voice_autojoin_exclusions, plus `guild_settings.voice_autojoin_enabled`
+8. `008_announcement_channel.ts` — `guild_settings.announcement_channel_id`
 
 `initializeDatabase()` runs all migrations inside a single transaction. It is safe to call multiple times; migrations use `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, and `DROP TABLE IF EXISTS`. Initialization is performed once per process.
 
@@ -268,6 +274,7 @@ erDiagram
         text guild_id PK
         text language
         text audit_channel_id
+        text announcement_channel_id
         integer voice_autojoin_enabled
         integer created_at
         integer updated_at

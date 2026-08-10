@@ -91,7 +91,7 @@ The project uses feature-based architecture. Each feature owns its command entry
     │   │       ├── 005_drop_steam.ts   # Drops legacy Steam tables on existing DBs
     │   │       ├── 006_polls.ts
     │   │       └── 007_voice_autojoin.ts
-    │   ├── guildSettings/   # Sole owner of guild_settings (language, audit channel, voice auto-join)
+    │   ├── guildSettings/   # Sole owner of guild_settings (language, audit/announcement channel, voice auto-join)
     │   │   ├── index.ts
     │   │   └── __tests__/
     │   ├── audit/           # Audit log storage and delivery

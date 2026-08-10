@@ -53,6 +53,25 @@ export const command: Command = {
         )
         .addSubcommand((sub) =>
           sub
+            .setName('announcements')
+            .setDescription('Set the channel for bot owner announcements')
+            .setDescriptionLocalizations({
+              ja: 'Bot オーナーからのお知らせを受け取るチャンネルを設定',
+            })
+            .addChannelOption((opt) =>
+              opt
+                .setName('channel')
+                .setDescription(
+                  'Channel for announcements (leave empty to opt out)'
+                )
+                .setDescriptionLocalizations({
+                  ja: 'お知らせを受け取るチャンネル（空で受け取らない）',
+                })
+                .addChannelTypes(ChannelType.GuildText)
+            )
+        )
+        .addSubcommand((sub) =>
+          sub
             .setName('logs')
             .setDescription('View recent audit logs')
             .setDescriptionLocalizations({

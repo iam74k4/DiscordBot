@@ -53,6 +53,12 @@ export const en: TranslationKeys = {
       configured: 'Audit logs will be sent to <#{channel}>',
       disabled: 'Audit log channel has been removed.',
     },
+    announcements: {
+      name: 'Announcement Channel',
+      notSet: 'Not receiving announcements',
+      configured: 'Bot owner announcements will be posted in <#{channel}>',
+      disabled: 'This server will no longer receive bot owner announcements.',
+    },
     logs: {
       title: 'Audit Logs',
       noLogs: 'No audit logs found for this server.',
@@ -225,12 +231,15 @@ export const en: TranslationKeys = {
     },
     broadcast: {
       confirm:
-        'This will DM the message below to up to {count} server owners.\n\n{message}',
+        'This will post the message below in the announcement channel of {count} of {total} servers. Servers that have not set one are skipped.\n\n{message}',
       progress:
         'Broadcast in progress... {processed}/{total}{capNote} (sent {sent}, failed {failed})',
-      complete: 'Broadcast complete\nSent: {sent}\nFailed: {failed}{capNote}',
+      complete:
+        'Broadcast complete\nSent: {sent}\nFailed: {failed}\nNo announcement channel: {skipped}{capNote}',
       capNote:
-        '\n\nNote: only the first {limit} of {total} guilds were processed.',
+        '\n\nNote: only the first {limit} of {total} guilds with an announcement channel were processed.',
+      noChannel:
+        'No server has set an announcement channel yet, so there is nothing to broadcast to. Server admins opt in with `/admin settings announcements`.',
     },
     backup: {
       confirm:

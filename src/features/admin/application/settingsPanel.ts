@@ -167,6 +167,9 @@ function buildOverviewEmbed(guildId: string, locale: Locale) {
   const auditChannel = guildSettings?.audit_channel_id
     ? `<#${guildSettings.audit_channel_id}>`
     : t('settings.audit.notSet', locale);
+  const announcementChannel = guildSettings?.announcement_channel_id
+    ? `<#${guildSettings.announcement_channel_id}>`
+    : t('settings.announcements.notSet', locale);
 
   return createEmbed({
     title: t('settings.title', locale),
@@ -180,6 +183,11 @@ function buildOverviewEmbed(guildId: string, locale: Locale) {
       {
         name: t('settings.audit.name', locale),
         value: auditChannel,
+        inline: true,
+      },
+      {
+        name: t('settings.announcements.name', locale),
+        value: announcementChannel,
         inline: true,
       },
     ],
