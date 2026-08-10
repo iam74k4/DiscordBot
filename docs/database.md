@@ -57,7 +57,9 @@ Per-guild notification channels by type.
 
 ### voice_sessions
 
-Per-user VC session history for statistics.
+Raw per-user VC session history. Deleted after
+`VOICE_SESSION_RETENTION_DAYS`; the durable numbers live in
+`voice_daily_stats`.
 
 | Column       | Type    | Constraints               |
 | ------------ | ------- | ------------------------- |
@@ -76,6 +78,35 @@ Per-user VC session history for statistics.
 - `idx_voice_sessions_guild_user` ON `guild_id, user_id`
 - `idx_voice_sessions_guild_channel` ON `guild_id, channel_id`
 - `idx_voice_sessions_joined_at` ON `joined_at`
+
+---
+
+### voice_daily_stats
+
+Daily rollup of VC time, and the only table `/notification stats` reads.
+
+| Column            | Type    | Constraints                                   |
+| ----------------- | ------- | --------------------------------------------- |
+| guild_id          | TEXT    | NOT NULL, PK                                  |
+| user_id           | TEXT    | NOT NULL, PK                                  |
+| channel_id        | TEXT    | NOT NULL, PK                                  |
+| channel_name      | TEXT    | NOT NULL                                      |
+| day               | TEXT    | NOT NULL, PK (`YYYY-MM-DD`, process timezone) |
+| total_duration_ms | INTEGER | NOT NULL                                      |
+| session_count     | INTEGER | NOT NULL                                      |
+| updated_at        | INTEGER | NOT NULL                                      |
+
+**Indices:**
+
+- `idx_voice_daily_stats_lookup` ON `guild_id, user_id, day`
+
+`voiceSessionRepository.endSession()` folds a closed session into this table in
+the same transaction that closes it, so a session is never counted in one place
+and missing from the other. Nothing deletes these rows: they are what makes
+"all time" mean all time rather than the last `VOICE_SESSION_RETENTION_DAYS`.
+
+Because a day is the finest bucket kept, a `since` cutoff in a stats query is
+rounded down to the start of its day.
 
 ---
 
@@ -199,13 +230,13 @@ Defined in `src/features/admin/repositories/auditRepository.ts`.
 
 ## Repository Ownership
 
-| Tables                                | Feature        | Repositories                                                    |
-| ------------------------------------- | -------------- | --------------------------------------------------------------- |
-| notification_channels, voice_sessions | notification   | `notificationChannelRepository.ts`, `voiceSessionRepository.ts` |
-| guild_settings                        | infrastructure | `infrastructure/guildSettings/index.ts`                         |
-| audit_logs                            | infrastructure | `infrastructure/audit/auditRepository.ts`                       |
-| polls, poll_votes                     | community      | `poll/pollRepository.ts`                                        |
-| voice_autojoin_exclusions             | voice          | `repositories/voiceSettingsRepository.ts`                       |
+| Tables                                                   | Feature        | Repositories                                                    |
+| -------------------------------------------------------- | -------------- | --------------------------------------------------------------- |
+| notification_channels, voice_sessions, voice_daily_stats | notification   | `notificationChannelRepository.ts`, `voiceSessionRepository.ts` |
+| guild_settings                                           | infrastructure | `infrastructure/guildSettings/index.ts`                         |
+| audit_logs                                               | infrastructure | `infrastructure/audit/auditRepository.ts`                       |
+| polls, poll_votes                                        | community      | `poll/pollRepository.ts`                                        |
+| voice_autojoin_exclusions                                | voice          | `repositories/voiceSettingsRepository.ts`                       |
 
 `guild_settings` and `audit_logs` are owned by infrastructure rather than a
 feature because several features read them: locale resolution reads
@@ -230,6 +261,7 @@ Migrations live in `src/infrastructure/database/migrations/` and are run in orde
 6. `006_polls.ts` — polls, poll_votes
 7. `007_voice_autojoin.ts` — voice_autojoin_exclusions, plus `guild_settings.voice_autojoin_enabled`
 8. `008_announcement_channel.ts` — `guild_settings.announcement_channel_id`
+9. `009_voice_daily_stats.ts` — voice_daily_stats, backfilled once from existing `voice_sessions`
 
 `initializeDatabase()` runs all migrations inside a single transaction. It is safe to call multiple times; migrations use `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, and `DROP TABLE IF EXISTS`. Initialization is performed once per process.
 
@@ -326,7 +358,7 @@ erDiagram
 Runtime retention is configured with environment variables and enforced by feature cleanup jobs.
 
 - `RECORDING_RETENTION_HOURS` (default: `24`): deletes `.wav` recording files from `data/recordings/`
-- `VOICE_SESSION_RETENTION_DAYS` (default: `30`): deletes completed `voice_sessions` rows older than the cutoff
+- `VOICE_SESSION_RETENTION_DAYS` (default: `30`): deletes completed `voice_sessions` rows older than the cutoff. Statistics are unaffected — the durations were already rolled up into `voice_daily_stats`, which retention does not touch
 - `AUDIT_LOG_RETENTION_DAYS` (default: `90`): deletes old `audit_logs` rows
 - `BACKUP_RETENTION_DAYS` (default: `7`): deletes old backup files
 

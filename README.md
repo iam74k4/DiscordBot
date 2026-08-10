@@ -254,7 +254,9 @@ actually grants the container.
 The bot keeps operational data for limited periods and cleans it up automatically.
 
 - `RECORDING_RETENTION_HOURS`: recording files in `data/recordings/` (default: 24 hours)
-- `VOICE_SESSION_RETENTION_DAYS`: completed VC session rows (default: 30 days)
+- `VOICE_SESSION_RETENTION_DAYS`: completed VC session rows (default: 30 days).
+  `/notification stats` is not affected: durations are rolled up per day into
+  `voice_daily_stats`, which is kept indefinitely
 - `AUDIT_LOG_RETENTION_DAYS`: audit log rows (default: 90 days)
 - `BACKUP_RETENTION_DAYS`: database backup files (default: 7 days)
 
