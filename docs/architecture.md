@@ -57,7 +57,7 @@ The project uses feature-based architecture. Each feature owns its command entry
     │       ├── index.ts
     │       ├── commands/
     │       ├── application/
-    │       ├── poll/        # Internal poll runtime owned by community
+    │       ├── poll/        # Native-poll command plus the message pointer it stores
     │       ├── __tests__/
     │       └── helpCatalog.ts
     ├── shared/
@@ -161,7 +161,7 @@ flowchart LR
 - **commands**: Slash command definitions; delegate to application layer.
 - **application**: Command/business logic handlers; orchestrate repositories and supporting runtime folders.
 - **repositories**: Database access with real SQL; use `runTransaction()` for multi-table writes.
-- **supporting runtime folders**: Feature-owned integrations, background jobs, trackers, recorders, or stateful helpers. Prefer explicit names over a generic `services/` directory, and reserve `services/` for cases like `poll` where a smaller stateful boundary is clearer than further splitting.
+- **supporting runtime folders**: Feature-owned integrations, background jobs, trackers, recorders, or stateful helpers. Prefer explicit names such as `jobs/`, `recording/`, or `tracking/` over a generic `services/` directory.
 - **shared infrastructure**: Cross-feature state and services with their own tables — `guildSettings` (`guild_settings`) and `audit` (`audit_logs`). Features use them; they never depend on a feature.
 - **database**: Pure infrastructure under `src/infrastructure/database/`—connection, pragma, transactions, migrations only.
 

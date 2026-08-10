@@ -129,35 +129,17 @@ export const ja: TranslationKeys = {
   },
 
   poll: {
-    title: '投票',
-    created: '投票を作成しました',
     ended: '投票が終了しました',
-    votes: '{count}票',
-    noVotes: '投票なし',
-    anonymous: '匿名投票',
-    total: '合計: {count}票',
-    endsIn: '{duration}分後に終了',
-    voteChanged: '「{from}」から「{to}」に投票を変更しました',
-    alreadyVoted: '既に「{option}」に投票しています',
-    votedFor: '「{option}」に投票しました',
-    endedMessage: '投票を終了しました。結果が確定しました。',
-    noActivePoll: '有効な投票がありません',
-    noActivePollDesc: 'このチャンネルに有効な投票がありません。',
+    endedMessage: '投票を締め切りました。結果が確定しました。',
+    noActivePoll: '受付中の投票がありません',
+    noActivePollDesc:
+      'このチャンネルにあなたが作成した受付中の投票はありません。',
     errors: {
       notEnoughOptions: '投票には最低2つの選択肢が必要です。',
-      tooManyOptions: '投票の選択肢は最大5個までです。',
-      questionTooLong: '質問は256文字以内にしてください。',
-      optionTooLong: '各選択肢は100文字以内にしてください。',
-      maxActivePolls: '投票数上限',
-      maxActivePollsDesc:
-        '有効な投票が既に{count}件あります。新しい投票を作成する前に既存の投票を終了してください。',
-      maxGuildPollsDesc:
-        'このサーバーでは有効な投票を{count}件まで作成できます。新しい投票を作成する前に既存の投票を終了してください。',
-      invalidOption: '無効な投票オプションです。',
+      questionTooLong: '質問は300文字以内にしてください。',
+      optionTooLong: '各選択肢は55文字以内にしてください。',
       pollEnded: '投票終了',
-      pollEndedDesc: 'この投票は終了したか、存在しません。',
-      pollError: '投票エラー',
-      pollErrorDesc: '投票の処理中にエラーが発生しました。',
+      pollEndedDesc: 'この投票は既に締め切られたか、存在しません。',
     },
   },
 

@@ -183,33 +183,16 @@ export interface TranslationKeys {
 
   // Poll command
   poll: {
-    title: string;
-    created: string;
     ended: string;
-    votes: string;
-    noVotes: string;
-    anonymous: string;
-    total: string;
-    endsIn: string;
-    voteChanged: string;
-    alreadyVoted: string;
-    votedFor: string;
     endedMessage: string;
     noActivePoll: string;
     noActivePollDesc: string;
     errors: {
       notEnoughOptions: string;
-      tooManyOptions: string;
       questionTooLong: string;
       optionTooLong: string;
-      maxActivePolls: string;
-      maxActivePollsDesc: string;
-      maxGuildPollsDesc: string;
-      invalidOption: string;
       pollEnded: string;
       pollEndedDesc: string;
-      pollError: string;
-      pollErrorDesc: string;
     };
   };
 

@@ -25,7 +25,7 @@ A modular Discord bot built with TypeScript and discord.js v14.
 - Slash command support with automatic registration
 - **Voice channel recording** (restricted past-audio recording with `/voice record`)
 - VC join/leave and member-join notifications, plus per-user VC time stats
-- Community features (polls that survive restarts, roulette)
+- Community features (native Discord polls, VC roulette)
 - Admin system (`/admin` server settings, `/owner` bot-owner tools)
 - Audit logging for role changes, notification setup, and settings changes
 - Middleware system (permissions, cooldown)
@@ -181,19 +181,27 @@ Only users listed in `BOT_OWNER_IDS` can run these commands (can be used in DMs 
 
 ### Community (`/community`)
 
-| Command                                          | Description                             |
-| ------------------------------------------------ | --------------------------------------- |
-| `/community poll create <question> <options...>` | Create a poll (2-10 options)            |
-| `/community poll end`                            | End your active poll                    |
-| `/community roulette member`                     | Randomly select one member from VC      |
-| `/community roulette team <count>`               | Divide voice channel members into teams |
+| Command                                          | Description                                 |
+| ------------------------------------------------ | ------------------------------------------- |
+| `/community poll create <question> <options...>` | Create a native Discord poll (2-10 options) |
+| `/community poll end`                            | Close your poll early                       |
+| `/community roulette member`                     | Randomly select one member from VC          |
+| `/community roulette team <count>`               | Divide voice channel members into teams     |
 
 **Options:**
 
-- `question`: Poll question (required)
-- `option1` to `option10`: Choices (at least 2 required, up to 10)
-- `duration`: Duration in minutes (optional, unlimited if not set)
-- `anonymous`: Anonymous voting (default: false)
+- `question`: Poll question, up to 300 characters (required)
+- `option1` to `option10`: Choices, up to 55 characters each (at least 2 required, up to 10)
+- `duration`: How long the poll stays open — 1h, 4h, 8h, 24h, 3d, or 7d (default: 24h)
+- `multi`: Let people pick more than one option (default: false)
+
+Polls use Discord's own poll feature, so voting, the running tally, and closing
+are handled by Discord itself: results survive a bot restart, and everyone sees
+the same native UI on desktop and mobile. The bot only stores which message a
+poll is in, so `/community poll end` can close it before its deadline.
+
+Discord's minimum poll duration is one hour, so the old 5/10/30-minute options
+are gone — use `/community poll end` to close a short poll when you are done.
 
 ### Voice (`/voice`)
 
@@ -288,7 +296,7 @@ Feature-based architecture: each feature lives under `src/features/` and exports
 - `src/features/<feature>/commands/` contains only public slash command definitions.
 - `src/features/<feature>/application/` is the internal command/application layer.
 - `src/features/<feature>/repositories/` contains feature-specific persistence access.
-- Feature runtime code should prefer explicit folders such as `integrations/`, `jobs/`, `recording/`, and `tracking/`; `services/` remains only where a smaller stateful boundary is clearer, such as `poll/services/`.
+- Feature runtime code should prefer explicit folders such as `integrations/`, `jobs/`, `recording/`, and `tracking/` over a generic `services/`.
 - `src/infrastructure/` contains shared runtime infrastructure such as database bootstrap, backup, health, and metrics.
 - `src/shared/` contains cross-feature utilities, shared types, and the shared help catalog.
 - `src/app-scripts/` contains TypeScript maintenance scripts, while root `scripts/` contains repo workflow shell scripts.

@@ -34,7 +34,7 @@ export const command: Command = {
                   ja: '投票の質問',
                 })
                 .setRequired(true)
-                .setMaxLength(256)
+                .setMaxLength(300)
             )
             .addStringOption((option) =>
               option
@@ -42,7 +42,7 @@ export const command: Command = {
                 .setDescription('First option')
                 .setDescriptionLocalizations({ ja: '選択肢1' })
                 .setRequired(true)
-                .setMaxLength(100)
+                .setMaxLength(55)
             )
             .addStringOption((option) =>
               option
@@ -50,119 +50,119 @@ export const command: Command = {
                 .setDescription('Second option')
                 .setDescriptionLocalizations({ ja: '選択肢2' })
                 .setRequired(true)
-                .setMaxLength(100)
+                .setMaxLength(55)
             )
             .addStringOption((option) =>
               option
                 .setName('option3')
                 .setDescription('Third option')
                 .setDescriptionLocalizations({ ja: '選択肢3' })
-                .setMaxLength(100)
+                .setMaxLength(55)
             )
             .addStringOption((option) =>
               option
                 .setName('option4')
                 .setDescription('Fourth option')
                 .setDescriptionLocalizations({ ja: '選択肢4' })
-                .setMaxLength(100)
+                .setMaxLength(55)
             )
             .addStringOption((option) =>
               option
                 .setName('option5')
                 .setDescription('Fifth option')
                 .setDescriptionLocalizations({ ja: '選択肢5' })
-                .setMaxLength(100)
+                .setMaxLength(55)
             )
             .addStringOption((option) =>
               option
                 .setName('option6')
                 .setDescription('Sixth option')
                 .setDescriptionLocalizations({ ja: '選択肢6' })
-                .setMaxLength(100)
+                .setMaxLength(55)
             )
             .addStringOption((option) =>
               option
                 .setName('option7')
                 .setDescription('Seventh option')
                 .setDescriptionLocalizations({ ja: '選択肢7' })
-                .setMaxLength(100)
+                .setMaxLength(55)
             )
             .addStringOption((option) =>
               option
                 .setName('option8')
                 .setDescription('Eighth option')
                 .setDescriptionLocalizations({ ja: '選択肢8' })
-                .setMaxLength(100)
+                .setMaxLength(55)
             )
             .addStringOption((option) =>
               option
                 .setName('option9')
                 .setDescription('Ninth option')
                 .setDescriptionLocalizations({ ja: '選択肢9' })
-                .setMaxLength(100)
+                .setMaxLength(55)
             )
             .addStringOption((option) =>
               option
                 .setName('option10')
                 .setDescription('Tenth option')
                 .setDescriptionLocalizations({ ja: '選択肢10' })
-                .setMaxLength(100)
+                .setMaxLength(55)
             )
             .addIntegerOption((option) =>
               option
                 .setName('duration')
-                .setDescription('Poll duration in minutes')
+                .setDescription('How long the poll stays open (default: 24h)')
                 .setDescriptionLocalizations({
-                  ja: '投票の期間（分）',
+                  ja: '投票を開けておく期間（既定: 24時間）',
                 })
                 .addChoices(
                   {
-                    name: '5 minutes',
-                    name_localizations: { ja: '5分' },
-                    value: 5,
-                  },
-                  {
-                    name: '10 minutes',
-                    name_localizations: { ja: '10分' },
-                    value: 10,
-                  },
-                  {
-                    name: '30 minutes',
-                    name_localizations: { ja: '30分' },
-                    value: 30,
-                  },
-                  {
                     name: '1 hour',
                     name_localizations: { ja: '1時間' },
-                    value: 60,
+                    value: 1,
                   },
                   {
-                    name: '3 hours',
-                    name_localizations: { ja: '3時間' },
-                    value: 180,
+                    name: '4 hours',
+                    name_localizations: { ja: '4時間' },
+                    value: 4,
+                  },
+                  {
+                    name: '8 hours',
+                    name_localizations: { ja: '8時間' },
+                    value: 8,
                   },
                   {
                     name: '24 hours',
                     name_localizations: { ja: '24時間' },
-                    value: 1440,
+                    value: 24,
+                  },
+                  {
+                    name: '3 days',
+                    name_localizations: { ja: '3日' },
+                    value: 72,
+                  },
+                  {
+                    name: '7 days',
+                    name_localizations: { ja: '7日' },
+                    value: 168,
                   }
                 )
             )
             .addBooleanOption((option) =>
               option
-                .setName('anonymous')
-                .setDescription('Make the poll anonymous (default: false)')
+                .setName('multi')
+                .setDescription('Let people pick more than one option')
                 .setDescriptionLocalizations({
-                  ja: '匿名投票にする（デフォルト: false）',
+                  ja: '複数の選択肢に投票できるようにする',
                 })
             )
         )
         .addSubcommand((subcommand) =>
           subcommand
             .setName('end')
-            .setDescription('End your active poll')
+            .setDescription('Close your poll early')
             .setDescriptionLocalizations({
-              ja: '有効な投票を終了',
+              ja: '自分の投票を早めに締め切る',
             })
         )
     )
