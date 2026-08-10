@@ -77,20 +77,6 @@ describe('CooldownStore', () => {
     });
   });
 
-  describe('clearCommandCooldowns', () => {
-    it('should clear all cooldowns for a command', () => {
-      cooldownStore.setCooldown('test-command', 'user1', 5000);
-      cooldownStore.setCooldown('test-command', 'user2', 5000);
-      cooldownStore.setCooldown('other-command', 'user1', 5000);
-
-      cooldownStore.clearCommandCooldowns('test-command');
-
-      expect(cooldownStore.isOnCooldown('test-command', 'user1')).toBe(false);
-      expect(cooldownStore.isOnCooldown('test-command', 'user2')).toBe(false);
-      expect(cooldownStore.isOnCooldown('other-command', 'user1')).toBe(true);
-    });
-  });
-
   describe('clearAll', () => {
     it('should clear all cooldowns', () => {
       cooldownStore.setCooldown('command1', 'user1', 5000);

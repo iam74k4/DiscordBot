@@ -7,12 +7,8 @@ export const en: TranslationKeys = {
   common: {
     error: 'Error',
     warning: 'Warning',
-    success: 'Success',
-    loading: 'Loading...',
-    notFound: 'Not Found',
     guildOnly: 'This command can only be used in a server.',
     noPermission: 'You do not have permission to use this command.',
-    status: 'Status',
     noData: 'No data',
     unexpectedError:
       'An unexpected error occurred while executing this command.',
@@ -23,22 +19,12 @@ export const en: TranslationKeys = {
     confirm: 'Confirm',
     cancel: 'Cancel',
     confirmMessage: 'Are you sure you want to proceed?',
-    timeout: 'This interaction has timed out.',
     cancelled: 'Action cancelled.',
     nextStep: 'Next step',
   },
 
-  units: {
-    hours: 'hours',
-    hoursPerPlayer: 'hours/player',
-    perDay: 'day',
-    minutes: 'min',
-    hoursAndMinutes: '{hours}h {minutes}m',
-  },
-
   settings: {
     title: 'Server Settings',
-    updated: 'Settings Updated',
     language: {
       name: 'Language',
       changed: 'Language changed to {language}',
@@ -53,16 +39,17 @@ export const en: TranslationKeys = {
       configured: 'Audit logs will be sent to <#{channel}>',
       disabled: 'Audit log channel has been removed.',
     },
+    announcements: {
+      name: 'Announcement Channel',
+      notSet: 'Not receiving announcements',
+      configured: 'Bot owner announcements will be posted in <#{channel}>',
+      disabled: 'This server will no longer receive bot owner announcements.',
+    },
     logs: {
       title: 'Audit Logs',
       noLogs: 'No audit logs found for this server.',
       showing: 'Showing {count} of {total} logs',
     },
-    view: {
-      footer: 'Use /admin settings to modify',
-    },
-    howToChange: 'How to change',
-    selectSetting: 'Select a setting...',
     overview: 'Overview',
     panel: {
       languagePlaceholder: 'Choose a language...',
@@ -71,17 +58,6 @@ export const en: TranslationKeys = {
       overviewFooter: 'Manage language, audit, and logs from this panel',
       languageFooter: 'Select a language below to update immediately',
       auditFooter: 'Choose a channel below or clear the current setting',
-    },
-  },
-
-  server: {
-    stats: {
-      title: 'Server Statistics',
-      members: 'Members',
-      total: 'Total',
-      online: 'Online',
-      offline: 'Offline',
-      bots: 'Bots',
     },
   },
 
@@ -123,47 +99,20 @@ export const en: TranslationKeys = {
   },
 
   poll: {
-    title: 'Poll',
-    created: 'Poll Created',
     ended: 'Poll Ended',
-    votes: '{count} votes',
-    noVotes: 'No votes',
-    anonymous: 'Anonymous poll',
-    total: 'Total: {count} votes',
-    endsIn: 'Ends in {duration} minute(s)',
-    voteChanged: 'Vote changed from "{from}" to "{to}"',
-    alreadyVoted: 'You already voted for "{option}"',
-    votedFor: 'Voted for "{option}"',
-    endedMessage: 'Your poll has been ended and results are now final.',
+    endedMessage: 'Your poll is closed and its results are final.',
     noActivePoll: 'No Active Poll',
-    noActivePollDesc: 'You do not have an active poll in this channel.',
+    noActivePollDesc: 'You do not have an open poll in this channel.',
     errors: {
       notEnoughOptions: 'A poll needs at least 2 options.',
-      tooManyOptions: 'A poll can have at most 5 options.',
-      questionTooLong: 'Question must be 256 characters or less.',
-      optionTooLong: 'Each option must be 100 characters or less.',
-      maxActivePolls: 'Poll Limit Reached',
-      maxActivePollsDesc:
-        'There are already {count} active polls. Please end an existing poll before creating a new one.',
-      maxGuildPollsDesc:
-        'This server can have {count} active polls at a time. Please end an existing poll before creating a new one.',
-      invalidOption: 'Invalid vote option.',
+      questionTooLong: 'Question must be 300 characters or less.',
+      optionTooLong: 'Each option must be 55 characters or less.',
       pollEnded: 'Poll Ended',
-      pollEndedDesc: 'This poll has ended or no longer exists.',
-      pollError: 'Poll Error',
-      pollErrorDesc: 'An error occurred while processing your vote.',
+      pollEndedDesc: 'This poll has already closed or no longer exists.',
     },
   },
 
   admin: {
-    reload: {
-      title: 'Commands Reloaded',
-      success: 'All commands have been reloaded.',
-    },
-    deploy: {
-      title: 'Commands Deployed',
-      success: 'All commands have been deployed to Discord.',
-    },
     role: {
       add: {
         success: 'Role Added',
@@ -212,7 +161,6 @@ export const en: TranslationKeys = {
       uptimeLabel: 'Uptime',
       memoryLabel: 'Memory',
       nodeLabel: 'Node.js',
-      registeredUsersLabel: 'Registered Users',
       tablesLabel: 'Tables',
       backupSuccess: 'Backup created: `{filename}` ({size} KB)',
       backupFailure: 'Backup failed: {error}',
@@ -225,12 +173,15 @@ export const en: TranslationKeys = {
     },
     broadcast: {
       confirm:
-        'This will DM the message below to up to {count} server owners.\n\n{message}',
+        'This will post the message below in the announcement channel of {count} of {total} servers. Servers that have not set one are skipped.\n\n{message}',
       progress:
         'Broadcast in progress... {processed}/{total}{capNote} (sent {sent}, failed {failed})',
-      complete: 'Broadcast complete\nSent: {sent}\nFailed: {failed}{capNote}',
+      complete:
+        'Broadcast complete\nSent: {sent}\nFailed: {failed}\nNo announcement channel: {skipped}{capNote}',
       capNote:
-        '\n\nNote: only the first {limit} of {total} guilds were processed.',
+        '\n\nNote: only the first {limit} of {total} guilds with an announcement channel were processed.',
+      noChannel:
+        'No server has set an announcement channel yet, so there is nothing to broadcast to. Server admins opt in with `/admin settings announcements`.',
     },
     backup: {
       confirm:
@@ -246,7 +197,6 @@ export const en: TranslationKeys = {
     description:
       'List of available commands. Use `/general help` with a command name for details.',
     usage: 'Usage',
-    footer: 'Use /general help for details',
     commandNotFound: 'Command Not Found',
     commandNotFoundDesc: 'Command `{command}` does not exist.',
     permission: {
@@ -314,6 +264,8 @@ export const en: TranslationKeys = {
     events: {
       voiceJoin: '**{name}** joined <#{channel}>',
       voiceLeave: '**{name}** left <#{channel}>',
+      voiceMove: '**{name}** moved from <#{from}> to <#{to}>',
+      voiceDigestTitle: 'Voice channel activity',
       memberJoinTitle: 'Welcome!',
       memberJoin: '**{name}** joined the server!',
       memberCount: 'Member Count',
@@ -352,12 +304,10 @@ export const en: TranslationKeys = {
       optOut: 'An admin can stop this with `/voice autojoin exclude`.',
     },
     bufferWindow: 'Buffer window',
-    title: 'Recording',
     recording: 'Recording...',
     recordingDesc: 'Recording {duration} of past audio.',
     success: 'Recording Complete',
     successDesc: 'Recorded {duration} of past audio.',
-    processing: 'Processing recording file...',
     successNextStep:
       'Need capacity details? Use `/voice status` to check active connections and the limit.',
     durationNote:
@@ -381,11 +331,6 @@ export const en: TranslationKeys = {
         'No usable audio was captured in that window. Speak closer to the mic or try a shorter duration.',
       noPermission: 'No Permission',
       noPermissionDesc: 'Bot does not have permission to send files.',
-      connectionLimit: 'Connection Limit',
-      connectionLimitDesc: 'Maximum concurrent connections reached.',
-      recordingInProgress: 'Recording In Progress',
-      recordingInProgressDesc:
-        'Recording is already in progress for this channel.',
       deliveryIncomplete: 'Recording Delivery Incomplete',
       deliveryIncompleteDesc:
         'Could not deliver split recording part(s) {parts} of {total}. Retry `/record` for the full audio.',

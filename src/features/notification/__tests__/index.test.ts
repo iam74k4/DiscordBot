@@ -20,12 +20,6 @@ vi.mock('../repositories/voiceSessionRepository.js', () => ({
   },
 }));
 
-vi.mock('../../../config/index.js', () => ({
-  env: {
-    VOICE_SESSION_RETENTION_DAYS: 30,
-  },
-}));
-
 vi.mock('../../../shared/utils/logger.js', () => ({
   logger: {
     info: loggerInfo,
@@ -46,9 +40,14 @@ describe('notification feature lifecycle', () => {
   it('runs voice session cleanup immediately and avoids duplicate intervals', async () => {
     const { start, stop } = await import('../index.js');
     const client = {} as never;
+    // Retention comes from the context the feature is started with.
+    const context = {
+      client,
+      config: { VOICE_SESSION_RETENTION_DAYS: 30 },
+    } as never;
 
-    start(client);
-    start(client);
+    start(context);
+    start(context);
 
     expect(closeAllStaleSessions).toHaveBeenCalledTimes(1);
     expect(reconcileActiveVoiceSessions).toHaveBeenCalledTimes(1);

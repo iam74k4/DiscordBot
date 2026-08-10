@@ -1,6 +1,6 @@
 import { readdir, stat, unlink } from 'fs/promises';
 import { join } from 'path';
-import { env } from '../../../config/index.js';
+import type { AppConfig } from '../../../config/index.js';
 import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 
 /**
@@ -9,9 +9,13 @@ import { getErrorMessage, logger } from '../../../shared/utils/logger.js';
 export class FileCleanupService {
   private interval: NodeJS.Timeout | null = null;
   private readonly retentionHours: number;
+  private readonly recordingsDir: string;
 
-  constructor() {
-    this.retentionHours = env.RECORDING_RETENTION_HOURS;
+  constructor(
+    config: Pick<AppConfig, 'RECORDING_RETENTION_HOURS' | 'RECORDINGS_DIR'>
+  ) {
+    this.retentionHours = config.RECORDING_RETENTION_HOURS;
+    this.recordingsDir = config.RECORDINGS_DIR;
   }
 
   /**
@@ -53,7 +57,7 @@ export class FileCleanupService {
    * Clean up old recording files
    */
   async cleanup(): Promise<void> {
-    const recordingsDir = join(process.cwd(), env.RECORDINGS_DIR);
+    const recordingsDir = join(process.cwd(), this.recordingsDir);
     const retentionMs = this.retentionHours * 60 * 60 * 1000;
     const cutoffTime = Date.now() - retentionMs;
 
@@ -103,7 +107,7 @@ export class FileCleanupService {
     fileCount: number;
     totalSizeMB: number;
   }> {
-    const recordingsDir = join(process.cwd(), env.RECORDINGS_DIR);
+    const recordingsDir = join(process.cwd(), this.recordingsDir);
 
     try {
       const files = await readdir(recordingsDir);
@@ -137,8 +141,3 @@ export class FileCleanupService {
     }
   }
 }
-
-/**
- * Singleton instance
- */
-export const fileCleanupService = new FileCleanupService();

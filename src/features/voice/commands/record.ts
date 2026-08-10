@@ -161,5 +161,3 @@ export const command: Command = {
     await executeStatusCommand(interaction);
   },
 };
-
-export default command;

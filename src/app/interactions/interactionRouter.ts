@@ -11,7 +11,6 @@ import { createErrorEmbed } from '../../shared/utils/embed.js';
 import { metrics } from '../../infrastructure/metrics/index.js';
 import { t } from '../../locales/index.js';
 import { resolveLocale } from '../../locales/guildLocale.js';
-import { routeComponentToFeatures } from '../../features/index.js';
 
 async function handleAutocompleteInteraction(
   client: ExtendedClient,
@@ -132,13 +131,6 @@ export async function routeInteraction(
   if (interaction.isAutocomplete()) {
     await handleAutocompleteInteraction(client, interaction);
     return;
-  }
-
-  if (interaction.isButton()) {
-    const handled = await routeComponentToFeatures(interaction);
-    if (handled) {
-      return;
-    }
   }
 
   if (!interaction.isChatInputCommand()) {

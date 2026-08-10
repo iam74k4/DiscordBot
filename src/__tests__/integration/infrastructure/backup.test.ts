@@ -63,7 +63,7 @@ describe('BackupService', () => {
   describe('runBackup', () => {
     it('should create a backup file', async () => {
       const { database } =
-        await import('../../../infrastructure/database/index.js');
+        await import('../../../infrastructure/database/connection.js');
 
       vi.mocked(database.backup).mockImplementation(
         async (filePath: string) => {
@@ -82,7 +82,7 @@ describe('BackupService', () => {
 
     it('should return error on failure', async () => {
       const { database } =
-        await import('../../../infrastructure/database/index.js');
+        await import('../../../infrastructure/database/connection.js');
       vi.mocked(database.backup).mockRejectedValueOnce(
         new Error('Backup failed')
       );
@@ -172,7 +172,7 @@ describe('BackupService', () => {
 
     it('should restore from existing backup', async () => {
       const { database } =
-        await import('../../../infrastructure/database/index.js');
+        await import('../../../infrastructure/database/connection.js');
       const backupFile = path.join(
         testBackupDir,
         'backup-2024-01-01T00-00-00.db'

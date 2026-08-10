@@ -6,7 +6,8 @@ import { getErrorMessage, logger } from '../../shared/utils/logger.js';
  *
  * This lives in infrastructure rather than a feature because three unrelated
  * consumers read it: locale resolution (`language`), the audit service
- * (`audit_channel_id`), and voice auto-join (`voice_autojoin_enabled`).
+ * (`audit_channel_id`), owner broadcasts (`announcement_channel_id`), and
+ * voice auto-join (`voice_autojoin_enabled`).
  * Owning it here keeps exactly one place that writes the table - previously
  * admin, voice, and audit each issued their own SQL against it.
  */
@@ -15,6 +16,8 @@ export interface GuildSettingsRecord {
   /** Configured language, or null when output follows each viewer's locale. */
   language: string | null;
   audit_channel_id: string | null;
+  /** Where bot-owner announcements are posted, or null when not opted in. */
+  announcement_channel_id: string | null;
   /** 1 while the bot may auto-join voice channels in this guild. */
   voice_autojoin_enabled: number;
   created_at: number;
@@ -25,13 +28,17 @@ export interface GuildSettingsRecord {
 export type GuildSettingsUpdate = Partial<
   Pick<
     GuildSettingsRecord,
-    'language' | 'audit_channel_id' | 'voice_autojoin_enabled'
+    | 'language'
+    | 'audit_channel_id'
+    | 'announcement_channel_id'
+    | 'voice_autojoin_enabled'
   >
 >;
 
 const WRITABLE_COLUMNS = [
   'language',
   'audit_channel_id',
+  'announcement_channel_id',
   'voice_autojoin_enabled',
 ] as const satisfies ReadonlyArray<keyof GuildSettingsUpdate>;
 
@@ -41,6 +48,7 @@ const COLUMN_DEFAULTS: {
 } = {
   language: null,
   audit_channel_id: null,
+  announcement_channel_id: null,
   voice_autojoin_enabled: 1,
 };
 
@@ -123,6 +131,30 @@ function setAuditChannel(guildId: string, channelId: string | null): void {
 }
 
 /**
+ * Channel this guild accepts bot-owner announcements in, or null.
+ *
+ * Never throws: a broadcast walks every guild, and one unreadable row must
+ * skip that guild rather than abort the run.
+ */
+function getAnnouncementChannel(guildId: string): string | null {
+  try {
+    return get(guildId)?.announcement_channel_id ?? null;
+  } catch (error) {
+    logger.debug(
+      `Failed to read announcement channel for guild ${guildId}: ${getErrorMessage(error)}`
+    );
+    return null;
+  }
+}
+
+function setAnnouncementChannel(
+  guildId: string,
+  channelId: string | null
+): void {
+  update(guildId, { announcement_channel_id: channelId });
+}
+
+/**
  * Whether the bot may auto-join voice channels here. Defaults to enabled:
  * a guild with no row has not opted out, and a read failure must not silently
  * change behaviour that existed before the setting did.
@@ -145,9 +177,11 @@ function setVoiceAutoJoinEnabled(guildId: string, enabled: boolean): void {
 
 export const guildSettingsRepository = {
   get,
+  getAnnouncementChannel,
   getAuditChannel,
   getLanguage,
   isVoiceAutoJoinEnabled,
+  setAnnouncementChannel,
   setAuditChannel,
   setLanguage,
   setVoiceAutoJoinEnabled,

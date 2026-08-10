@@ -25,7 +25,7 @@ A modular Discord bot built with TypeScript and discord.js v14.
 - Slash command support with automatic registration
 - **Voice channel recording** (restricted past-audio recording with `/voice record`)
 - VC join/leave and member-join notifications, plus per-user VC time stats
-- Community features (polls that survive restarts, roulette)
+- Community features (native Discord polls, VC roulette)
 - Admin system (`/admin` server settings, `/owner` bot-owner tools)
 - Audit logging for role changes, notification setup, and settings changes
 - Middleware system (permissions, cooldown)
@@ -140,18 +140,25 @@ npm start
 | `/notification status`                | Show current notification settings     |
 | `/notification stats [period]`        | Show your VC time statistics           |
 
+VC notifications are throttled: the first change is posted right away, then
+anything happening in the next 30 seconds is collapsed into one summary. A
+channel filling up costs two messages instead of ten, moving between channels
+reads as a single line, and someone who drops in and out inside the window is
+not announced at all.
+
 ### Admin (`/admin`)
 
 Requires **Manage Server** in the guild (slash command default permission).
 
-| Command                           | Description                                |
-| --------------------------------- | ------------------------------------------ |
-| `/admin settings view`            | View current settings                      |
-| `/admin settings language <lang>` | Set server language (`ja` / `en` / `auto`) |
-| `/admin settings audit [channel]` | Set audit log channel                      |
-| `/admin settings logs`            | View recent audit logs                     |
-| `/admin role add`                 | Add a role to a member (audit logged)      |
-| `/admin role remove`              | Remove a role from a member (audit logged) |
+| Command                                   | Description                                                    |
+| ----------------------------------------- | -------------------------------------------------------------- |
+| `/admin settings view`                    | View current settings                                          |
+| `/admin settings language <lang>`         | Set server language (`ja` / `en` / `auto`)                     |
+| `/admin settings audit [channel]`         | Set audit log channel                                          |
+| `/admin settings announcements [channel]` | Set the channel for bot owner announcements (empty to opt out) |
+| `/admin settings logs`                    | View recent audit logs                                         |
+| `/admin role add`                         | Add a role to a member (audit logged)                          |
+| `/admin role remove`                      | Remove a role from a member (audit logged)                     |
 
 `language` sets the language the bot replies in for everyone in the server.
 `auto` follows each user's own Discord client language, which is how the bot
@@ -161,32 +168,40 @@ behaves when nothing is configured.
 
 Only users listed in `BOT_OWNER_IDS` can run these commands (can be used in DMs with the bot).
 
-| Command                             | Description                                  |
-| ----------------------------------- | -------------------------------------------- |
-| `/owner system stats`               | View bot statistics                          |
-| `/owner system db`                  | View database statistics                     |
-| `/owner system guilds`              | List servers the bot is in                   |
-| `/owner system broadcast <message>` | Send message to server owners (capped batch) |
-| `/owner system health`              | View system health status                    |
-| `/owner system metrics`             | View bot metrics                             |
-| `/owner backup list`                | List database backups                        |
-| `/owner backup run`                 | Run a manual database backup                 |
+| Command                             | Description                                                                                          |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `/owner system stats`               | View bot statistics                                                                                  |
+| `/owner system db`                  | View database statistics                                                                             |
+| `/owner system guilds`              | List servers the bot is in                                                                           |
+| `/owner system broadcast <message>` | Post a message in each server's announcement channel (capped batch; servers without one are skipped) |
+| `/owner system health`              | View system health status                                                                            |
+| `/owner system metrics`             | View bot metrics                                                                                     |
+| `/owner backup list`                | List database backups                                                                                |
+| `/owner backup run`                 | Run a manual database backup                                                                         |
 
 ### Community (`/community`)
 
-| Command                                          | Description                             |
-| ------------------------------------------------ | --------------------------------------- |
-| `/community poll create <question> <options...>` | Create a poll (2-10 options)            |
-| `/community poll end`                            | End your active poll                    |
-| `/community roulette member`                     | Randomly select one member from VC      |
-| `/community roulette team <count>`               | Divide voice channel members into teams |
+| Command                                          | Description                                 |
+| ------------------------------------------------ | ------------------------------------------- |
+| `/community poll create <question> <options...>` | Create a native Discord poll (2-10 options) |
+| `/community poll end`                            | Close your poll early                       |
+| `/community roulette member`                     | Randomly select one member from VC          |
+| `/community roulette team <count>`               | Divide voice channel members into teams     |
 
 **Options:**
 
-- `question`: Poll question (required)
-- `option1` to `option10`: Choices (at least 2 required, up to 10)
-- `duration`: Duration in minutes (optional, unlimited if not set)
-- `anonymous`: Anonymous voting (default: false)
+- `question`: Poll question, up to 300 characters (required)
+- `option1` to `option10`: Choices, up to 55 characters each (at least 2 required, up to 10)
+- `duration`: How long the poll stays open — 1h, 4h, 8h, 24h, 3d, or 7d (default: 24h)
+- `multi`: Let people pick more than one option (default: false)
+
+Polls use Discord's own poll feature, so voting, the running tally, and closing
+are handled by Discord itself: results survive a bot restart, and everyone sees
+the same native UI on desktop and mobile. The bot only stores which message a
+poll is in, so `/community poll end` can close it before its deadline.
+
+Discord's minimum poll duration is one hour, so the old 5/10/30-minute options
+are gone — use `/community poll end` to close a short poll when you are done.
 
 ### Voice (`/voice`)
 
@@ -216,8 +231,9 @@ Only users listed in `BOT_OWNER_IDS` can run these commands (can be used in DMs 
   `/voice autojoin exclude <channel>` (one channel). Both also drop any
   connection already buffering
 - In-memory ring buffer of `AUDIO_BUFFER_DURATION` seconds (default: 300 = 5
-  minutes), about **82MB per connected voice channel**. Multiply by
-  `MAX_CONCURRENT_VC_CONNECTIONS` when sizing your host
+  minutes), about **82MB per voice channel**, allocated the first time someone
+  actually speaks — a channel the bot sits in silently costs nothing. Multiply
+  by `MAX_CONCURRENT_VC_CONNECTIONS` for the worst case when sizing your host
 - WAV format output at 48kHz/16bit/mono (~27.5MB for 5 minutes)
 - Private delivery: Recording responses and files are sent ephemerally
 - Automatic file cleanup after `RECORDING_RETENTION_HOURS` (default: 24 hours)
@@ -233,8 +249,10 @@ Only users listed in `BOT_OWNER_IDS` can run these commands (can be used in DMs 
 
 ### Memory
 
-Each connected voice channel holds its ring buffer in memory: roughly
-`AUDIO_BUFFER_DURATION × 0.27 MB` (about 82MB at the 300s default). With
+A voice channel holds a ring buffer in memory once it has carried audio:
+roughly `AUDIO_BUFFER_DURATION × 0.27 MB` (about 82MB at the 300s default).
+The buffer is allocated on the first decoded chunk, so connections that never
+hear anything stay free, and it is released on disconnect. With
 `MAX_CONCURRENT_VC_CONNECTIONS=5` the worst case is about 410MB on top of the
 bot's baseline, so `MEMORY_LIMIT_MB` (default 512) should match what your host
 actually grants the container.
@@ -244,7 +262,9 @@ actually grants the container.
 The bot keeps operational data for limited periods and cleans it up automatically.
 
 - `RECORDING_RETENTION_HOURS`: recording files in `data/recordings/` (default: 24 hours)
-- `VOICE_SESSION_RETENTION_DAYS`: completed VC session rows (default: 30 days)
+- `VOICE_SESSION_RETENTION_DAYS`: completed VC session rows (default: 30 days).
+  `/notification stats` is not affected: durations are rolled up per day into
+  `voice_daily_stats`, which is kept indefinitely
 - `AUDIT_LOG_RETENTION_DAYS`: audit log rows (default: 90 days)
 - `BACKUP_RETENTION_DAYS`: database backup files (default: 7 days)
 
@@ -276,7 +296,7 @@ Feature-based architecture: each feature lives under `src/features/` and exports
 - `src/features/<feature>/commands/` contains only public slash command definitions.
 - `src/features/<feature>/application/` is the internal command/application layer.
 - `src/features/<feature>/repositories/` contains feature-specific persistence access.
-- Feature runtime code should prefer explicit folders such as `integrations/`, `jobs/`, `recording/`, and `tracking/`; `services/` remains only where a smaller stateful boundary is clearer, such as `poll/services/`.
+- Feature runtime code should prefer explicit folders such as `integrations/`, `jobs/`, `recording/`, and `tracking/` over a generic `services/`.
 - `src/infrastructure/` contains shared runtime infrastructure such as database bootstrap, backup, health, and metrics.
 - `src/shared/` contains cross-feature utilities, shared types, and the shared help catalog.
 - `src/app-scripts/` contains TypeScript maintenance scripts, while root `scripts/` contains repo workflow shell scripts.

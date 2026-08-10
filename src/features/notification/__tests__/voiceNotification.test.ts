@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { VoiceState } from 'discord.js';
 import {
   createMockClient,
@@ -75,11 +75,22 @@ function createVoiceState(overrides: {
 }
 
 describe('voiceNotification event', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    // Digest windows are module state keyed by guild; a window left open by
+    // one test would silently swallow the next test's first notification.
+    const { resetVoiceDigests } =
+      await import('../events/voiceNotification.js');
+    resetVoiceDigests();
     getEnabled.mockReturnValue('notify-channel');
     getSendableTextChannel.mockResolvedValue({ send });
     send.mockResolvedValue(undefined);
+  });
+
+  afterEach(async () => {
+    const { resetVoiceDigests } =
+      await import('../events/voiceNotification.js');
+    resetVoiceDigests();
   });
 
   it('completes move session transition before awaiting leave notification', async () => {
@@ -173,5 +184,100 @@ describe('voiceNotification event', () => {
     await event.execute(client as never, oldState, newState);
 
     expect(order).toEqual(['startSession', 'send']);
+  });
+});
+
+describe('voice notification batching', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    const { resetVoiceDigests } =
+      await import('../events/voiceNotification.js');
+    resetVoiceDigests();
+    getEnabled.mockReturnValue('notify-channel');
+    getSendableTextChannel.mockResolvedValue({ send });
+    send.mockResolvedValue(undefined);
+  });
+
+  afterEach(async () => {
+    const { resetVoiceDigests } =
+      await import('../events/voiceNotification.js');
+    resetVoiceDigests();
+    vi.useRealTimers();
+  });
+
+  async function joinVoice(
+    client: unknown,
+    userId: string,
+    channelId: string
+  ): Promise<void> {
+    const { event } = await import('../events/voiceNotification.js');
+    await event.execute(
+      client as never,
+      createVoiceState({ channelId: null, userId }),
+      createVoiceState({ channelId, userId })
+    );
+  }
+
+  it('announces the first change immediately and batches the rest', async () => {
+    const client = Object.assign(createMockClient(), { isFullyReady: true });
+
+    await joinVoice(client, 'user-1', 'vc-a');
+    expect(send).toHaveBeenCalledTimes(1);
+
+    // Four more people pile in during the window: still one message, later.
+    await joinVoice(client, 'user-2', 'vc-a');
+    await joinVoice(client, 'user-3', 'vc-a');
+    await joinVoice(client, 'user-4', 'vc-a');
+    await joinVoice(client, 'user-5', 'vc-a');
+    expect(send).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(send).toHaveBeenCalledTimes(2);
+
+    const digest = send.mock.calls[1][0] as {
+      embeds: Array<{ data: { description: string } }>;
+    };
+    const description = digest.embeds[0].data.description;
+    expect(description.split('\n')).toHaveLength(4);
+  });
+
+  it('sends nothing extra when the window collected nothing', async () => {
+    const client = Object.assign(createMockClient(), { isFullyReady: true });
+
+    await joinVoice(client, 'user-1', 'vc-a');
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('says nothing about someone who joined and left within one window', async () => {
+    const { event } = await import('../events/voiceNotification.js');
+    const client = Object.assign(createMockClient(), { isFullyReady: true });
+
+    // First change opens the window and is announced on its own.
+    await joinVoice(client, 'user-1', 'vc-a');
+
+    await joinVoice(client, 'user-2', 'vc-a');
+    await event.execute(
+      client as never,
+      createVoiceState({ channelId: 'vc-a', userId: 'user-2' }),
+      createVoiceState({ channelId: null, userId: 'user-2' })
+    );
+
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    // user-2 was never there as far as anyone reading the channel is concerned.
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('accepts a new immediate announcement once the window closes', async () => {
+    const client = Object.assign(createMockClient(), { isFullyReady: true });
+
+    await joinVoice(client, 'user-1', 'vc-a');
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    await joinVoice(client, 'user-2', 'vc-a');
+    expect(send).toHaveBeenCalledTimes(2);
   });
 });

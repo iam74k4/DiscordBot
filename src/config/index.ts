@@ -1,15 +1,3 @@
-export {
-  env,
-  isBotOwner,
-  loadConfig,
-  parseConfig,
-  resetConfigForTesting,
-} from './env.js';
-export type { AppConfig } from './env.js';
-export {
-  AUDIO,
-  DISCORD_LIMITS,
-  RETRY,
-  MONITORING,
-  BOT_INFO,
-} from './constants.js';
+export { env, loadConfig } from './env.js';
+export type { AppConfig } from './schema.js';
+export { AUDIO, DISCORD_LIMITS, RETRY, MONITORING } from './constants.js';

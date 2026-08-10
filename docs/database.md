@@ -57,7 +57,9 @@ Per-guild notification channels by type.
 
 ### voice_sessions
 
-Per-user VC session history for statistics.
+Raw per-user VC session history. Deleted after
+`VOICE_SESSION_RETENTION_DAYS`; the durable numbers live in
+`voice_daily_stats`.
 
 | Column       | Type    | Constraints               |
 | ------------ | ------- | ------------------------- |
@@ -79,18 +81,52 @@ Per-user VC session history for statistics.
 
 ---
 
+### voice_daily_stats
+
+Daily rollup of VC time, and the only table `/notification stats` reads.
+
+| Column            | Type    | Constraints                                   |
+| ----------------- | ------- | --------------------------------------------- |
+| guild_id          | TEXT    | NOT NULL, PK                                  |
+| user_id           | TEXT    | NOT NULL, PK                                  |
+| channel_id        | TEXT    | NOT NULL, PK                                  |
+| channel_name      | TEXT    | NOT NULL                                      |
+| day               | TEXT    | NOT NULL, PK (`YYYY-MM-DD`, process timezone) |
+| total_duration_ms | INTEGER | NOT NULL                                      |
+| session_count     | INTEGER | NOT NULL                                      |
+| updated_at        | INTEGER | NOT NULL                                      |
+
+**Indices:**
+
+- `idx_voice_daily_stats_lookup` ON `guild_id, user_id, day`
+
+`voiceSessionRepository.endSession()` folds a closed session into this table in
+the same transaction that closes it, so a session is never counted in one place
+and missing from the other. Nothing deletes these rows: they are what makes
+"all time" mean all time rather than the last `VOICE_SESSION_RETENTION_DAYS`.
+
+Because a day is the finest bucket kept, a `since` cutoff in a stats query is
+rounded down to the start of its day.
+
+---
+
 ### guild_settings
 
-Per-guild settings (language, audit channel, voice auto-join).
+Per-guild settings (language, audit channel, announcement channel, voice
+auto-join).
 
-| Column                 | Type    | Constraints        |
-| ---------------------- | ------- | ------------------ |
-| guild_id               | TEXT    | PRIMARY KEY        |
-| language               | TEXT    | DEFAULT 'ja'       |
-| audit_channel_id       | TEXT    |                    |
-| voice_autojoin_enabled | INTEGER | NOT NULL DEFAULT 1 |
-| created_at             | INTEGER | NOT NULL           |
-| updated_at             | INTEGER | NOT NULL           |
+| Column                  | Type    | Constraints        |
+| ----------------------- | ------- | ------------------ |
+| guild_id                | TEXT    | PRIMARY KEY        |
+| language                | TEXT    | DEFAULT 'ja'       |
+| audit_channel_id        | TEXT    |                    |
+| announcement_channel_id | TEXT    |                    |
+| voice_autojoin_enabled  | INTEGER | NOT NULL DEFAULT 1 |
+| created_at              | INTEGER | NOT NULL           |
+| updated_at              | INTEGER | NOT NULL           |
+
+`announcement_channel_id` NULL means the guild has not opted in to bot-owner
+announcements, so `/owner system broadcast` skips it.
 
 `language` NULL means "follow each viewer's Discord client locale" — the `auto`
 choice in `/admin settings language`. Rows inserted for other settings leave it
@@ -100,41 +136,25 @@ NULL so a guild is never pinned to a language it did not choose.
 
 ### polls
 
-Open polls. A row exists only while a poll is running; finalizing deletes it
-along with its votes.
+Where a user's open poll lives, so `/community poll end` can find it. Discord
+owns the poll itself — question, answers, voters, and closing time — so nothing
+here is authoritative: losing a row costs the creator the shortcut, not the
+poll.
 
-| Column     | Type    | Constraints           |
-| ---------- | ------- | --------------------- |
-| message_id | TEXT    | PRIMARY KEY           |
-| guild_id   | TEXT    | NOT NULL              |
-| channel_id | TEXT    | NOT NULL              |
-| creator_id | TEXT    | NOT NULL              |
-| question   | TEXT    | NOT NULL              |
-| options    | TEXT    | NOT NULL (JSON array) |
-| anonymous  | INTEGER | NOT NULL DEFAULT 0    |
-| ends_at    | INTEGER |                       |
-| locale     | TEXT    | NOT NULL              |
-| created_at | INTEGER | NOT NULL              |
+| Column     | Type    | Constraints |
+| ---------- | ------- | ----------- |
+| message_id | TEXT    | PRIMARY KEY |
+| guild_id   | TEXT    | NOT NULL    |
+| channel_id | TEXT    | NOT NULL    |
+| creator_id | TEXT    | NOT NULL    |
+| expires_at | INTEGER | NOT NULL    |
+| created_at | INTEGER | NOT NULL    |
 
 **Indices:**
 
-- `idx_polls_guild_id` ON `guild_id`
-- `idx_polls_ends_at` ON `ends_at`
+- `idx_polls_creator` ON `creator_id, channel_id`
 
----
-
-### poll_votes
-
-One row per voter per poll; changing a vote updates the row.
-
-| Column       | Type    | Constraints                      |
-| ------------ | ------- | -------------------------------- |
-| message_id   | TEXT    | NOT NULL, FK → polls(message_id) |
-| user_id      | TEXT    | NOT NULL                         |
-| option_index | INTEGER | NOT NULL                         |
-| voted_at     | INTEGER | NOT NULL                         |
-
-PRIMARY KEY (`message_id`, `user_id`)
+Rows past `expires_at` are pruned daily by the community feature.
 
 ---
 
@@ -194,18 +214,18 @@ Defined in `src/features/admin/repositories/auditRepository.ts`.
 
 ## Repository Ownership
 
-| Tables                                | Feature        | Repositories                                                    |
-| ------------------------------------- | -------------- | --------------------------------------------------------------- |
-| notification_channels, voice_sessions | notification   | `notificationChannelRepository.ts`, `voiceSessionRepository.ts` |
-| guild_settings                        | infrastructure | `infrastructure/guildSettings/index.ts`                         |
-| audit_logs                            | infrastructure | `infrastructure/audit/auditRepository.ts`                       |
-| polls, poll_votes                     | community      | `poll/pollRepository.ts`                                        |
-| voice_autojoin_exclusions             | voice          | `repositories/voiceSettingsRepository.ts`                       |
+| Tables                                                   | Feature        | Repositories                                                    |
+| -------------------------------------------------------- | -------------- | --------------------------------------------------------------- |
+| notification_channels, voice_sessions, voice_daily_stats | notification   | `notificationChannelRepository.ts`, `voiceSessionRepository.ts` |
+| guild_settings                                           | infrastructure | `infrastructure/guildSettings/index.ts`                         |
+| audit_logs                                               | infrastructure | `infrastructure/audit/auditRepository.ts`                       |
+| polls                                                    | community      | `poll/pollRepository.ts`                                        |
+| voice_autojoin_exclusions                                | voice          | `repositories/voiceSettingsRepository.ts`                       |
 
 `guild_settings` and `audit_logs` are owned by infrastructure rather than a
 feature because several features read them: locale resolution reads
-`language`, the audit service reads `audit_channel_id`, and voice reads
-`voice_autojoin_enabled`. Every write to `guild_settings` goes through
+`language`, the audit service reads `audit_channel_id`, owner broadcasts read
+`announcement_channel_id`, and voice reads `voice_autojoin_enabled`. Every write to `guild_settings` goes through
 `guildSettingsRepository.update()`, which is enforced by
 `src/__tests__/architecture.test.ts`.
 
@@ -222,8 +242,11 @@ Migrations live in `src/infrastructure/database/migrations/` and are run in orde
 3. `003_settings.ts` — guild_settings, audit_logs
 4. `004_notification.ts` — notification_channels, voice_sessions
 5. `005_drop_steam.ts` — Drops the legacy Steam tables created by 001 and 002 on existing databases
-6. `006_polls.ts` — polls, poll_votes
+6. `006_polls.ts` — polls, poll_votes (both superseded by 010)
 7. `007_voice_autojoin.ts` — voice_autojoin_exclusions, plus `guild_settings.voice_autojoin_enabled`
+8. `008_announcement_channel.ts` — `guild_settings.announcement_channel_id`
+9. `009_voice_daily_stats.ts` — voice_daily_stats, backfilled once from existing `voice_sessions`
+10. `010_native_polls.ts` — drops poll_votes and the custom `polls` schema, replacing it with the message pointer Discord's native polls need
 
 `initializeDatabase()` runs all migrations inside a single transaction. It is safe to call multiple times; migrations use `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, and `DROP TABLE IF EXISTS`. Initialization is performed once per process.
 
@@ -268,6 +291,7 @@ erDiagram
         text guild_id PK
         text language
         text audit_channel_id
+        text announcement_channel_id
         integer voice_autojoin_enabled
         integer created_at
         integer updated_at
@@ -278,19 +302,8 @@ erDiagram
         text guild_id
         text channel_id
         text creator_id
-        text question
-        text options
-        integer anonymous
-        integer ends_at
-        text locale
+        integer expires_at
         integer created_at
-    }
-
-    poll_votes {
-        text message_id PK
-        text user_id PK
-        integer option_index
-        integer voted_at
     }
 
     voice_autojoin_exclusions {
@@ -298,8 +311,6 @@ erDiagram
         text channel_id PK
         integer created_at
     }
-
-    polls ||--o{ poll_votes : "collects"
 
     audit_logs {
         integer id PK
@@ -319,7 +330,7 @@ erDiagram
 Runtime retention is configured with environment variables and enforced by feature cleanup jobs.
 
 - `RECORDING_RETENTION_HOURS` (default: `24`): deletes `.wav` recording files from `data/recordings/`
-- `VOICE_SESSION_RETENTION_DAYS` (default: `30`): deletes completed `voice_sessions` rows older than the cutoff
+- `VOICE_SESSION_RETENTION_DAYS` (default: `30`): deletes completed `voice_sessions` rows older than the cutoff. Statistics are unaffected — the durations were already rolled up into `voice_daily_stats`, which retention does not touch
 - `AUDIT_LOG_RETENTION_DAYS` (default: `90`): deletes old `audit_logs` rows
 - `BACKUP_RETENTION_DAYS` (default: `7`): deletes old backup files
 

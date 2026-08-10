@@ -40,7 +40,3 @@ export async function cooldownMiddleware(
 export function clearCooldown(commandName: string, userId: string): void {
   cooldownStore.clearCooldown(commandName, userId);
 }
-
-export function clearCommandCooldowns(commandName: string): void {
-  cooldownStore.clearCommandCooldowns(commandName);
-}

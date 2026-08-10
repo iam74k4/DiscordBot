@@ -59,5 +59,3 @@ export const event: Event<typeof Events.GuildMemberAdd> = {
     }
   },
 };
-
-export default event;

@@ -11,6 +11,8 @@ import { withTimeout } from '../../../shared/utils/timeout.js';
 import { t, type Locale } from '../../../locales/index.js';
 import { resolveLocale } from '../../../locales/guildLocale.js';
 import { backupService } from '../../../infrastructure/backup/index.js';
+import { guildSettingsRepository } from '../../../infrastructure/guildSettings/index.js';
+import { getSendableTextChannel } from '../../../shared/utils/discord.js';
 import { showAdminSystemPanel } from './systemPanel.js';
 import { awaitConfirmation } from '../../../shared/utils/confirm.js';
 
@@ -21,6 +23,45 @@ const BROADCAST_PROGRESS_EVERY = 12;
 
 function checkOwner(interaction: ChatInputCommandInteraction): boolean {
   return isBotOwner(interaction.user.id);
+}
+
+export interface BroadcastTarget<G> {
+  guild: G;
+  channelId: string;
+}
+
+export interface BroadcastPlan<G> {
+  /** Guilds this run will actually post to, already capped. */
+  targets: BroadcastTarget<G>[];
+  /** Guilds with no announcement channel. Not failures - they never opted in. */
+  skipped: number;
+  /** Addressable guilds left out because the run hit `BROADCAST_MAX_GUILDS`. */
+  overCap: number;
+}
+
+/**
+ * Decide who a broadcast goes to.
+ *
+ * Split out from the send loop because the interesting rule is here: a guild
+ * that never nominated a channel is skipped rather than counted as a delivery
+ * failure, so an owner reading the result can tell "nobody opted in" apart
+ * from "delivery is broken".
+ */
+export function planBroadcast<G extends { id: string }>(
+  guilds: readonly G[],
+  announcementChannelOf: (guildId: string) => string | null,
+  cap = BROADCAST_MAX_GUILDS
+): BroadcastPlan<G> {
+  const addressable = guilds.flatMap((guild) => {
+    const channelId = announcementChannelOf(guild.id);
+    return channelId ? [{ guild, channelId }] : [];
+  });
+
+  return {
+    targets: addressable.slice(0, cap),
+    skipped: guilds.length - addressable.length,
+    overCap: Math.max(0, addressable.length - cap),
+  };
 }
 
 async function handleStats(
@@ -64,13 +105,37 @@ async function handleBroadcast(
 
   const allGuilds = [...client.guilds.cache.values()];
   const totalGuilds = allGuilds.length;
-  const guilds = allGuilds.slice(0, BROADCAST_MAX_GUILDS);
-  const capped = totalGuilds > BROADCAST_MAX_GUILDS;
+  const {
+    targets: guilds,
+    skipped,
+    overCap,
+  } = planBroadcast(
+    allGuilds,
+    guildSettingsRepository.getAnnouncementChannel,
+    BROADCAST_MAX_GUILDS
+  );
+  const addressable = guilds.length + overCap;
+  const capped = overCap > 0;
+
+  if (guilds.length === 0) {
+    await interaction.reply({
+      embeds: [
+        createEmbed({
+          title: t('common.error', locale),
+          description: t('owner.broadcast.noChannel', locale),
+          color: COLORS.WARNING,
+        }),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
 
   const confirmed = await awaitConfirmation(
     interaction,
     t('owner.broadcast.confirm', locale, {
       count: guilds.length,
+      total: totalGuilds,
       message,
     }),
     { ephemeral: true, timeout: 45_000 }
@@ -95,17 +160,21 @@ async function handleBroadcast(
       total: guilds.length,
       sent: 0,
       failed: 0,
-      capNote: capped ? ` [${BROADCAST_MAX_GUILDS}/${totalGuilds}]` : '',
+      capNote: capped ? ` [${BROADCAST_MAX_GUILDS}/${addressable}]` : '',
     }),
     embeds: [],
     components: [],
   });
 
   let processed = 0;
-  for (const guild of guilds) {
+  for (const { guild, channelId } of guilds) {
     try {
-      const owner = await withTimeout(guild.fetchOwner(), BROADCAST_TIMEOUT);
-      await withTimeout(owner.send({ embeds: [embed] }), BROADCAST_TIMEOUT);
+      const channel = await getSendableTextChannel(guild, channelId);
+      if (!channel) {
+        // Configured but no longer usable: deleted, or the bot lost access.
+        throw new Error(`Announcement channel ${channelId} is not sendable`);
+      }
+      await withTimeout(channel.send({ embeds: [embed] }), BROADCAST_TIMEOUT);
       sent++;
     } catch (error) {
       failed++;
@@ -120,7 +189,7 @@ async function handleBroadcast(
       processed === guilds.length
     ) {
       const capNote = capped
-        ? ` (cap ${BROADCAST_MAX_GUILDS}/${totalGuilds} guilds)`
+        ? ` (cap ${BROADCAST_MAX_GUILDS}/${addressable} guilds)`
         : '';
       await interaction
         .editReply({
@@ -144,7 +213,7 @@ async function handleBroadcast(
   const capLine = capped
     ? t('owner.broadcast.capNote', locale, {
         limit: BROADCAST_MAX_GUILDS,
-        total: totalGuilds,
+        total: addressable,
       })
     : '';
 
@@ -153,6 +222,7 @@ async function handleBroadcast(
     description: t('owner.broadcast.complete', locale, {
       sent,
       failed,
+      skipped,
       capNote: capLine,
     }),
     color: COLORS.SUCCESS,

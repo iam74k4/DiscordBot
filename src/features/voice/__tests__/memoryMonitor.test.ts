@@ -20,18 +20,14 @@ vi.mock('../../../shared/utils/logger.js', () => ({
   getErrorMessage: (e: unknown) => String(e),
 }));
 
-vi.mock('../../../config/index.js', async () => {
-  const actual = await vi.importActual<
-    typeof import('../../../config/index.js')
-  >('../../../config/index.js');
-  return {
-    ...actual,
-    env: { ...actual.env, MEMORY_LIMIT_MB: 1000 },
-    MONITORING: { MEMORY_MONITOR_INTERVAL_MS: 60_000 },
-  };
-});
+vi.mock('../../../config/index.js', () => ({
+  MONITORING: { MEMORY_MONITOR_INTERVAL_MS: 60_000 },
+}));
 
 const { MemoryMonitor } = await import('../jobs/memoryMonitor.js');
+
+/** The monitor is built from what it is handed, not from ambient config. */
+const config = { MEMORY_LIMIT_MB: 1000 };
 
 /** Fake three connected channels so shedding has something to drop. */
 function connections(count: number) {
@@ -63,7 +59,7 @@ describe('MemoryMonitor', () => {
 
   it('reports RSS, because mix rings live outside the V8 heap', async () => {
     mockMemory(700);
-    const stats = await new MemoryMonitor().getStats();
+    const stats = await new MemoryMonitor(config).getStats();
 
     expect(stats.memoryUsageMB).toBeCloseTo(700);
     expect(stats.heapUsedMB).toBeCloseTo(40);
@@ -73,7 +69,7 @@ describe('MemoryMonitor', () => {
 
   it('sheds the oldest connections once RSS passes the critical ratio', async () => {
     mockMemory(900); // 90% of the 1000MB budget
-    const monitor = new MemoryMonitor();
+    const monitor = new MemoryMonitor(config);
 
     await monitor['checkMemoryUsage']();
 
@@ -83,7 +79,7 @@ describe('MemoryMonitor', () => {
 
   it('warns without disconnecting between the warning and critical ratios', async () => {
     mockMemory(750); // 75%: above warn (70%), below critical (85%)
-    const monitor = new MemoryMonitor();
+    const monitor = new MemoryMonitor(config);
 
     await monitor['checkMemoryUsage']();
 
@@ -93,7 +89,7 @@ describe('MemoryMonitor', () => {
 
   it('leaves connections alone below the warning ratio', async () => {
     mockMemory(300);
-    const monitor = new MemoryMonitor();
+    const monitor = new MemoryMonitor(config);
 
     await monitor['checkMemoryUsage']();
 
@@ -110,7 +106,7 @@ describe('MemoryMonitor', () => {
         })
     );
 
-    const monitor = new MemoryMonitor();
+    const monitor = new MemoryMonitor(config);
     const first = monitor['checkMemoryUsage']();
     await monitor['checkMemoryUsage']();
 

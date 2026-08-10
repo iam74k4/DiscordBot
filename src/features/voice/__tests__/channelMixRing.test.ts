@@ -23,8 +23,7 @@ describe('ChannelMixRing', () => {
   });
 
   it('sums two speakers at the same global sample', () => {
-    const ring = new ChannelMixRing(10);
-    ring.setEpoch(epoch);
+    const ring = new ChannelMixRing(10, epoch);
 
     const frameSamples = 960;
     const pcmA = Buffer.alloc(frameSamples * 2);
@@ -42,8 +41,7 @@ describe('ChannelMixRing', () => {
   });
 
   it('overwrites ring slot when global sample wraps past buffer length', () => {
-    const ring = new ChannelMixRing(0.02);
-    ring.setEpoch(epoch);
+    const ring = new ChannelMixRing(0.02, epoch);
     const frameBytes = 960 * 2;
     const pcmEarly = Buffer.alloc(frameBytes);
     pcmEarly.writeInt16LE(5000, 0);
@@ -65,8 +63,7 @@ describe('ChannelMixRing', () => {
   it('does not replay a slot written a full lap earlier', () => {
     // One lap is 20ms of samples. Audio written in lap 0 must not be read
     // back as if it belonged to lap 1 at the same ring offset.
-    const ring = new ChannelMixRing(0.02);
-    ring.setEpoch(epoch);
+    const ring = new ChannelMixRing(0.02, epoch);
 
     const pcm = Buffer.alloc(960 * 2);
     pcm.fill(0);
@@ -81,8 +78,7 @@ describe('ChannelMixRing', () => {
   });
 
   it('keeps mixing correctly after more laps than the generation counter holds', () => {
-    const ring = new ChannelMixRing(0.02);
-    ring.setEpoch(epoch);
+    const ring = new ChannelMixRing(0.02, epoch);
 
     // 0xffff laps returns the generation marker to its starting value; the
     // slot must still be recognised as belonging to the current lap.
@@ -100,8 +96,7 @@ describe('ChannelMixRing', () => {
   });
 
   it('extractLastSeconds returns silence before epoch', () => {
-    const ring = new ChannelMixRing(5);
-    ring.setEpoch(epoch + 5000);
+    const ring = new ChannelMixRing(5, epoch + 5000);
 
     const pcm = Buffer.alloc(4800);
     pcm.writeInt16LE(8000, 0);
@@ -128,5 +123,13 @@ describe('ChannelMixRingManager', () => {
     expect(mgr.getTotalMixBufferSizeMB()).toBeGreaterThan(0);
     mgr.remove('c1');
     expect(mgr.extractLastSeconds('c1', 1).length).toBe(0);
+  });
+
+  it('costs nothing for a channel that never receives audio', () => {
+    const mgr = new ChannelMixRingManager();
+    // Reading from an untouched channel must not allocate its ring; that is
+    // what makes an idle voice connection free.
+    expect(mgr.extractLastSeconds('quiet', 1).length).toBe(0);
+    expect(mgr.getTotalMixBufferSizeMB()).toBe(0);
   });
 });

@@ -65,9 +65,4 @@ export async function runMiddleware(
   return true;
 }
 
-export { permissionsMiddleware } from './permissions.js';
-export {
-  cooldownMiddleware,
-  clearCooldown,
-  clearCommandCooldowns,
-} from './cooldown/index.js';
+export { clearCooldown } from './cooldown/index.js';

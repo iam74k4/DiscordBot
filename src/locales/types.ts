@@ -60,12 +60,8 @@ export interface TranslationKeys {
   common: {
     error: string;
     warning: string;
-    success: string;
-    loading: string;
-    notFound: string;
     guildOnly: string;
     noPermission: string;
-    status: string;
     noData: string;
     unexpectedError: string;
     cooldown: string;
@@ -75,24 +71,13 @@ export interface TranslationKeys {
     confirm: string;
     cancel: string;
     confirmMessage: string;
-    timeout: string;
     cancelled: string;
     nextStep: string;
-  };
-
-  // Units
-  units: {
-    hours: string;
-    hoursPerPlayer: string;
-    perDay: string;
-    minutes: string;
-    hoursAndMinutes: string;
   };
 
   // Settings command
   settings: {
     title: string;
-    updated: string;
     language: {
       name: string;
       changed: string;
@@ -106,16 +91,17 @@ export interface TranslationKeys {
       configured: string;
       disabled: string;
     };
+    announcements: {
+      name: string;
+      notSet: string;
+      configured: string;
+      disabled: string;
+    };
     logs: {
       title: string;
       noLogs: string;
       showing: string;
     };
-    view: {
-      footer: string;
-    };
-    howToChange: string;
-    selectSetting: string;
     overview: string;
     panel: {
       languagePlaceholder: string;
@@ -124,18 +110,6 @@ export interface TranslationKeys {
       overviewFooter: string;
       languageFooter: string;
       auditFooter: string;
-    };
-  };
-
-  // Server command
-  server: {
-    stats: {
-      title: string;
-      members: string;
-      total: string;
-      online: string;
-      offline: string;
-      bots: string;
     };
   };
 
@@ -177,46 +151,21 @@ export interface TranslationKeys {
 
   // Poll command
   poll: {
-    title: string;
-    created: string;
     ended: string;
-    votes: string;
-    noVotes: string;
-    anonymous: string;
-    total: string;
-    endsIn: string;
-    voteChanged: string;
-    alreadyVoted: string;
-    votedFor: string;
     endedMessage: string;
     noActivePoll: string;
     noActivePollDesc: string;
     errors: {
       notEnoughOptions: string;
-      tooManyOptions: string;
       questionTooLong: string;
       optionTooLong: string;
-      maxActivePolls: string;
-      maxActivePollsDesc: string;
-      maxGuildPollsDesc: string;
-      invalidOption: string;
       pollEnded: string;
       pollEndedDesc: string;
-      pollError: string;
-      pollErrorDesc: string;
     };
   };
 
   // Admin command
   admin: {
-    reload: {
-      title: string;
-      success: string;
-    };
-    deploy: {
-      title: string;
-      success: string;
-    };
     role: {
       add: {
         success: string;
@@ -260,7 +209,6 @@ export interface TranslationKeys {
       uptimeLabel: string;
       memoryLabel: string;
       nodeLabel: string;
-      registeredUsersLabel: string;
       tablesLabel: string;
       backupSuccess: string;
       backupFailure: string;
@@ -276,6 +224,7 @@ export interface TranslationKeys {
       progress: string;
       complete: string;
       capNote: string;
+      noChannel: string;
     };
     backup: {
       confirm: string;
@@ -289,7 +238,6 @@ export interface TranslationKeys {
     title: string;
     description: string;
     usage: string;
-    footer: string;
     commandNotFound: string;
     commandNotFoundDesc: string;
     permission: {
@@ -353,6 +301,8 @@ export interface TranslationKeys {
     events: {
       voiceJoin: string;
       voiceLeave: string;
+      voiceMove: string;
+      voiceDigestTitle: string;
       memberJoinTitle: string;
       memberJoin: string;
       memberCount: string;
@@ -387,12 +337,10 @@ export interface TranslationKeys {
       optOut: string;
     };
     bufferWindow: string;
-    title: string;
     recording: string;
     recordingDesc: string;
     success: string;
     successDesc: string;
-    processing: string;
     successNextStep: string;
     durationNote: string;
     statusHint: string;
@@ -411,10 +359,6 @@ export interface TranslationKeys {
       noAudibleAudioDesc: string;
       noPermission: string;
       noPermissionDesc: string;
-      connectionLimit: string;
-      connectionLimitDesc: string;
-      recordingInProgress: string;
-      recordingInProgressDesc: string;
       deliveryIncomplete: string;
       deliveryIncompleteDesc: string;
       failed: string;

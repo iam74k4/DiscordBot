@@ -35,5 +35,3 @@ export const event: Event<typeof Events.ClientReady> = {
     logger.info('Bot is ready!');
   },
 };
-
-export default event;

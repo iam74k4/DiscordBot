@@ -1,4 +1,4 @@
-import { env, MONITORING } from '../../../config/index.js';
+import { MONITORING, type AppConfig } from '../../../config/index.js';
 import { logger } from '../../../shared/utils/logger.js';
 import { sendAlert } from '../../../shared/utils/alert.js';
 import { connectionManager } from '../recording/connectionManager.js';
@@ -19,13 +19,15 @@ const CRITICAL_RATIO = 0.85;
 export class MemoryMonitor {
   private interval: NodeJS.Timeout | null = null;
   private checkInProgress = false;
+  private readonly limitMB: number;
   private readonly warningThreshold: number;
   private readonly criticalThreshold: number;
   private readonly monitorInterval: number;
 
-  constructor() {
-    this.warningThreshold = Math.round(env.MEMORY_LIMIT_MB * WARNING_RATIO);
-    this.criticalThreshold = Math.round(env.MEMORY_LIMIT_MB * CRITICAL_RATIO);
+  constructor(config: Pick<AppConfig, 'MEMORY_LIMIT_MB'>) {
+    this.limitMB = config.MEMORY_LIMIT_MB;
+    this.warningThreshold = Math.round(this.limitMB * WARNING_RATIO);
+    this.criticalThreshold = Math.round(this.limitMB * CRITICAL_RATIO);
     this.monitorInterval = MONITORING.MEMORY_MONITOR_INTERVAL_MS;
   }
 
@@ -43,7 +45,7 @@ export class MemoryMonitor {
     }, this.monitorInterval);
 
     logger.info(
-      `Memory monitor started (limit ${env.MEMORY_LIMIT_MB}MB, warn at ` +
+      `Memory monitor started (limit ${this.limitMB}MB, warn at ` +
         `${this.warningThreshold}MB, shed connections at ${this.criticalThreshold}MB RSS)`
     );
   }
@@ -146,14 +148,9 @@ export class MemoryMonitor {
     return {
       memoryUsageMB: usage.rss / (1024 * 1024),
       heapUsedMB: usage.heapUsed / (1024 * 1024),
-      limitMB: env.MEMORY_LIMIT_MB,
+      limitMB: this.limitMB,
       activeConnections: connections.size,
       totalBufferSizeMB,
     };
   }
 }
-
-/**
- * Singleton instance
- */
-export const memoryMonitor = new MemoryMonitor();

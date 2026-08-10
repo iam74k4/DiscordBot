@@ -1,32 +1,32 @@
-import type { Client, MessageComponentInteraction } from 'discord.js';
-import { pollStore, restorePolls } from './poll/index.js';
-import { handleCommunityButtonInteraction } from './poll/button.js';
+import {
+  startDailyCleanup,
+  stopCleanupInterval,
+} from '../../shared/utils/cleanup.js';
+import { logger } from '../../shared/utils/logger.js';
+import { pollRepository } from './poll/index.js';
 
 export const name = 'community';
 
-/**
- * Start Community feature
- */
-export async function start(client: Client): Promise<void> {
-  await restorePolls(client);
-}
+let cleanupInterval: NodeJS.Timeout | null = null;
 
 /**
- * Claim poll vote buttons. Returns false for anything else so other features
- * still get a chance at the interaction.
+ * Discord owns polls now, so there is nothing to restore on boot - only stale
+ * pointers to polls it has already closed, which are pruned daily.
  */
-export async function handleComponent(
-  interaction: MessageComponentInteraction
-): Promise<boolean> {
-  if (!interaction.isButton()) return false;
-  return handleCommunityButtonInteraction(interaction);
+function prunePollPointers(): void {
+  const removed = pollRepository.removeExpired();
+  if (removed > 0) {
+    logger.info(`Pruned ${removed} expired poll record(s)`);
+  }
 }
 
-/**
- * Stop Community feature.
- * Clears timers and in-memory state only; stored polls are restored on the
- * next start.
- */
+export function start(): void {
+  if (cleanupInterval) return;
+  prunePollPointers();
+  cleanupInterval = startDailyCleanup(prunePollPointers);
+  logger.info('Community feature started');
+}
+
 export function stop(): void {
-  pollStore.clearAll();
+  cleanupInterval = stopCleanupInterval(cleanupInterval);
 }

@@ -14,5 +14,3 @@ export const event: Event<typeof Events.InteractionCreate> = {
     await routeInteraction(client as ExtendedClient, interaction);
   },
 };
-
-export default event;

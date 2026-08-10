@@ -27,8 +27,28 @@ async function handleView(
   await showSettingsPanel(interaction, locale, 'overview');
 }
 
-async function handleAudit(
-  interaction: ChatInputCommandInteraction
+/**
+ * Shape shared by every "point this setting at a text channel" subcommand:
+ * an empty option clears it, a set one is validated for sendability first.
+ */
+interface ChannelSetting {
+  nameKey: 'settings.audit.name' | 'settings.announcements.name';
+  configuredKey:
+    | 'settings.audit.configured'
+    | 'settings.announcements.configured';
+  disabledKey: 'settings.audit.disabled' | 'settings.announcements.disabled';
+  /** Command to suggest next, by state. */
+  nextStep: { set: string; cleared: string };
+  store: (guildId: string, channelId: string | null) => void;
+  auditLog: (channelName: string) => {
+    action: 'AUDIT_SETUP' | 'SETTINGS_CHANGE';
+    detail: string;
+  };
+}
+
+async function handleChannelSetting(
+  interaction: ChatInputCommandInteraction,
+  setting: ChannelSetting
 ): Promise<void> {
   const locale = resolveLocale(interaction);
 
@@ -46,55 +66,15 @@ async function handleAudit(
 
   const channel = interaction.options.getChannel('channel');
 
-  if (channel) {
-    const sendableChannel = await getSendableTextChannel(
-      interaction.guild,
-      channel.id
-    );
-    if (!sendableChannel) {
-      const embed = createErrorEmbed(
-        t('common.error', locale),
-        t('notification.errors.channelNotSendable', locale)
-      );
-      await interaction.reply({
-        embeds: [embed],
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
-
-    guildSettingsRepository.setAuditChannel(interaction.guild.id, channel.id);
+  if (!channel) {
+    setting.store(interaction.guild.id, null);
 
     const embed = createEmbed({
-      title: t('settings.audit.name', locale),
-      description: `${t('settings.audit.configured', locale, {
-        channel: channel.id,
-      })}\n\n${t('common.nextStep', locale)}: /admin settings logs`,
-      color: COLORS.SUCCESS,
-    });
-
-    await interaction.reply({
-      embeds: [embed],
-      flags: MessageFlags.Ephemeral,
-    });
-
-    void logAuditAction(
-      interaction.client,
-      interaction.guild.id,
-      interaction.user.id,
-      'AUDIT_SETUP',
-      channel.id,
-      `Audit channel set to: #${channel.name}`
-    );
-  } else {
-    guildSettingsRepository.setAuditChannel(interaction.guild.id, null);
-
-    const embed = createEmbed({
-      title: t('settings.audit.name', locale),
-      description: `${t('settings.audit.disabled', locale)}\n\n${t(
+      title: t(setting.nameKey, locale),
+      description: `${t(setting.disabledKey, locale)}\n\n${t(
         'common.nextStep',
         locale
-      )}: /admin settings audit`,
+      )}: ${setting.nextStep.cleared}`,
       color: COLORS.WARNING,
     });
 
@@ -102,7 +82,87 @@ async function handleAudit(
       embeds: [embed],
       flags: MessageFlags.Ephemeral,
     });
+    return;
   }
+
+  const sendableChannel = await getSendableTextChannel(
+    interaction.guild,
+    channel.id
+  );
+  if (!sendableChannel) {
+    const embed = createErrorEmbed(
+      t('common.error', locale),
+      t('notification.errors.channelNotSendable', locale)
+    );
+    await interaction.reply({
+      embeds: [embed],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  setting.store(interaction.guild.id, channel.id);
+
+  const embed = createEmbed({
+    title: t(setting.nameKey, locale),
+    description: `${t(setting.configuredKey, locale, {
+      channel: channel.id,
+    })}\n\n${t('common.nextStep', locale)}: ${setting.nextStep.set}`,
+    color: COLORS.SUCCESS,
+  });
+
+  await interaction.reply({
+    embeds: [embed],
+    flags: MessageFlags.Ephemeral,
+  });
+
+  const { action, detail } = setting.auditLog(sendableChannel.name);
+  void logAuditAction(
+    interaction.client,
+    interaction.guild.id,
+    interaction.user.id,
+    action,
+    channel.id,
+    detail
+  );
+}
+
+async function handleAudit(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  await handleChannelSetting(interaction, {
+    nameKey: 'settings.audit.name',
+    configuredKey: 'settings.audit.configured',
+    disabledKey: 'settings.audit.disabled',
+    nextStep: {
+      set: '/admin settings logs',
+      cleared: '/admin settings audit',
+    },
+    store: guildSettingsRepository.setAuditChannel,
+    auditLog: (channelName) => ({
+      action: 'AUDIT_SETUP',
+      detail: `Audit channel set to: #${channelName}`,
+    }),
+  });
+}
+
+async function handleAnnouncements(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  await handleChannelSetting(interaction, {
+    nameKey: 'settings.announcements.name',
+    configuredKey: 'settings.announcements.configured',
+    disabledKey: 'settings.announcements.disabled',
+    nextStep: {
+      set: '/admin settings view',
+      cleared: '/admin settings announcements',
+    },
+    store: guildSettingsRepository.setAnnouncementChannel,
+    auditLog: (channelName) => ({
+      action: 'SETTINGS_CHANGE',
+      detail: `Announcement channel set to: #${channelName}`,
+    }),
+  });
 }
 
 async function handleLogs(
@@ -196,6 +256,9 @@ export async function executeSettingsCommand(
       break;
     case 'audit':
       await handleAudit(interaction);
+      break;
+    case 'announcements':
+      await handleAnnouncements(interaction);
       break;
     case 'logs':
       await handleLogs(interaction);

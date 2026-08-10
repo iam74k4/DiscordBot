@@ -115,6 +115,30 @@ describe('dependency direction', () => {
   });
 });
 
+describe('composition root', () => {
+  it('is the only place the entry point gets the bot from', () => {
+    const entry = collectSourceFiles(SRC).filter(
+      (file) => file.path === 'index.ts'
+    );
+
+    expect(entry).toHaveLength(1);
+
+    // src/index.ts owns the process - config, signals, crash reporting - and
+    // nothing else. Assembling the bot belongs to app/composition.ts, which is
+    // where the order is stated and tested.
+    const found = violations(
+      entry,
+      (resolved) =>
+        resolved.startsWith('features/') ||
+        resolved.startsWith('infrastructure/') ||
+        resolved.startsWith('middleware/') ||
+        resolved.startsWith('handlers/')
+    );
+
+    expect(found).toEqual([]);
+  });
+});
+
 describe('layer discipline inside a feature', () => {
   it('commands delegate instead of reaching for persistence', () => {
     const commandFiles = importsFrom('features').filter((file) =>

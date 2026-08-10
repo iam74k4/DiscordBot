@@ -26,35 +26,35 @@ The bot stores SQLite data under `/app/data`, and the same volume may also conta
 
 In Railway dashboard, add the following variables:
 
-| Variable                        | Description                                                                      | Required          |
-| ------------------------------- | -------------------------------------------------------------------------------- | ----------------- |
-| `DISCORD_TOKEN`                 | Discord bot token                                                                | Yes               |
-| `DISCORD_CLIENT_ID`             | Discord application client ID                                                    | Yes               |
-| `BOT_OWNER_IDS`                 | Bot owner Discord IDs (comma-separated); **required when `NODE_ENV=production`** | Yes in production |
-| `DISCORD_GUILD_ID`              | Development guild for faster slash command updates                               | No                |
-| `NODE_ENV`                      | Set to `production`                                                              | No                |
-| `TZ`                            | Timezone used by cron jobs and timestamps                                        | No                |
-| `MAX_RECORDING_DURATION`        | Max recording time in seconds (default: 300)                                     | No                |
-| `AUDIO_BUFFER_DURATION`         | In-memory ring buffer length in seconds (default: 300, ~0.27MB/s per channel)    | No                |
-| `MEMORY_LIMIT_MB`               | Memory budget in MB (default: 512); warns at 70% RSS, sheds connections at 85%   | No                |
-| `MAX_CONCURRENT_VC_CONNECTIONS` | Max concurrent VC connections (default: 5)                                       | No                |
-| `RECORDING_RETENTION_HOURS`     | Hours to keep generated recording files (default: 24)                            | No                |
-| `VOICE_SESSION_RETENTION_DAYS`  | Days to keep completed VC session records (default: 30)                          | No                |
-| `AUDIT_LOG_RETENTION_DAYS`      | Days to keep audit logs (default: 90)                                            | No                |
-| `BACKUP_RETENTION_DAYS`         | Days to keep backups (default: 7)                                                | No                |
-| `BACKUP_CRON`                   | Backup schedule cron expression (default: `0 4 * * *`)                           | No                |
-| `SHUTDOWN_FINAL_BACKUP`         | Run final backup before shutdown (default: true)                                 | No                |
-| `SHUTDOWN_TIMEOUT_MS`           | Shutdown timeout in ms (default: 10000, range: 5000–120000)                      | No                |
-| `ALERT_WEBHOOK_URL`             | Discord webhook URL for alerts (`https://` only)                                 | No                |
-| `LOG_LEVEL`                     | Log level: debug, info, warn, error                                              | No                |
-| `DATA_DIR`                      | Base directory for persisted runtime data (must stay relative to repo root)      | No                |
-| `DATABASE_PATH`                 | SQLite database path (must stay relative to repo root)                           | No                |
-| `RECORDINGS_DIR`                | Generated recording files directory (must stay relative to repo root)            | No                |
-| `BACKUP_DIR`                    | Backup output directory (must stay relative to repo root)                        | No                |
+| Variable                        | Description                                                                               | Required          |
+| ------------------------------- | ----------------------------------------------------------------------------------------- | ----------------- |
+| `DISCORD_TOKEN`                 | Discord bot token                                                                         | Yes               |
+| `DISCORD_CLIENT_ID`             | Discord application client ID                                                             | Yes               |
+| `BOT_OWNER_IDS`                 | Bot owner Discord IDs (comma-separated); **required when `NODE_ENV=production`**          | Yes in production |
+| `DISCORD_GUILD_ID`              | Development guild for faster slash command updates                                        | No                |
+| `NODE_ENV`                      | Set to `production`                                                                       | No                |
+| `TZ`                            | Timezone used by cron jobs and timestamps                                                 | No                |
+| `MAX_RECORDING_DURATION`        | Max recording time in seconds (default: 300)                                              | No                |
+| `AUDIO_BUFFER_DURATION`         | In-memory ring buffer length in seconds (default: 300, ~0.27MB/s per channel)             | No                |
+| `MEMORY_LIMIT_MB`               | Memory budget in MB (default: 512); warns at 70% RSS, sheds connections at 85%            | No                |
+| `MAX_CONCURRENT_VC_CONNECTIONS` | Max concurrent VC connections (default: 5)                                                | No                |
+| `RECORDING_RETENTION_HOURS`     | Hours to keep generated recording files (default: 24)                                     | No                |
+| `VOICE_SESSION_RETENTION_DAYS`  | Days to keep raw VC session rows (default: 30); stats totals survive via the daily rollup | No                |
+| `AUDIT_LOG_RETENTION_DAYS`      | Days to keep audit logs (default: 90)                                                     | No                |
+| `BACKUP_RETENTION_DAYS`         | Days to keep backups (default: 7)                                                         | No                |
+| `BACKUP_CRON`                   | Backup schedule cron expression (default: `0 4 * * *`)                                    | No                |
+| `SHUTDOWN_FINAL_BACKUP`         | Run final backup before shutdown (default: true)                                          | No                |
+| `SHUTDOWN_TIMEOUT_MS`           | Shutdown timeout in ms (default: 10000, range: 5000–120000)                               | No                |
+| `ALERT_WEBHOOK_URL`             | Discord webhook URL for alerts (`https://` only)                                          | No                |
+| `LOG_LEVEL`                     | Log level: debug, info, warn, error                                                       | No                |
+| `DATA_DIR`                      | Base directory for persisted runtime data (must stay relative to repo root)               | No                |
+| `DATABASE_PATH`                 | SQLite database path (must stay relative to repo root)                                    | No                |
+| `RECORDINGS_DIR`                | Generated recording files directory (must stay relative to repo root)                     | No                |
+| `BACKUP_DIR`                    | Backup output directory (must stay relative to repo root)                                 | No                |
 
 If you enable voice recording in production, remember that `/voice record` now requires `Manage Server`, and generated files are delivered ephemerally and cleaned up automatically according to `RECORDING_RETENTION_HOURS`.
 
-Size the instance from `AUDIO_BUFFER_DURATION × 0.27MB × MAX_CONCURRENT_VC_CONNECTIONS` — about 410MB at the defaults — plus the bot's baseline, and set `MEMORY_LIMIT_MB` to the memory the host actually grants. Servers that do not want the bot buffering their voice channels can turn it off per guild or per channel with `/voice autojoin`.
+Size the instance from `AUDIO_BUFFER_DURATION × 0.27MB × MAX_CONCURRENT_VC_CONNECTIONS` — about 410MB at the defaults — plus the bot's baseline, and set `MEMORY_LIMIT_MB` to the memory the host actually grants. That is the worst case, not the steady state: a channel's buffer is allocated on its first decoded audio chunk, so idle connections cost nothing. Servers that do not want the bot buffering their voice channels can turn it off per guild or per channel with `/voice autojoin`.
 
 ### 4. Choose how production deploys run
 

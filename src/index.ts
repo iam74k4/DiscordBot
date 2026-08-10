@@ -1,33 +1,21 @@
-import { once } from 'node:events';
-import { Events } from 'discord.js';
-import { createClient } from './client.js';
-import { env, loadConfig } from './config/index.js';
-import { loadCommands } from './handlers/commandHandler.js';
-import { loadEvents } from './handlers/eventHandler.js';
+import { createApp, type App } from './app/composition.js';
+import { loadConfig } from './config/index.js';
 import { getErrorMessage, logger } from './shared/utils/logger.js';
 import { sendAlert } from './shared/utils/alert.js';
-import {
-  loadFeatures,
-  startAllFeatures,
-  stopAllFeatures,
-} from './features/index.js';
-import {
-  closeDatabase,
-  initializeDatabase,
-} from './infrastructure/database/index.js';
-import { backupService } from './infrastructure/backup/index.js';
-import {
-  startAuditRetention,
-  stopAuditRetention,
-} from './infrastructure/audit/index.js';
-import { cooldownStore } from './middleware/cooldown/cooldownStore.js';
-import type { ExtendedClient } from './client.js';
 
+/**
+ * Process entry point.
+ *
+ * Owns only what belongs to the process itself - reading configuration,
+ * signals, and last-resort error reporting. What the bot is made of, and the
+ * order it is assembled and torn down in, lives in the composition root.
+ */
 let isShuttingDown = false;
 
 async function gracefulShutdown(
-  client: ExtendedClient,
-  signal: string
+  app: App,
+  signal: string,
+  shutdownTimeoutMs: number
 ): Promise<void> {
   if (isShuttingDown) {
     logger.warn(`Shutdown already in progress, ignoring ${signal}`);
@@ -40,121 +28,68 @@ async function gracefulShutdown(
   const forceExitTimer = setTimeout(() => {
     logger.error('Shutdown timed out, forcing exit');
     process.exit(1);
-  }, env.SHUTDOWN_TIMEOUT_MS);
+  }, shutdownTimeoutMs);
   forceExitTimer.unref();
 
-  const steps: [string, () => void | Promise<void>][] = [];
-
-  if (env.SHUTDOWN_FINAL_BACKUP) {
-    steps.push([
-      'Final backup',
-      async () => {
-        const result = await backupService.runBackup();
-        if (!result.success) {
-          logger.warn(`Final backup failed: ${result.error ?? 'Unknown'}`);
-        }
-      },
-    ]);
-  }
-
-  steps.push(
-    ['Backup service', () => backupService.stop()],
-    ['Audit retention', () => stopAuditRetention()],
-    ['Features', () => stopAllFeatures()],
-    ['Cooldown store', () => cooldownStore.clearAll()],
-    ['Database', () => closeDatabase()],
-    ['Discord client', () => client.destroy()]
-  );
-
-  for (const [name, fn] of steps) {
-    try {
-      logger.debug(`Stopping ${name}...`);
-      await fn();
-    } catch (error) {
-      logger.error(`Failed to stop ${name}:`, getErrorMessage(error));
-    }
-  }
+  await app.stop();
 
   clearTimeout(forceExitTimer);
   logger.info('Graceful shutdown complete');
   process.exit(0);
 }
 
-async function main(): Promise<void> {
-  // Read and validate configuration before anything else can observe it.
-  loadConfig();
+function reportAlert(title: string, message: string, stack?: string): void {
+  sendAlert(
+    title,
+    message,
+    stack ? [{ name: 'Stack', value: stack.slice(0, 1000) }] : undefined
+  ).catch((error: unknown) => {
+    logger.error(`Failed to send alert for ${title}:`, getErrorMessage(error));
+  });
+}
 
-  logger.info('Starting Discord bot...');
-
-  await initializeDatabase();
-
-  const client = createClient();
-
-  process.on('SIGINT', () => gracefulShutdown(client, 'SIGINT'));
-  process.on('SIGTERM', () => gracefulShutdown(client, 'SIGTERM'));
-  process.on('SIGHUP', () => gracefulShutdown(client, 'SIGHUP'));
+function installProcessHandlers(app: App, shutdownTimeoutMs: number): void {
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) {
+    process.on(signal, () => gracefulShutdown(app, signal, shutdownTimeoutMs));
+  }
 
   process.on('unhandledRejection', (reason, promise) => {
     logger.error('Unhandled Promise Rejection at:', promise, 'reason:', reason);
-    const message = getErrorMessage(reason ?? 'Unknown');
-    const stack =
-      reason instanceof Error && reason.stack
-        ? reason.stack.slice(0, 1000)
-        : 'N/A';
-    sendAlert('Unhandled Promise Rejection', message, [
-      { name: 'Stack', value: stack },
-    ]).catch((err) => {
-      logger.error(
-        'Failed to send alert for unhandledRejection:',
-        getErrorMessage(err)
-      );
-    });
+    reportAlert(
+      'Unhandled Promise Rejection',
+      getErrorMessage(reason ?? 'Unknown'),
+      reason instanceof Error ? reason.stack : undefined
+    );
   });
 
   process.on('uncaughtException', (error) => {
     logger.error('Uncaught Exception:', error);
-    sendAlert(
-      'Uncaught Exception',
-      getErrorMessage(error),
-      error instanceof Error && error.stack
-        ? [{ name: 'Stack', value: error.stack.slice(0, 1000) }]
-        : undefined
-    ).catch((err) => {
-      logger.error(
-        'Failed to send alert for uncaughtException:',
-        getErrorMessage(err)
-      );
-    });
-    void gracefulShutdown(client, 'uncaughtException').catch((e) => {
-      logger.error('Shutdown failed after uncaughtException:', e);
-      process.exit(1);
-    });
+    reportAlert('Uncaught Exception', getErrorMessage(error), error.stack);
+
+    void gracefulShutdown(app, 'uncaughtException', shutdownTimeoutMs).catch(
+      (e: unknown) => {
+        logger.error('Shutdown failed after uncaughtException:', e);
+        process.exit(1);
+      }
+    );
   });
 
-  client.on('error', (error) => {
+  app.client.on('error', (error) => {
     logger.error('Discord client error:', error);
-    sendAlert('Discord Client Error', getErrorMessage(error)).catch((err) => {
-      logger.error(
-        'Failed to send alert for Discord client error:',
-        getErrorMessage(err)
-      );
-    });
+    reportAlert('Discord Client Error', getErrorMessage(error));
   });
+}
 
-  await loadFeatures();
-  await loadCommands(client);
-  await loadEvents(client);
+async function main(): Promise<void> {
+  // Read and validate configuration before anything else can observe it.
+  const config = loadConfig();
 
-  await client.login(env.DISCORD_TOKEN);
+  logger.info('Starting Discord bot...');
 
-  if (!client.isReady()) {
-    await once(client, Events.ClientReady);
-  }
+  const app = createApp(config);
+  installProcessHandlers(app, config.SHUTDOWN_TIMEOUT_MS);
 
-  await startAllFeatures(client);
-
-  backupService.start();
-  startAuditRetention();
+  await app.start();
 
   logger.info('Discord bot started successfully');
 }
