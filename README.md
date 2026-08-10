@@ -216,8 +216,9 @@ Only users listed in `BOT_OWNER_IDS` can run these commands (can be used in DMs 
   `/voice autojoin exclude <channel>` (one channel). Both also drop any
   connection already buffering
 - In-memory ring buffer of `AUDIO_BUFFER_DURATION` seconds (default: 300 = 5
-  minutes), about **82MB per connected voice channel**. Multiply by
-  `MAX_CONCURRENT_VC_CONNECTIONS` when sizing your host
+  minutes), about **82MB per voice channel**, allocated the first time someone
+  actually speaks — a channel the bot sits in silently costs nothing. Multiply
+  by `MAX_CONCURRENT_VC_CONNECTIONS` for the worst case when sizing your host
 - WAV format output at 48kHz/16bit/mono (~27.5MB for 5 minutes)
 - Private delivery: Recording responses and files are sent ephemerally
 - Automatic file cleanup after `RECORDING_RETENTION_HOURS` (default: 24 hours)
@@ -233,8 +234,10 @@ Only users listed in `BOT_OWNER_IDS` can run these commands (can be used in DMs 
 
 ### Memory
 
-Each connected voice channel holds its ring buffer in memory: roughly
-`AUDIO_BUFFER_DURATION × 0.27 MB` (about 82MB at the 300s default). With
+A voice channel holds a ring buffer in memory once it has carried audio:
+roughly `AUDIO_BUFFER_DURATION × 0.27 MB` (about 82MB at the 300s default).
+The buffer is allocated on the first decoded chunk, so connections that never
+hear anything stay free, and it is released on disconnect. With
 `MAX_CONCURRENT_VC_CONNECTIONS=5` the worst case is about 410MB on top of the
 bot's baseline, so `MEMORY_LIMIT_MB` (default 512) should match what your host
 actually grants the container.

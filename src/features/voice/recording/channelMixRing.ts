@@ -29,28 +29,24 @@ export class ChannelMixRing {
    * untouched (weeks at any sane buffer length).
    */
   private readonly slotGeneration: Uint16Array;
-  private epochMs: number;
+  /**
+   * Start of this ring's timeline. Fixed at construction: a ring lives for one
+   * voice session, so there is never a reason to move it. Anything before the
+   * epoch reads as silence.
+   */
+  private readonly epochMs: number;
 
-  constructor(bufferDurationSeconds: number) {
+  constructor(bufferDurationSeconds: number, epochMs: number = Date.now()) {
     this.sizeSamples = Math.ceil(SAMPLE_RATE * bufferDurationSeconds);
     this.mix = new Int32Array(this.sizeSamples);
     this.slotGeneration = new Uint16Array(this.sizeSamples);
-    this.epochMs = Date.now();
+    this.epochMs = epochMs;
   }
 
   /** Lap marker for a global sample index (never 0, which means "empty"). */
   private generationOf(globalIndex: number): number {
     const lap = Math.floor(globalIndex / this.sizeSamples);
     return (lap % GENERATION_MODULUS) + 1;
-  }
-
-  /**
-   * Reset timeline (e.g. new VC session). Clears accumulated mix state.
-   */
-  setEpoch(ms: number): void {
-    this.epochMs = ms;
-    this.mix.fill(0);
-    this.slotGeneration.fill(0);
   }
 
   /**
@@ -133,7 +129,11 @@ export class ChannelMixRingManager {
   private readonly rings = new Map<string, ChannelMixRing>();
 
   /**
-   * Create or return existing ring for a channel. Does not reset epoch.
+   * Return this channel's ring, allocating it on first use.
+   *
+   * Allocation is the expensive step (~0.27 MB per buffered second), so
+   * callers are expected to reach here only when there is audio to store —
+   * an idle voice channel then holds no buffer at all.
    */
   getOrCreate(channelId: string): ChannelMixRing {
     let ring = this.rings.get(channelId);

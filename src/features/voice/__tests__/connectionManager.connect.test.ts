@@ -46,7 +46,7 @@ vi.mock('../../../config/index.js', () => ({
 
 vi.mock('../recording/channelMixRing.js', () => ({
   channelMixRingManager: {
-    getOrCreate: vi.fn(() => ({ setEpoch: vi.fn() })),
+    getOrCreate: vi.fn(() => ({ addMonoPcmInt16: vi.fn() })),
     remove: vi.fn(),
   },
 }));
@@ -186,11 +186,26 @@ describe('VoiceConnectionManager.connect concurrency', () => {
     await manager.connect(guild as never, channel as never);
     expect(manager.getConnection('ch-replace')?.connection).toBe(connB);
 
+    const removesBeforeStaleCleanup = vi.mocked(channelMixRingManager.remove)
+      .mock.calls.length;
+
     rejectRecovery(new Error('recovery timed out'));
     await staleCleanup;
 
     expect(manager.getConnection('ch-replace')?.connection).toBe(connB);
-    expect(channelMixRingManager.remove).toHaveBeenCalledTimes(1);
+    // The stale handler must not drop the replacement session's mix ring.
+    expect(channelMixRingManager.remove).toHaveBeenCalledTimes(
+      removesBeforeStaleCleanup
+    );
     expect(connB.destroy).not.toHaveBeenCalled();
+  });
+
+  it('allocates no mix ring for a channel nobody speaks in', async () => {
+    const manager = new VoiceConnectionManager();
+    const channel = makeChannel('ch-quiet');
+
+    await manager.connect(makeGuild(channel) as never, channel as never);
+
+    expect(channelMixRingManager.getOrCreate).not.toHaveBeenCalled();
   });
 });
