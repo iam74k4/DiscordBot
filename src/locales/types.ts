@@ -360,6 +360,8 @@ export interface TranslationKeys {
     events: {
       voiceJoin: string;
       voiceLeave: string;
+      voiceMove: string;
+      voiceDigestTitle: string;
       memberJoinTitle: string;
       memberJoin: string;
       memberCount: string;

@@ -323,6 +323,8 @@ export const en: TranslationKeys = {
     events: {
       voiceJoin: '**{name}** joined <#{channel}>',
       voiceLeave: '**{name}** left <#{channel}>',
+      voiceMove: '**{name}** moved from <#{from}> to <#{to}>',
+      voiceDigestTitle: 'Voice channel activity',
       memberJoinTitle: 'Welcome!',
       memberJoin: '**{name}** joined the server!',
       memberCount: 'Member Count',

@@ -140,6 +140,12 @@ npm start
 | `/notification status`                | Show current notification settings     |
 | `/notification stats [period]`        | Show your VC time statistics           |
 
+VC notifications are throttled: the first change is posted right away, then
+anything happening in the next 30 seconds is collapsed into one summary. A
+channel filling up costs two messages instead of ten, moving between channels
+reads as a single line, and someone who drops in and out inside the window is
+not announced at all.
+
 ### Admin (`/admin`)
 
 Requires **Manage Server** in the guild (slash command default permission).

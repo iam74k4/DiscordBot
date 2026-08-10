@@ -317,6 +317,8 @@ export const ja: TranslationKeys = {
     events: {
       voiceJoin: '**{name}** が <#{channel}> に参加しました',
       voiceLeave: '**{name}** が <#{channel}> から退出しました',
+      voiceMove: '**{name}** が <#{from}> から <#{to}> に移動しました',
+      voiceDigestTitle: 'ボイスチャンネルの動き',
       memberJoinTitle: 'ようこそ！',
       memberJoin: '**{name}** がサーバーに参加しました！',
       memberCount: 'メンバー数',

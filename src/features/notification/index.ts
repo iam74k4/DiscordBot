@@ -7,6 +7,7 @@ import {
   startDailyCleanup,
   stopCleanupInterval,
 } from '../../shared/utils/cleanup.js';
+import { resetVoiceDigests } from './events/voiceNotification.js';
 
 export const name = 'notification';
 let cleanupInterval: NodeJS.Timeout | null = null;
@@ -32,5 +33,6 @@ export function start(client: Client): void {
 
 export function stop(): void {
   voiceTracker.endAllSessions();
+  resetVoiceDigests();
   cleanupInterval = stopCleanupInterval(cleanupInterval);
 }
