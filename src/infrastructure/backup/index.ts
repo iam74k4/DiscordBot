@@ -37,16 +37,31 @@ export interface BackupInfo {
  */
 class BackupService {
   private task: cron.ScheduledTask | null = null;
-  private backupDir: string;
+  private backupDirValue: string | null = null;
   private storage: IBackupStorage;
-  private initialized: Promise<void>;
+  private initialized: Promise<void> | null = null;
   /** Serialize backups so cron + manual cannot share a path mid-write. */
   private backupChain: Promise<void> = Promise.resolve();
 
   constructor() {
-    this.backupDir = env.BACKUP_DIR;
     this.storage = createBackupStorage();
-    this.initialized = this.ensureBackupDir();
+  }
+
+  /**
+   * Read config and create the directory on first use, never on import.
+   *
+   * The constructor used to do both, which meant importing this module read
+   * the environment and made a directory on disk - including in any test that
+   * merely touched the admin panel.
+   */
+  private get backupDir(): string {
+    this.backupDirValue ??= env.BACKUP_DIR;
+    return this.backupDirValue;
+  }
+
+  private ensureInitialized(): Promise<void> {
+    this.initialized ??= this.ensureBackupDir();
+    return this.initialized;
   }
 
   /**
@@ -83,7 +98,7 @@ class BackupService {
   }
 
   private async runBackupExclusive(): Promise<BackupResult> {
-    await this.initialized;
+    await this.ensureInitialized();
     const filename = this.generateFilename();
     const backupPath = path.join(this.backupDir, filename);
 

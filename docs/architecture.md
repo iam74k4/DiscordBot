@@ -8,9 +8,10 @@ The project uses feature-based architecture. Each feature owns its command entry
 .
 ├── scripts/                 # Repo workflow shell scripts
 └── src/
-    ├── index.ts             # App bootstrap and graceful shutdown
+    ├── index.ts             # Process entry point: config, signals, crash reporting
     ├── client.ts            # Discord client configuration
     ├── app/
+    │   ├── composition.ts   # Composition root: what the bot is made of, and in what order
     │   └── interactions/
     │       ├── commandRegistry.ts   # Feature command discovery + deployment payload
     │       └── interactionRouter.ts # Chat input / autocomplete / button routing
@@ -20,7 +21,7 @@ The project uses feature-based architecture. Each feature owns its command entry
     │   ├── constants.ts     # Internal constants (AUDIO, MONITORING, BOT_INFO)
     │   └── index.ts
     ├── features/
-    │   ├── index.ts         # Feature auto-discovery, startAllFeatures/stopAllFeatures
+    │   ├── index.ts         # Feature auto-discovery, FeatureContext, startAllFeatures/stopAllFeatures
     │   ├── __tests__/       # Feature registry tests
     │   ├── voice/
     │   │   ├── index.ts     # Feature lifecycle (name, start, stop)
@@ -126,6 +127,8 @@ The project uses feature-based architecture. Each feature owns its command entry
 - Features never import each other. Anything two features need belongs in `infrastructure/` or `shared/`.
 - `src/infrastructure/` is reserved for truly shared runtime infrastructure, not feature-owned business logic. State that several features read - such as `guild_settings` - is owned here, not by whichever feature happens to provide its UI.
 - `src/shared/` contains cross-feature utilities, types, and shared registries such as the help catalog.
+- Feature lifecycle hooks take a `FeatureContext` (`{ client, config }`). A feature must not import `env` to start itself.
+- Nothing is constructed at import time. A module that needs configuration reads it when it is used or when its owner builds it.
 - These rules are enforced by `src/__tests__/architecture.test.ts`, not just documented.
 
 ## Layer Architecture
@@ -188,28 +191,61 @@ flowchart LR
 - Middleware tests under `middleware/__tests__/` and `middleware/cooldown/__tests__/`.
 - Infrastructure tests under `infrastructure/<service>/__tests__/`.
 
+## Composition Root
+
+`src/app/composition.ts` is the single place the running bot is assembled.
+`createApp(config, deps)` builds the object graph and returns `start()` and
+`stop()`; `src/index.ts` keeps only what belongs to the process — reading
+configuration, signal handlers, and last-resort crash reporting. A test
+enforces that split (`src/__tests__/architecture.test.ts`).
+
+`deps` defaults to the real collaborators and can be replaced wholesale, so
+`src/app/__tests__/composition.test.ts` drives the real startup and shutdown
+sequence with fakes instead of mocking module paths. Order is a correctness
+property here — the database opens before anything queries it, features start
+only after the gateway is ready, and the final backup runs while the
+connection is still open — so it is asserted, not assumed.
+
+Features are started with a `FeatureContext` (`{ client, config }`) rather
+than importing `env` for themselves, and nothing is constructed at import
+time: the voice jobs are built from the config their feature is handed, and
+services that must stay module-level (`backupService`,
+`connectionManager`) read configuration on first use.
+
+**What is deliberately not injected:** `config` and the database connection.
+Both are process-wide resources with an explicit lifecycle (`loadConfig`,
+`closeDatabase`), and their consumers are reached through Discord interaction
+handlers whose signature the library fixes. Threading them down would mean a
+module-level context holder set during startup — the same global with extra
+steps and a temporal coupling on top. Tests override both by mocking
+`config/index.js` and `database/connection.js`.
+
 ## Lifecycle
 
 Startup and shutdown flow:
 
 ```mermaid
 flowchart TD
-  main["src/index.ts"] --> initDb["initializeDatabase()"]
+  main["src/index.ts (config, signals)"] --> createApp["createApp(config)"]
+  createApp --> initDb["initializeDatabase()"]
   initDb --> loadFeatures["loadFeatures()"]
   loadFeatures --> loadDiscord["loadCommands() + loadEvents()"]
   loadDiscord --> login["client.login()"]
   login --> ready["ClientReady event"]
-  ready --> featureRegistry["src/features/index.ts"]
-  featureRegistry --> featureStart["startAllFeatures(client)"]
-  featureStart --> backupStart["backupService.start()"]
+  ready --> featureStart["startAllFeatures({ client, config })"]
+  featureStart --> backupStart["backupService.start() + startAuditRetention()"]
   backupStart --> running["bot running"]
-  running --> shutdown["gracefulShutdown()"]
+  running --> shutdown["app.stop()"]
   shutdown --> finalBackup["runBackup() (if SHUTDOWN_FINAL_BACKUP)"]
-  finalBackup --> backupStop["backupService.stop()"]
+  finalBackup --> backupStop["backupService.stop() + stopAuditRetention()"]
   backupStop --> featureStop["stopAllFeatures() in reverse order"]
-  featureStop --> closeDb["closeDatabase()"]
+  featureStop --> cooldowns["cooldownStore.clearAll()"]
+  cooldowns --> closeDb["closeDatabase()"]
   closeDb --> destroyClient["client.destroy()"]
 ```
+
+Every shutdown step runs even if an earlier one throws, so a feature that
+hangs cannot leave the database open.
 
 ## Scripts
 

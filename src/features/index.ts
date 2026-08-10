@@ -1,4 +1,5 @@
-import type { Client } from 'discord.js';
+import type { AppConfig } from '../config/index.js';
+import type { ExtendedClient } from '../client.js';
 import { readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -8,9 +9,20 @@ import { setServiceStatus } from '../infrastructure/health/index.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+/**
+ * What the composition root hands a feature when it starts it.
+ *
+ * Features used to import `env` for themselves, which made their startup
+ * depend on ambient configuration rather than on what they were given.
+ */
+export interface FeatureContext {
+  client: ExtendedClient;
+  config: AppConfig;
+}
+
 export interface FeatureModule {
   name: string;
-  start(client: Client): void | Promise<void>;
+  start(context: FeatureContext): void | Promise<void>;
   stop(): void | Promise<void>;
 }
 
@@ -77,11 +89,11 @@ export function getFeatureModules(): readonly FeatureModule[] {
  * Start all features with per-feature error isolation.
  * A failing feature does not prevent other features from starting.
  */
-export async function startAllFeatures(client: Client): Promise<void> {
+export async function startAllFeatures(context: FeatureContext): Promise<void> {
   for (const feature of featureModules) {
     try {
       logger.debug(`Starting feature: ${feature.name}`);
-      await feature.start(client);
+      await feature.start(context);
       setServiceStatus(`feature:${feature.name}`, true);
     } catch (error) {
       logger.error(

@@ -19,11 +19,11 @@ src/features/myfeature/
 2. Export the required interface from `index.ts`:
 
 ```typescript
-import type { Client } from 'discord.js';
+import type { FeatureContext } from '../index.js';
 
 export const name = 'myfeature';
 
-export function start(client: Client): void {
+export function start({ client, config }: FeatureContext): void {
   // Startup logic (e.g., register event listeners)
 }
 
@@ -31,6 +31,11 @@ export function stop(): void {
   // Cleanup logic
 }
 ```
+
+The composition root hands you `client` and the validated `config`; do not
+import `env` to start a feature, and do not construct anything at import time.
+A feature that needs a long-lived object should build it in `start` and drop it
+in `stop`, the way `voice` does with its jobs.
 
 3. **No manual registration** — features are discovered by scanning subdirectories of `src/features/`. Each feature must export `{ name, start, stop }` from its `index.ts`.
 

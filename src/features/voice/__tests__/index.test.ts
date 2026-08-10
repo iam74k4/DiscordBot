@@ -10,16 +10,16 @@ const setServiceStatus = vi.fn();
 const reconcileOccupiedVoiceChannels = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('../jobs/memoryMonitor.js', () => ({
-  memoryMonitor: {
-    start: memoryMonitorStart,
-    stop: memoryMonitorStop,
+  MemoryMonitor: class {
+    start = memoryMonitorStart;
+    stop = memoryMonitorStop;
   },
 }));
 
 vi.mock('../jobs/fileCleanup.js', () => ({
-  fileCleanupService: {
-    start: fileCleanupStart,
-    stop: fileCleanupStop,
+  FileCleanupService: class {
+    start = fileCleanupStart;
+    stop = fileCleanupStop;
   },
 }));
 
@@ -49,10 +49,11 @@ describe('voice feature lifecycle', () => {
   it('restarts voice jobs after stop and start and reconciles occupied channels', async () => {
     const { start, stop } = await import('../index.js');
     const client = {} as never;
+    const context = { client, config: {} } as never;
 
-    await start(client);
+    await start(context);
     await stop();
-    await start(client);
+    await start(context);
 
     expect(memoryMonitorStart).toHaveBeenCalledTimes(2);
     expect(memoryMonitorStop).toHaveBeenCalledTimes(1);

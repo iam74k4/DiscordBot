@@ -39,10 +39,12 @@ export class VoiceConnectionManager {
    * live VoiceConnection under a different channelId (mix-ring cross-talk).
    */
   private readonly connectingGuilds = new Map<string, string>();
-  private readonly maxConnections: number;
+  private maxConnectionsValue: number | null = null;
 
-  constructor() {
-    this.maxConnections = env.MAX_CONCURRENT_VC_CONNECTIONS;
+  /** Read on use, not on import: constructing this must not touch config. */
+  private get maxConnections(): number {
+    this.maxConnectionsValue ??= env.MAX_CONCURRENT_VC_CONNECTIONS;
+    return this.maxConnectionsValue;
   }
 
   /**
