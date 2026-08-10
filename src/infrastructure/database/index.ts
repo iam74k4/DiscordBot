@@ -1,3 +1,2 @@
-export { database, closeDatabase, getTableCount } from './connection.js';
-export { runTransaction } from './transaction.js';
+export { closeDatabase } from './connection.js';
 export { initializeDatabase } from './migrations/index.js';

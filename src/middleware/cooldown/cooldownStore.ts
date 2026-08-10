@@ -82,10 +82,6 @@ class CooldownStore {
     }
   }
 
-  clearCommandCooldowns(commandName: string): void {
-    this.cooldowns.delete(commandName);
-  }
-
   clearAll(): void {
     for (const timer of this.timers.values()) {
       clearTimeout(timer);

@@ -272,5 +272,3 @@ export function resetVoiceDigests(): void {
   }
   windows.clear();
 }
-
-export default event;

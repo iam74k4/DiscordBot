@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MessageFlags } from 'discord.js';
-import { createMockInteraction } from '../setup.js';
+import { createMockInteraction } from '../../helpers/discord.js';
 
 vi.mock('../../../infrastructure/database/connection.js', () => ({
   database: {

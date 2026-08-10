@@ -16,11 +16,6 @@ vi.mock('../cooldown/cooldownStore.js', () => {
       clearCooldown: vi.fn((cmd: string, uid: string) => {
         cooldowns.delete(`${cmd}:${uid}`);
       }),
-      clearCommandCooldowns: vi.fn((cmd: string) => {
-        for (const key of cooldowns.keys()) {
-          if (key.startsWith(`${cmd}:`)) cooldowns.delete(key);
-        }
-      }),
       _reset: () => {
         cooldowns = new Map();
       },
@@ -31,7 +26,6 @@ vi.mock('../cooldown/cooldownStore.js', () => {
 import {
   cooldownMiddleware,
   clearCooldown,
-  clearCommandCooldowns,
 } from '../cooldown/cooldownMiddleware.js';
 import { cooldownStore } from '../cooldown/index.js';
 import { Command } from '../../shared/types/index.js';
@@ -121,12 +115,5 @@ describe('clearCooldown', () => {
       'test',
       'user-123'
     );
-  });
-});
-
-describe('clearCommandCooldowns', () => {
-  it('should call cooldownStore.clearCommandCooldowns', () => {
-    clearCommandCooldowns('test');
-    expect(cooldownStore.clearCommandCooldowns).toHaveBeenCalledWith('test');
   });
 });

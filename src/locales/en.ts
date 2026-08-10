@@ -7,12 +7,8 @@ export const en: TranslationKeys = {
   common: {
     error: 'Error',
     warning: 'Warning',
-    success: 'Success',
-    loading: 'Loading...',
-    notFound: 'Not Found',
     guildOnly: 'This command can only be used in a server.',
     noPermission: 'You do not have permission to use this command.',
-    status: 'Status',
     noData: 'No data',
     unexpectedError:
       'An unexpected error occurred while executing this command.',
@@ -23,22 +19,12 @@ export const en: TranslationKeys = {
     confirm: 'Confirm',
     cancel: 'Cancel',
     confirmMessage: 'Are you sure you want to proceed?',
-    timeout: 'This interaction has timed out.',
     cancelled: 'Action cancelled.',
     nextStep: 'Next step',
   },
 
-  units: {
-    hours: 'hours',
-    hoursPerPlayer: 'hours/player',
-    perDay: 'day',
-    minutes: 'min',
-    hoursAndMinutes: '{hours}h {minutes}m',
-  },
-
   settings: {
     title: 'Server Settings',
-    updated: 'Settings Updated',
     language: {
       name: 'Language',
       changed: 'Language changed to {language}',
@@ -64,11 +50,6 @@ export const en: TranslationKeys = {
       noLogs: 'No audit logs found for this server.',
       showing: 'Showing {count} of {total} logs',
     },
-    view: {
-      footer: 'Use /admin settings to modify',
-    },
-    howToChange: 'How to change',
-    selectSetting: 'Select a setting...',
     overview: 'Overview',
     panel: {
       languagePlaceholder: 'Choose a language...',
@@ -77,17 +58,6 @@ export const en: TranslationKeys = {
       overviewFooter: 'Manage language, audit, and logs from this panel',
       languageFooter: 'Select a language below to update immediately',
       auditFooter: 'Choose a channel below or clear the current setting',
-    },
-  },
-
-  server: {
-    stats: {
-      title: 'Server Statistics',
-      members: 'Members',
-      total: 'Total',
-      online: 'Online',
-      offline: 'Offline',
-      bots: 'Bots',
     },
   },
 
@@ -143,14 +113,6 @@ export const en: TranslationKeys = {
   },
 
   admin: {
-    reload: {
-      title: 'Commands Reloaded',
-      success: 'All commands have been reloaded.',
-    },
-    deploy: {
-      title: 'Commands Deployed',
-      success: 'All commands have been deployed to Discord.',
-    },
     role: {
       add: {
         success: 'Role Added',
@@ -199,7 +161,6 @@ export const en: TranslationKeys = {
       uptimeLabel: 'Uptime',
       memoryLabel: 'Memory',
       nodeLabel: 'Node.js',
-      registeredUsersLabel: 'Registered Users',
       tablesLabel: 'Tables',
       backupSuccess: 'Backup created: `{filename}` ({size} KB)',
       backupFailure: 'Backup failed: {error}',
@@ -236,7 +197,6 @@ export const en: TranslationKeys = {
     description:
       'List of available commands. Use `/general help` with a command name for details.',
     usage: 'Usage',
-    footer: 'Use /general help for details',
     commandNotFound: 'Command Not Found',
     commandNotFoundDesc: 'Command `{command}` does not exist.',
     permission: {
@@ -344,12 +304,10 @@ export const en: TranslationKeys = {
       optOut: 'An admin can stop this with `/voice autojoin exclude`.',
     },
     bufferWindow: 'Buffer window',
-    title: 'Recording',
     recording: 'Recording...',
     recordingDesc: 'Recording {duration} of past audio.',
     success: 'Recording Complete',
     successDesc: 'Recorded {duration} of past audio.',
-    processing: 'Processing recording file...',
     successNextStep:
       'Need capacity details? Use `/voice status` to check active connections and the limit.',
     durationNote:
@@ -373,11 +331,6 @@ export const en: TranslationKeys = {
         'No usable audio was captured in that window. Speak closer to the mic or try a shorter duration.',
       noPermission: 'No Permission',
       noPermissionDesc: 'Bot does not have permission to send files.',
-      connectionLimit: 'Connection Limit',
-      connectionLimitDesc: 'Maximum concurrent connections reached.',
-      recordingInProgress: 'Recording In Progress',
-      recordingInProgressDesc:
-        'Recording is already in progress for this channel.',
       deliveryIncomplete: 'Recording Delivery Incomplete',
       deliveryIncompleteDesc:
         'Could not deliver split recording part(s) {parts} of {total}. Retry `/record` for the full audio.',

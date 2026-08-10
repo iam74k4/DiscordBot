@@ -13,7 +13,7 @@ src/features/myfeature/
 ├── application/      # Business logic
 ├── repositories/     # Database access
 ├── __tests__/        # Unit tests (required for new features)
-└── ...               # Optional: integrations/, jobs/, tracking/, recording/, or services/
+└── ...               # Optional: integrations/, jobs/, tracking/, recording/
 ```
 
 2. Export the required interface from `index.ts`:
@@ -41,7 +41,6 @@ export function stop(): void {
    - `application/` — Business logic, separate from command definitions
    - `repositories/` — Database access layer
    - `integrations/`, `jobs/`, `tracking/`, `recording/` — Prefer explicit runtime boundaries when the responsibility is clear
-   - `services/` — Allowed only when a smaller stateful boundary is clearer than splitting further
    - `__tests__/` — Feature-specific tests
 
 ## Adding New Commands
@@ -67,8 +66,6 @@ export const command: Command = {
     await interaction.reply('Hello!');
   },
 };
-
-export default command;
 ```
 
 2. The command will be automatically loaded from `features/*/commands/` on next restart.

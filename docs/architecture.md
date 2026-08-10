@@ -124,7 +124,6 @@ The project uses feature-based architecture. Each feature owns its command entry
 - Prefer explicit supporting folder names such as `integrations/`, `jobs/`, `recording/`, `tracking/`, and feature-owned internal modules like `community/poll/`.
 - `commands/` files delegate to `application/`; they must not import `repositories/` or `infrastructure/` directly.
 - Features never import each other. Anything two features need belongs in `infrastructure/` or `shared/`.
-- Features may expose `handleComponent(interaction)` to claim button and select-menu interactions. The router walks the registry, so component UI needs no change outside the feature.
 - `src/infrastructure/` is reserved for truly shared runtime infrastructure, not feature-owned business logic. State that several features read - such as `guild_settings` - is owned here, not by whichever feature happens to provide its UI.
 - `src/shared/` contains cross-feature utilities, types, and shared registries such as the help catalog.
 - These rules are enforced by `src/__tests__/architecture.test.ts`, not just documented.
@@ -169,13 +168,12 @@ flowchart LR
 
 - `infrastructure/database/` is **pure infrastructure**: connection management, `runTransaction()`, and migrations.
 - No business logic or feature-specific queries live here. All SQL lives in feature `repositories/`.
-- Migrations are numbered DDL files (`001_steam.ts` … `007_voice_autojoin.ts`) applied by `initializeDatabase()`. They re-run on every boot, so a migration that adds a column checks `PRAGMA table_info` first. The Steam feature has been removed; migrations 001 and 002 are kept untouched for a clean upgrade path, and `005_drop_steam.ts` drops the legacy Steam tables on existing databases.
+- Migrations are numbered DDL files (`001_steam.ts` … `010_native_polls.ts`) applied by `initializeDatabase()`. They re-run on every boot, so a migration that adds a column checks `PRAGMA table_info` first. The Steam feature has been removed; migrations 001 and 002 are kept untouched for a clean upgrade path, and `005_drop_steam.ts` drops the legacy Steam tables on existing databases.
 
 ## Interactions
 
 - Slash commands and events are auto-discovered from `features/*/commands/` and `features/*/events/`.
-- Component interactions (buttons, select menus) go through `dispatchComponent()` in `src/features/index.ts`: each feature's optional `handleComponent` is offered the interaction until one returns `true`, with per-feature error isolation.
-- Interactive panels use `runComponentPanel()` from `src/shared/utils/panel.ts`, which owns the reply/collect/re-render/expire lifecycle. A panel supplies `render`, `renderDisabled`, and `onComponent`.
+- Interactive panels use `runComponentPanel()` from `src/shared/utils/panel.ts`, which owns the reply/collect/re-render/expire lifecycle. A panel supplies `render`, `renderDisabled`, and `onComponent`. Every button and select menu in the bot belongs to a panel, so components are collected on the message that created them and never reach the interaction router.
 
 ## Middleware
 

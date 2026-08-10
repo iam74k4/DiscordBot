@@ -7,12 +7,8 @@ export const ja: TranslationKeys = {
   common: {
     error: 'エラー',
     warning: '警告',
-    success: '成功',
-    loading: '読み込み中...',
-    notFound: '見つかりません',
     guildOnly: 'このコマンドはサーバー内でのみ使用できます。',
     noPermission: 'このコマンドを使用する権限がありません。',
-    status: 'ステータス',
     noData: 'データなし',
     unexpectedError: 'コマンドの実行中に予期しないエラーが発生しました。',
     cooldown: '`/{command}` を再使用するには {time} 秒お待ちください。',
@@ -22,22 +18,12 @@ export const ja: TranslationKeys = {
     confirm: '確認',
     cancel: 'キャンセル',
     confirmMessage: '本当に実行しますか？',
-    timeout: 'この操作はタイムアウトしました。',
     cancelled: 'キャンセルしました。',
     nextStep: '次のおすすめ',
   },
 
-  units: {
-    hours: '時間',
-    hoursPerPlayer: '時間/人',
-    perDay: '日',
-    minutes: '分',
-    hoursAndMinutes: '{hours}時間 {minutes}分',
-  },
-
   settings: {
     title: 'サーバー設定',
-    updated: '設定を更新しました',
     language: {
       name: '言語',
       changed: '言語を {language} に変更しました',
@@ -63,11 +49,6 @@ export const ja: TranslationKeys = {
       noLogs: 'このサーバーの監査ログはありません。',
       showing: '{total}件中{count}件を表示',
     },
-    view: {
-      footer: '/admin settings で変更可能',
-    },
-    howToChange: '変更方法',
-    selectSetting: '設定項目を選択...',
     overview: '概要',
     panel: {
       languagePlaceholder: '言語を選択...',
@@ -76,17 +57,6 @@ export const ja: TranslationKeys = {
       overviewFooter: 'このパネルから言語・監査・ログを管理できます',
       languageFooter: '下のセレクトから即時に言語を更新できます',
       auditFooter: '下のセレクトで設定、または現在の設定を解除できます',
-    },
-  },
-
-  server: {
-    stats: {
-      title: 'サーバー統計',
-      members: 'メンバー',
-      total: '合計',
-      online: 'オンライン',
-      offline: 'オフライン',
-      bots: 'Bot',
     },
   },
 
@@ -144,14 +114,6 @@ export const ja: TranslationKeys = {
   },
 
   admin: {
-    reload: {
-      title: 'コマンド再読み込み',
-      success: 'すべてのコマンドを再読み込みしました。',
-    },
-    deploy: {
-      title: 'コマンドデプロイ',
-      success: 'すべてのコマンドをDiscordにデプロイしました。',
-    },
     role: {
       add: {
         success: 'ロールを付与しました',
@@ -198,7 +160,6 @@ export const ja: TranslationKeys = {
       uptimeLabel: '稼働時間',
       memoryLabel: 'メモリ',
       nodeLabel: 'Node.js',
-      registeredUsersLabel: '登録ユーザー数',
       tablesLabel: 'テーブル',
       backupSuccess: 'バックアップを作成しました: `{filename}` ({size} KB)',
       backupFailure: 'バックアップに失敗しました: {error}',
@@ -234,7 +195,6 @@ export const ja: TranslationKeys = {
     description:
       '利用可能なコマンドの一覧です。詳細は `/general help` にコマンド名を指定して確認できます。',
     usage: '使い方',
-    footer: '/general help で詳細を表示',
     commandNotFound: 'コマンドが見つかりません',
     commandNotFoundDesc: '`{command}` というコマンドは存在しません。',
     permission: {
@@ -340,12 +300,10 @@ export const ja: TranslationKeys = {
         '保持を止めるには管理者が `/voice autojoin exclude` を実行してください。',
     },
     bufferWindow: '保持時間',
-    title: '録音',
     recording: '録音中...',
     recordingDesc: '過去{duration}の音声を録音しています。',
     success: '録音完了',
     successDesc: '過去{duration}の音声を録音しました。',
-    processing: '録音ファイルを処理中...',
     successNextStep:
       '接続数や上限を確認したい場合は `/voice status` を使ってください。',
     durationNote: 'ヒント: 録音時間は保持バッファと最大5分の制限を受けます。',
@@ -369,10 +327,6 @@ export const ja: TranslationKeys = {
         'その期間に十分な音量の音声がありませんでした。マイクに近づくか、より短い時間で試してください。',
       noPermission: '権限不足',
       noPermissionDesc: 'Botがファイルを送信する権限がありません。',
-      connectionLimit: '接続数上限',
-      connectionLimitDesc: '同時接続数の上限に達しています。',
-      recordingInProgress: '録音中',
-      recordingInProgressDesc: 'このチャンネルで既に録音が進行中です。',
       deliveryIncomplete: '録音配信が不完全です',
       deliveryIncompleteDesc:
         '分割録音のパート {parts}（全{total}件中）を配信できませんでした。完全な音声が必要な場合は `/record` を再実行してください。',

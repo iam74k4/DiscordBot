@@ -152,33 +152,3 @@ export function createMockInteraction(
 
   return interaction;
 }
-
-/**
- * Mock environment variables for testing
- */
-export function mockEnv(overrides: Record<string, string> = {}): void {
-  const defaults = {
-    DISCORD_TOKEN: 'test-token',
-    DISCORD_CLIENT_ID: '123456789012345678',
-    BOT_OWNER_IDS: '987654321098765432',
-    NODE_ENV: 'test',
-  };
-
-  for (const [key, value] of Object.entries({ ...defaults, ...overrides })) {
-    process.env[key] = value;
-  }
-}
-
-/**
- * Clear all mocks
- */
-export function clearAllMocks(): void {
-  vi.clearAllMocks();
-}
-
-/**
- * Reset all mocks
- */
-export function resetAllMocks(): void {
-  vi.resetAllMocks();
-}

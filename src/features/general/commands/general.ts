@@ -64,5 +64,3 @@ export const command: Command = {
     await executeGeneralCommand(interaction);
   },
 };
-
-export default command;

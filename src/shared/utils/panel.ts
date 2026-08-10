@@ -9,7 +9,7 @@ import { getErrorMessage, logger } from './logger.js';
 import { t, type Locale } from '../../locales/index.js';
 
 /** How long a panel stays interactive before its components are disabled. */
-export const DEFAULT_PANEL_TIMEOUT = 120_000;
+const DEFAULT_PANEL_TIMEOUT = 120_000;
 
 /** What a panel renders: the same shape a reply takes. */
 export type PanelPayload = Required<

@@ -2,9 +2,6 @@ import { config as dotenvConfig } from 'dotenv';
 import { logger } from '../shared/utils/logger.js';
 import { parseConfig, type AppConfig } from './schema.js';
 
-export type { AppConfig } from './schema.js';
-export { parseConfig } from './schema.js';
-
 let loaded: AppConfig | null = null;
 
 /**
@@ -26,11 +23,6 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
 
   loaded = config;
   return loaded;
-}
-
-/** Drop the cached config. Tests use this; the running bot never does. */
-export function resetConfigForTesting(): void {
-  loaded = null;
 }
 
 /**

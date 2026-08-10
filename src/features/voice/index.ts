@@ -1,7 +1,6 @@
 import type { Client } from 'discord.js';
 import { memoryMonitor } from './jobs/memoryMonitor.js';
 import { fileCleanupService } from './jobs/fileCleanup.js';
-import { channelMixRingManager } from './recording/channelMixRing.js';
 import { connectionManager } from './recording/connectionManager.js';
 import { reconcileOccupiedVoiceChannels } from './application/reconcile.js';
 import { setServiceStatus } from '../../infrastructure/health/index.js';
@@ -35,5 +34,3 @@ export async function stop(): Promise<void> {
     await connectionManager.disconnect(channelId);
   }
 }
-
-export { connectionManager, channelMixRingManager };

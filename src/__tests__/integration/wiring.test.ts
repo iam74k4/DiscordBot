@@ -13,7 +13,7 @@ vi.mock('../../shared/utils/logger.js', () => ({
   getErrorMessage: (e: unknown) => String(e),
 }));
 
-const { loadFeatures, getFeatureModules, routeComponentToFeatures } =
+const { loadFeatures, getFeatureModules } =
   await import('../../features/index.js');
 const { discoverFeatureCommands } =
   await import('../../app/interactions/commandRegistry.js');
@@ -77,20 +77,5 @@ describe('command routing reaches the owning command', () => {
     );
 
     expect(execute).toHaveBeenCalled();
-  });
-
-  it('leaves a component no feature claims unhandled', async () => {
-    // Polls are native, so nothing currently registers a component handler.
-    // An unclaimed button must fall through quietly rather than throw.
-    const handled = await routeComponentToFeatures({
-      customId: 'something_else',
-      message: { id: 'msg-1' },
-      user: { id: 'user-1', tag: 'User#0001' },
-      guildId: 'guild-1',
-      locale: 'en-US',
-      isButton: () => true,
-    } as never);
-
-    expect(handled).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 import { database } from '../../../infrastructure/database/connection.js';
 import { runTransaction } from '../../../infrastructure/database/transaction.js';
 
-export interface VoiceSessionRecord {
+interface VoiceSessionRecord {
   id: number;
   guild_id: string;
   user_id: string;

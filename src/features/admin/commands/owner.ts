@@ -118,5 +118,3 @@ export const command: Command = {
     await executeOwnerCommand(interaction);
   },
 };
-
-export default command;

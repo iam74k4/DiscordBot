@@ -224,5 +224,3 @@ async function handleUserMoved(
   // Handle joining new channel
   await handleUserJoined(client, newState);
 }
-
-export default event;

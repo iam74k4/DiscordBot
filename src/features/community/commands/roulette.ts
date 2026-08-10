@@ -246,5 +246,3 @@ export const command: Command = {
     await executeRouletteCommand(interaction);
   },
 };
-
-export default command;
