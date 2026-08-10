@@ -49,6 +49,11 @@ vi.mock('../recording/channelMixRing.js', () => ({
     getOrCreate: vi.fn(() => ({ addMonoPcmInt16: vi.fn() })),
     remove: vi.fn(),
   },
+  resolveChunkEndWallMs: (
+    nowMs: number,
+    _lastEndWallMs: number | null,
+    _durationMs: number
+  ) => nowMs,
 }));
 
 function makeChannel(id: string, guildId = 'guild-1') {

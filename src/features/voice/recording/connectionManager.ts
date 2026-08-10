@@ -20,7 +20,10 @@ import {
   VoiceConnectionInfo,
   VoiceConnectionState,
 } from '../../../shared/types/voice.js';
-import { channelMixRingManager } from './channelMixRing.js';
+import {
+  channelMixRingManager,
+  resolveChunkEndWallMs,
+} from './channelMixRing.js';
 
 /**
  * Voice connection manager
@@ -264,6 +267,11 @@ export class VoiceConnectionManager {
         };
 
         let chunkCount = 0;
+        // Per-subscribe stream clock: after an event-loop stall, buffered PCM
+        // 'data' handlers can fire in the same Date.now() millisecond. Using
+        // raw wall clock then maps every frame onto one 20ms window and
+        // destroys the catch-up audio (same-user samples sum / later speech lost).
+        let lastEndWallMs: number | null = null;
         pcmStream.on('data', (chunk: Buffer) => {
           if (!this.connections.has(channelId)) return;
           chunkCount++;
@@ -282,13 +290,21 @@ export class VoiceConnectionManager {
             monoChunk.writeInt16LE(mono, i * 2);
           }
 
+          const durationMs = (monoSamples / AUDIO.SAMPLE_RATE) * 1000;
+          const endWallMs = resolveChunkEndWallMs(
+            Date.now(),
+            lastEndWallMs,
+            durationMs
+          );
+          lastEndWallMs = endWallMs;
+
           // Allocated here rather than on connect: the ring costs ~82MB at the
           // default buffer length, and a channel where nobody ever speaks
-          // should not pay it. The first chunk also sets the ring's epoch, so
-          // the timeline starts at real audio instead of at join time.
+          // should not pay it. Epoch is the first chunk's start (end −
+          // duration), not allocation time — samples before epoch are dropped.
           channelMixRingManager
-            .getOrCreate(channelId)
-            .addMonoPcmInt16(monoChunk, Date.now());
+            .getOrCreate(channelId, endWallMs - durationMs)
+            .addMonoPcmInt16(monoChunk, endWallMs);
         });
 
         pcmStream.on('error', (error) => {
