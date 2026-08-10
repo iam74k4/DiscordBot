@@ -231,8 +231,8 @@ describe('ChannelMixRingManager', () => {
 
     mgr.getOrCreate('ch', endMs - durationMs).addMonoPcmInt16(pcm, endMs);
 
-    expect(maxAbsInt16(mgr.extractLastSeconds('ch', 0.02, endMs))).toBeGreaterThan(
-      4000
-    );
+    expect(
+      maxAbsInt16(mgr.extractLastSeconds('ch', 0.02, endMs))
+    ).toBeGreaterThan(4000);
   });
 });
