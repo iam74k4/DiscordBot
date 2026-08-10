@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import {
   ChannelMixRing,
   ChannelMixRingManager,
+  resolveChunkEndWallMs,
 } from '../recording/channelMixRing.js';
 
 vi.mock('../../../config/index.js', () => ({
@@ -9,6 +10,30 @@ vi.mock('../../../config/index.js', () => ({
     AUDIO_BUFFER_DURATION: 60,
   },
 }));
+
+describe('resolveChunkEndWallMs', () => {
+  it('uses wall clock for the first chunk', () => {
+    expect(resolveChunkEndWallMs(1_000, null, 20)).toBe(1_000);
+  });
+
+  it('keeps wall clock when chunks are spaced by at least durationMs', () => {
+    expect(resolveChunkEndWallMs(1_020, 1_000, 20)).toBe(1_020);
+    expect(resolveChunkEndWallMs(1_040, 1_020, 20)).toBe(1_040);
+  });
+
+  it('advances past the previous chunk when drained in the same millisecond', () => {
+    const first = resolveChunkEndWallMs(5_000, null, 20);
+    const second = resolveChunkEndWallMs(5_000, first, 20);
+    const third = resolveChunkEndWallMs(5_000, second, 20);
+    expect(first).toBe(5_000);
+    expect(second).toBe(5_020);
+    expect(third).toBe(5_040);
+  });
+
+  it('preserves a real wall-clock gap larger than one frame', () => {
+    expect(resolveChunkEndWallMs(5_100, 5_000, 20)).toBe(5_100);
+  });
+});
 
 describe('ChannelMixRing', () => {
   const epoch = 1_000_000;
@@ -20,6 +45,67 @@ describe('ChannelMixRing', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it('drops the first frame when epoch equals the chunk end wall time', () => {
+    // Documents the #169 lazy-alloc pitfall: getOrCreate() used Date.now() at
+    // construction, which matches endWallMs in the same tick, so every sample
+    // of the first frame lands before epoch and is skipped.
+    const endMs = epoch + 20;
+    const ring = new ChannelMixRing(10, endMs);
+    const frameSamples = 960;
+    const pcm = Buffer.alloc(frameSamples * 2);
+    for (let i = 0; i < frameSamples; i++) {
+      pcm.writeInt16LE(8000, i * 2);
+    }
+    ring.addMonoPcmInt16(pcm, endMs);
+    expect(maxAbsInt16(ring.extractLastSeconds(0.02, endMs))).toBe(0);
+  });
+
+  it('keeps the first frame when epoch is the chunk start wall time', () => {
+    const frameSamples = 960;
+    const durationMs = (frameSamples / 48000) * 1000;
+    const endMs = epoch + durationMs;
+    const ring = new ChannelMixRing(10, endMs - durationMs);
+    const pcm = Buffer.alloc(frameSamples * 2);
+    for (let i = 0; i < frameSamples; i++) {
+      pcm.writeInt16LE(8000, i * 2);
+    }
+    ring.addMonoPcmInt16(pcm, endMs);
+    expect(maxAbsInt16(ring.extractLastSeconds(0.02, endMs))).toBeGreaterThan(
+      4000
+    );
+  });
+
+  it('keeps catch-up frames contiguous when end times advance by duration', () => {
+    const ring = new ChannelMixRing(10, epoch);
+
+    const frameSamples = 960;
+    const pcmA = Buffer.alloc(frameSamples * 2);
+    const pcmB = Buffer.alloc(frameSamples * 2);
+    pcmA.fill(0);
+    pcmB.fill(0);
+    pcmA.writeInt16LE(8000, 0);
+    pcmB.writeInt16LE(9000, 0);
+
+    let lastEnd: number | null = null;
+    const now = epoch + 40;
+    const durationMs = (frameSamples / 48000) * 1000;
+    const endA = resolveChunkEndWallMs(now, lastEnd, durationMs);
+    lastEnd = endA;
+    const endB = resolveChunkEndWallMs(now, lastEnd, durationMs);
+
+    ring.addMonoPcmInt16(pcmA, endA);
+    ring.addMonoPcmInt16(pcmB, endB);
+
+    const out = ring.extractLastSeconds(0.04, endB);
+    const firstPeak = Math.abs(out.readInt16LE(0));
+    const secondPeak = Math.abs(out.readInt16LE(frameSamples * 2));
+    // Soft-limited single-frame peaks stay well below a collapsed sum (~17k → ~20k).
+    expect(firstPeak).toBeGreaterThan(9000);
+    expect(firstPeak).toBeLessThan(12000);
+    expect(secondPeak).toBeGreaterThan(10000);
+    expect(secondPeak).toBeLessThan(13000);
   });
 
   it('sums two speakers at the same global sample', () => {
@@ -131,5 +217,22 @@ describe('ChannelMixRingManager', () => {
     // what makes an idle voice connection free.
     expect(mgr.extractLastSeconds('quiet', 1).length).toBe(0);
     expect(mgr.getTotalMixBufferSizeMB()).toBe(0);
+  });
+
+  it('allocates the ring epoch from the first chunk start, not its end', () => {
+    const mgr = new ChannelMixRingManager();
+    const frameSamples = 960;
+    const durationMs = (frameSamples / 48000) * 1000;
+    const endMs = 1_000_000;
+    const pcm = Buffer.alloc(frameSamples * 2);
+    for (let i = 0; i < frameSamples; i++) {
+      pcm.writeInt16LE(8000, i * 2);
+    }
+
+    mgr.getOrCreate('ch', endMs - durationMs).addMonoPcmInt16(pcm, endMs);
+
+    expect(maxAbsInt16(mgr.extractLastSeconds('ch', 0.02, endMs))).toBeGreaterThan(
+      4000
+    );
   });
 });
